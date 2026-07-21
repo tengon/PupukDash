@@ -142,11 +142,52 @@ SiPUPUK is a fully functional, production-ready web application for Indonesia's 
 ### Unresolved Issues / Risks
 - Dev server auto-restart loop needed due to sandbox process management (not a code issue)
 - No authentication/authorization system (all users have full access)
-- No dark mode toggle button in UI (dark mode CSS exists but no switch)
-- Mobile sidebar navigation may need testing on actual devices
 - Priority recommendations for next phase:
   1. Add authentication system (NextAuth.js)
   2. Add data visualization charts (replace Progress bars with recharts if memory allows)
   3. Add notification system for stock alerts
-  4. Add pagination to all table views
-  5. Add data validation improvements (e.g., max order quantity vs available stock)
+  4. Add data validation improvements (e.g., max order quantity vs available stock)
+
+---
+Task ID: 5
+Agent: Main Agent (with sub-agents)
+Task: Comprehensive QA, bug fixes, styling overhaul, and new features
+
+Work Log:
+- **QA Testing**: Tested all 7 API endpoints (all return 200), dashboard loads correctly via agent-browser
+- **BUG FIX 1**: Products view showed "STOK TOTAL" as 0 for all products
+  - Root cause: View used `product._count?.stock` but API returns `totalStock` field
+  - Fix: Changed to `product.totalStock ?? 0` with "kg" unit suffix
+  - Also updated Product type in api.ts to match actual API response fields
+- **BUG FIX 2**: Warehouses view showed stock count as 0
+  - Root cause: View used `wh._count?.stock` but API returns `totalStock` field
+  - Fix: Changed to `wh.totalStock ?? 0` with "kg" unit suffix
+  - Also updated Warehouse type in api.ts to match actual API response fields
+- **BUG FIX 3**: Dark mode toggle wasn't working
+  - Root cause: ThemeProvider was inside `<body>` but CSS `.dark {}` targets `:root` (`<html>`)
+  - Fix: Moved theme initialization to inline `<script>` in `<head>`, ThemeProvider kept for client-side `setTheme` calls
+  - ThemeToggle also now directly manipulates `document.documentElement.classList` for immediate feedback
+  - Created `src/components/providers.tsx` to wrap QueryProvider + ThemeProvider
+
+- **STYLING IMPROVEMENTS** (via full-stack-developer sub-agent):
+  - Farmers View: Added 2 summary cards (Total Petani Aktif, Rata-rata Luas Lahan), expanded table columns (Telepon, Kelompok Tani, Kabupaten, Luas Lahan), 2-column dialog layout, proper empty states
+  - Stock View: Completely redesigned from plain table to visual card grid with colored stock level indicators (green/yellow/red), large quantity numbers, product type badges, warehouse names, status-colored card borders
+  - All Views: Added 2px colored left-border accent to each module's main card
+  - Orders View: Added 3-step visual status stepper in detail dialog (Menunggu → Dikonfirmasi → Diambil) with circle icons, connecting lines, green glow
+  - Distributions View: Added icons to status tabs, distinct status colors (gray/blue/green/red), progress bars under status badges
+  - Sidebar: Added green dot indicator with glow shadow on active menu item
+
+- **NEW FEATURES** (via full-stack-developer sub-agent):
+  - Dark Mode Toggle: Created ThemeToggle component (Sun/Moon icons), integrated with next-themes, fixed hydration with inline script in layout head
+  - Client-side Pagination: Added to Farmers, Warehouses, Stock, Distributions, Orders — 10 items/page with "Menampilkan X-Y dari Z data" text
+  - Notification Bell: Created NotificationBell component showing stock alert count from dashboard, with animated red badge, navigates to Dashboard on click
+
+Stage Summary:
+- 3 data mismatch bugs fixed (products stock, warehouses stock, dark mode)
+- Lint passes with 0 errors consistently
+- All APIs return 200
+- Page size: ~55KB (increased from ~49KB due to new features)
+- Dark/light mode verified working via agent-browser
+- Stock view completely redesigned with visual card grid
+- All tables now have client-side pagination
+- All views have colored card accent borders

@@ -6,9 +6,9 @@ import { useAppStore } from '@/lib/store'
 import {
   fetchDistributions, createDistribution, updateDistribution, deleteDistribution,
   fetchWarehouses, fetchProducts,
-  type Distribution, type Warehouse, type Product,
+  type Distribution,
 } from '@/lib/api'
-import { formatNumber, formatDate, getStatusColor, getStatusLabel } from '@/lib/format'
+import { formatNumber, formatDate, getStatusLabel } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,16 +50,27 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
-import { Plus, Truck, Pencil, Trash2, ArrowRight } from 'lucide-react'
+import { Plus, Truck, Pencil, Trash2, ArrowRight, FileText, CheckCircle, XCircle, Search } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
+const ITEMS_PER_PAGE = 10
+
 const STATUS_TABS = [
-  { value: 'all', label: 'Semua' },
-  { value: 'DRAFT', label: 'Draft' },
-  { value: 'IN_TRANSIT', label: 'Dikirim' },
-  { value: 'DELIVERED', label: 'Diterima' },
-  { value: 'CANCELLED', label: 'Dibatalkan' },
+  { value: 'all', label: 'Semua', icon: null },
+  { value: 'DRAFT', label: 'Draft', icon: FileText },
+  { value: 'IN_TRANSIT', label: 'Dikirim', icon: Truck },
+  { value: 'DELIVERED', label: 'Diterima', icon: CheckCircle },
+  { value: 'CANCELLED', label: 'Dibatalkan', icon: XCircle },
 ]
 
 const STATUS_FLOW: Record<string, string[]> = {
@@ -67,6 +78,20 @@ const STATUS_FLOW: Record<string, string[]> = {
   IN_TRANSIT: ['DELIVERED', 'CANCELLED'],
   DELIVERED: [],
   CANCELLED: [],
+}
+
+const STATUS_BADGE_STYLES: Record<string, string> = {
+  DRAFT: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700',
+  IN_TRANSIT: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
+  DELIVERED: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+  CANCELLED: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+}
+
+const STATUS_PROGRESS: Record<string, { width: string; color: string }> = {
+  DRAFT: { width: '25%', color: 'bg-gray-400' },
+  IN_TRANSIT: { width: '60%', color: 'bg-blue-500' },
+  DELIVERED: { width: '100%', color: 'bg-green-500' },
+  CANCELLED: { width: '0%', color: 'bg-red-500' },
 }
 
 export function DistributionsView() {
@@ -85,6 +110,7 @@ export function DistributionsView() {
   const [formVillage, setFormVillage] = useState('')
   const [formGroup, setFormGroup] = useState('')
   const [formNotes, setFormNotes] = useState('')
+  const [page, setPage] = useState(1)
 
   const { data: distributions, isLoading } = useQuery({
     queryKey: ['distributions', refreshKey],
@@ -177,9 +203,15 @@ export function DistributionsView() {
     (d) => statusFilter === 'all' || d.status === statusFilter
   )
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card>
+      <Card className="border-l-2 border-l-blue-500">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -192,13 +224,17 @@ export function DistributionsView() {
             </Button>
           </div>
           <div className="pt-2">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+            <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
               <TabsList className="h-8">
-                {STATUS_TABS.map((tab) => (
-                  <TabsTrigger key={tab.value} value={tab.value} className="text-xs px-3">
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
+                {STATUS_TABS.map((tab) => {
+                  const TabIcon = tab.icon
+                  return (
+                    <TabsTrigger key={tab.value} value={tab.value} className="text-xs px-3 gap-1">
+                      {TabIcon && <TabIcon className="h-3 w-3" />}
+                      {tab.label}
+                    </TabsTrigger>
+                  )
+                })}
               </TabsList>
             </Tabs>
           </div>
@@ -211,72 +247,126 @@ export function DistributionsView() {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">No. Distribusi</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
-                    <TableHead className="text-xs">Produk</TableHead>
-                    <TableHead className="text-xs text-right">Jumlah (kg)</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Desa Tujuan</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Kel. Tani</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Tanggal</TableHead>
-                    <TableHead className="text-xs text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
-                        Tidak ada data distribusi
-                      </TableCell>
+                      <TableHead className="text-xs">No. Distribusi</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
+                      <TableHead className="text-xs">Produk</TableHead>
+                      <TableHead className="text-xs text-right">Jumlah (kg)</TableHead>
+                      <TableHead className="text-xs hidden lg:table-cell">Desa Tujuan</TableHead>
+                      <TableHead className="text-xs hidden lg:table-cell">Kel. Tani</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Tanggal</TableHead>
+                      <TableHead className="text-xs text-right">Aksi</TableHead>
                     </TableRow>
-                  ) : (
-                    filtered.map((dist, idx) => (
-                      <TableRow key={dist.id}>
-                        <TableCell className="text-xs font-mono">{dist.distributionNo}</TableCell>
-                        <TableCell className="text-xs hidden md:table-cell">{dist.warehouse.name}</TableCell>
-                        <TableCell className="text-sm font-medium">{dist.productName}</TableCell>
-                        <TableCell className="text-sm text-right font-mono">{formatNumber(dist.quantity)}</TableCell>
-                        <TableCell className="text-xs hidden lg:table-cell">{dist.targetVillage || '-'}</TableCell>
-                        <TableCell className="text-xs hidden lg:table-cell">{dist.targetGroup || '-'}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(dist.status)}`}>
-                            {getStatusLabel(dist.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs hidden md:table-cell">{formatDate(dist.createdAt)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {STATUS_FLOW[dist.status]?.length > 0 && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => { setEditingDist(dist); setStatusDialogOpen(true) }}
-                                title="Update Status"
-                              >
-                                <ArrowRight className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => { setDeletingId(dist.id); setDeleteOpen(true) }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Truck className="h-10 w-10 opacity-30" />
+                            <p className="text-sm font-medium">Tidak ada data distribusi</p>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ) : (
+                      paged.map((dist) => {
+                        const progress = STATUS_PROGRESS[dist.status] || STATUS_PROGRESS.DRAFT
+                        return (
+                          <TableRow key={dist.id}>
+                            <TableCell className="text-xs font-mono">{dist.distributionNo}</TableCell>
+                            <TableCell className="text-xs hidden md:table-cell">{dist.warehouse.name}</TableCell>
+                            <TableCell className="text-sm font-medium">{dist.productName}</TableCell>
+                            <TableCell className="text-sm text-right font-mono">{formatNumber(dist.quantity)}</TableCell>
+                            <TableCell className="text-xs hidden lg:table-cell">{dist.targetVillage || '-'}</TableCell>
+                            <TableCell className="text-xs hidden lg:table-cell">{dist.targetGroup || '-'}</TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE_STYLES[dist.status] || ''}`}>
+                                  {getStatusLabel(dist.status)}
+                                </Badge>
+                                <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all duration-500 ${progress.color}`} style={{ width: progress.width }} />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs hidden md:table-cell">{formatDate(dist.createdAt)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {STATUS_FLOW[dist.status]?.length > 0 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => { setEditingDist(dist); setStatusDialogOpen(true) }}
+                                    title="Update Status"
+                                  >
+                                    <ArrowRight className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => { setDeletingId(dist.id); setDeleteOpen(true) }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {filtered.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Menampilkan {startIndex}-{endIndex} dari {filtered.length} data
+                  </p>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                      {safePage > 3 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink>
+                          </PaginationItem>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                        </>
+                      )}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((p) => p >= safePage - 1 && p <= safePage + 1)
+                        .map((p) => (
+                          <PaginationItem key={p}>
+                            <PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                          </PaginationItem>
+                        ))
+                      }
+                      {safePage < totalPages - 2 && (
+                        <>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink>
+                          </PaginationItem>
+                        </>
+                      )}
+                      <PaginationItem>
+                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -346,7 +436,7 @@ export function DistributionsView() {
             <DialogTitle>Update Status Distribusi</DialogTitle>
             <DialogDescription>
               {editingDist && (
-                <span>Distribusi <span className="font-mono font-medium">{editingDist.distributionNo}</span> — Status saat ini: <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(editingDist.status)}`}>{getStatusLabel(editingDist.status)}</Badge></span>
+                <span>Distribusi <span className="font-mono font-medium">{editingDist.distributionNo}</span> — Status saat ini: <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE_STYLES[editingDist.status] || ''}`}>{getStatusLabel(editingDist.status)}</Badge></span>
               )}
             </DialogDescription>
           </DialogHeader>

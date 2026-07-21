@@ -41,11 +41,22 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer } from 'lucide-react'
+import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer, Check, Clock, PackageCheck } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+
+const ITEMS_PER_PAGE = 10
 
 const ORDER_STATUS_TABS = [
   { value: 'all', label: 'Semua' },
@@ -60,6 +71,75 @@ const ORDER_STATUS_FLOW: Record<string, string[]> = {
   CONFIRMED: ['PICKED_UP', 'CANCELLED'],
   PICKED_UP: [],
   CANCELLED: [],
+}
+
+const STATUS_STEPS = ['PENDING', 'CONFIRMED', 'PICKED_UP'] as const
+const STEP_LABELS: Record<string, string> = {
+  PENDING: 'Menunggu',
+  CONFIRMED: 'Dikonfirmasi',
+  PICKED_UP: 'Diambil',
+}
+const STEP_ICONS: Record<string, typeof Check> = {
+  PENDING: Clock,
+  CONFIRMED: Check,
+  PICKED_UP: PackageCheck,
+}
+
+function OrderStatusTimeline({ status }: { status: string }) {
+  if (status === 'CANCELLED') {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 px-3 py-1">
+          Pesanan Dibatalkan
+        </Badge>
+      </div>
+    )
+  }
+
+  const currentIdx = STATUS_STEPS.indexOf(status as typeof STATUS_STEPS[number])
+
+  return (
+    <div className="flex items-center justify-center py-4 px-2">
+      <div className="flex items-center gap-0 w-full max-w-xs">
+        {STATUS_STEPS.map((step, idx) => {
+          const StepIcon = STEP_ICONS[step]
+          const isCompleted = idx < currentIdx
+          const isCurrent = idx === currentIdx
+          const isFuture = idx > currentIdx
+
+          return (
+            <div key={step} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
+                    isCompleted
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : isCurrent
+                        ? 'bg-green-100 border-green-500 text-green-700 dark:bg-green-900/40 dark:text-green-400 shadow-[0_0_8px_rgba(34,197,94,0.4)]'
+                        : 'bg-muted border-muted-foreground/30 text-muted-foreground/50'
+                  }`}
+                >
+                  <StepIcon className="h-4 w-4" />
+                </div>
+                <span className={`text-[10px] mt-1 font-medium ${
+                  isCompleted || isCurrent ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'
+                }`}>
+                  {STEP_LABELS[step]}
+                </span>
+              </div>
+              {idx < STATUS_STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 mb-4 rounded-full transition-all ${
+                  idx < currentIdx
+                    ? 'bg-green-500'
+                    : 'bg-muted-foreground/20'
+                }`} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 interface OrderItemForm {
@@ -83,6 +163,7 @@ export function OrdersView() {
   const [statusOpen, setStatusOpen] = useState(false)
   const [detailOrder, setDetailOrder] = useState<OrderWithDetails | null>(null)
   const [editingOrder, setEditingOrder] = useState<OrderWithDetails | null>(null)
+  const [page, setPage] = useState(1)
 
   const [formFarmer, setFormFarmer] = useState('')
   const [formWarehouse, setFormWarehouse] = useState('')
@@ -291,7 +372,7 @@ export function OrdersView() {
     <div class="info-item"><span class="label">Status:</span> <span class="value">${getStatusLabel(order.status)}</span></div>
     <div class="info-item"><span class="label">Petani:</span> <span class="value">${order.farmer.name}</span></div>
     <div class="info-item"><span class="label">NIK:</span> <span class="value">${order.farmer.nik}</span></div>
-    <div class="info-item" style="grid-column: span 2"><span class="label">Gudang:</span> <span class="value">${order.warehouse.name} (${order.warehouse.code})</span></div>
+    <div class="info-item" style="grid-column: span 2"><span class="label">Gudang:</span> <span class="value">${order.warehouse.name} (${order.warehouse.code}</span></div>
   </div>
   <table>
     <thead>
@@ -335,9 +416,15 @@ export function OrdersView() {
     return matchStatus && matchSearch
   })
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card>
+      <Card className="border-l-2 border-l-green-500">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -377,7 +464,7 @@ export function OrdersView() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+            <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
               <TabsList className="h-8">
                 {ORDER_STATUS_TABS.map((tab) => (
                   <TabsTrigger key={tab.value} value={tab.value} className="text-xs px-3">
@@ -391,7 +478,7 @@ export function OrdersView() {
               <Input
                 placeholder="Cari pesanan..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="pl-9 h-8 text-sm"
               />
             </div>
@@ -405,59 +492,105 @@ export function OrdersView() {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">No. Pesanan</TableHead>
-                    <TableHead className="text-xs">Petani</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
-                    <TableHead className="text-xs text-right">Total (Rp)</TableHead>
-                    <TableHead className="text-xs text-right hidden sm:table-cell">Subsidi (Rp)</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Tanggal</TableHead>
-                    <TableHead className="text-xs text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
-                        Tidak ada data pesanan
-                      </TableCell>
+                      <TableHead className="text-xs">No. Pesanan</TableHead>
+                      <TableHead className="text-xs">Petani</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
+                      <TableHead className="text-xs text-right">Total (Rp)</TableHead>
+                      <TableHead className="text-xs text-right hidden sm:table-cell">Subsidi (Rp)</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Tanggal</TableHead>
+                      <TableHead className="text-xs text-right">Aksi</TableHead>
                     </TableRow>
-                  ) : (
-                    filtered.map((order, idx) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
-                        <TableCell className="text-sm font-medium">{order.farmer.name}</TableCell>
-                        <TableCell className="text-xs hidden md:table-cell">{order.warehouse.name}</TableCell>
-                        <TableCell className="text-sm text-right font-medium">{formatRupiah(order.totalAmount)}</TableCell>
-                        <TableCell className="text-xs text-right hidden sm:table-cell text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>
-                            {getStatusLabel(order.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs hidden md:table-cell">{formatDate(order.createdAt)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setDetailOrder(order); setDetailOpen(true) }}>
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                            {ORDER_STATUS_FLOW[order.status]?.length > 0 && (
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingOrder(order); setStatusOpen(true) }}>
-                                <ArrowRight className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <ShoppingCart className="h-10 w-10 opacity-30" />
+                            <p className="text-sm font-medium">Tidak ada data pesanan</p>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ) : (
+                      paged.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
+                          <TableCell className="text-sm font-medium">{order.farmer.name}</TableCell>
+                          <TableCell className="text-xs hidden md:table-cell">{order.warehouse.name}</TableCell>
+                          <TableCell className="text-sm text-right font-medium">{formatRupiah(order.totalAmount)}</TableCell>
+                          <TableCell className="text-xs text-right hidden sm:table-cell text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>
+                              {getStatusLabel(order.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs hidden md:table-cell">{formatDate(order.createdAt)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setDetailOrder(order); setDetailOpen(true) }}>
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                              {ORDER_STATUS_FLOW[order.status]?.length > 0 && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingOrder(order); setStatusOpen(true) }}>
+                                  <ArrowRight className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {filtered.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Menampilkan {startIndex}-{endIndex} dari {filtered.length} data
+                  </p>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                      {safePage > 3 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink>
+                          </PaginationItem>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                        </>
+                      )}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((p) => p >= safePage - 1 && p <= safePage + 1)
+                        .map((p) => (
+                          <PaginationItem key={p}>
+                            <PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                          </PaginationItem>
+                        ))
+                      }
+                      {safePage < totalPages - 2 && (
+                        <>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink>
+                          </PaginationItem>
+                        </>
+                      )}
+                      <PaginationItem>
+                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -601,7 +734,7 @@ export function OrdersView() {
 
       {/* Order Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh]">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center justify-between pr-2">
               <div>
@@ -625,6 +758,11 @@ export function OrdersView() {
           </DialogHeader>
           {detailOrder && (
             <div className="space-y-4">
+              {/* Status Timeline */}
+              <div className="rounded-lg border bg-muted/30 p-2">
+                <OrderStatusTimeline status={detailOrder.status} />
+              </div>
+
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-muted-foreground">Petani:</span> <span className="font-medium">{detailOrder.farmer.name}</span></div>
                 <div><span className="text-muted-foreground">Gudang:</span> <span className="font-medium">{detailOrder.warehouse.name}</span></div>
@@ -651,15 +789,17 @@ export function OrdersView() {
                   <TableBody>
                     {detailOrder.items.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="text-xs">
-                          {item.productName}
-                          <Badge variant="outline" className={`ml-1 text-[9px] px-1 py-0 ${getTypeBadgeColor(item.product?.type || '')}`}>
-                            {item.product?.type}
-                          </Badge>
+                        <TableCell className="text-sm py-2">
+                          <div className="flex items-center gap-2">
+                            {item.productName}
+                            <Badge variant="outline" className={`text-[9px] px-1 py-0 ${getTypeBadgeColor(item.product?.type || '')}`}>
+                              {item.product?.type}
+                            </Badge>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-xs text-right font-mono">{formatNumber(item.quantity)}</TableCell>
-                        <TableCell className="text-xs text-right font-mono">{formatRupiah(item.pricePerKg)}</TableCell>
-                        <TableCell className="text-xs text-right font-mono font-medium">{formatRupiah(item.subtotal)}</TableCell>
+                        <TableCell className="text-sm text-right font-mono">{formatNumber(item.quantity)}</TableCell>
+                        <TableCell className="text-sm text-right font-mono">{formatRupiah(item.pricePerKg)}</TableCell>
+                        <TableCell className="text-sm text-right font-mono font-medium">{formatRupiah(item.subtotal)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

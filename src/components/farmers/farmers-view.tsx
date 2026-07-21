@@ -37,13 +37,24 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, Pencil, Trash2, Users, Eye, Download } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Users, Eye, Download, UserCheck, Wheat } from 'lucide-react'
 import { exportToCSV } from '@/lib/export'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, getStatusColor, getStatusLabel } from '@/lib/format'
+
+const ITEMS_PER_PAGE = 10
 
 const emptyForm = {
   nik: '',
@@ -72,6 +83,7 @@ export function FarmersView() {
   const [detailFarmer, setDetailFarmer] = useState<Farmer | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [nikError, setNikError] = useState('')
+  const [page, setPage] = useState(1)
 
   const { data: farmers, isLoading } = useQuery({
     queryKey: ['farmers', refreshKey],
@@ -186,14 +198,56 @@ export function FarmersView() {
     (f) =>
       f.name.toLowerCase().includes(search.toLowerCase()) ||
       f.nik.includes(search) ||
-      (f.farmerGroup || '').toLowerCase().includes(search.toLowerCase())
+      (f.farmerGroup || '').toLowerCase().includes(search.toLowerCase()) ||
+      (f.regency || '').toLowerCase().includes(search.toLowerCase())
   )
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
 
   const farmerOrders = (orders || []).filter((o) => o.farmerId === detailFarmer?.id)
 
+  // Summary stats
+  const activeFarmers = (farmers || []).filter((f) => f.isActive).length
+  const allFarmers = farmers || []
+  const avgLandArea = allFarmers.length > 0
+    ? allFarmers.reduce((sum, f) => sum + (f.landAreaHa || 0), 0) / allFarmers.length
+    : 0
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card>
+      {/* Summary Cards */}
+      {!isLoading && farmers && farmers.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Card className="border-l-2 border-l-emerald-500">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
+                <UserCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{formatNumber(activeFarmers)}</p>
+                <p className="text-xs text-muted-foreground">Total Petani Aktif</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-2 border-l-teal-500">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/40">
+                <Wheat className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{avgLandArea.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">Rata-rata Luas Lahan (Ha)</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <Card className="border-l-2 border-l-emerald-500">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -206,7 +260,7 @@ export function FarmersView() {
                 <Input
                   placeholder="Cari petani..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                   className="pl-9 h-9 w-full sm:w-60"
                 />
               </div>
@@ -253,60 +307,107 @@ export function FarmersView() {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">NIK</TableHead>
-                    <TableHead className="text-xs">Nama</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">No. HP</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Desa</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Kecamatan</TableHead>
-                    <TableHead className="text-xs hidden xl:table-cell">Kabupaten</TableHead>
-                    <TableHead className="text-xs text-right hidden md:table-cell">Lahan (Ha)</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Kel. Tani</TableHead>
-                    <TableHead className="text-xs text-right">Pesanan</TableHead>
-                    <TableHead className="text-xs text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-8">
-                        {search ? 'Tidak ada petani yang cocok' : 'Belum ada data petani'}
-                      </TableCell>
+                      <TableHead className="text-xs">NIK</TableHead>
+                      <TableHead className="text-xs">Nama</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Telepon</TableHead>
+                      <TableHead className="text-xs hidden lg:table-cell">Kelompok Tani</TableHead>
+                      <TableHead className="text-xs hidden xl:table-cell">Kabupaten</TableHead>
+                      <TableHead className="text-xs text-right hidden sm:table-cell">Luas Lahan (Ha)</TableHead>
+                      <TableHead className="text-xs text-right">Pesanan</TableHead>
+                      <TableHead className="text-xs text-right">Aksi</TableHead>
                     </TableRow>
-                  ) : (
-                    filtered.map((farmer, idx) => (
-                      <TableRow key={farmer.id}>
-                        <TableCell className="text-xs font-mono">{farmer.nik}</TableCell>
-                        <TableCell className="text-sm font-medium">{farmer.name}</TableCell>
-                        <TableCell className="text-xs hidden md:table-cell">{farmer.phone || '-'}</TableCell>
-                        <TableCell className="text-xs hidden lg:table-cell">{farmer.village || '-'}</TableCell>
-                        <TableCell className="text-xs hidden lg:table-cell">{farmer.district || '-'}</TableCell>
-                        <TableCell className="text-xs hidden xl:table-cell">{farmer.regency || '-'}</TableCell>
-                        <TableCell className="text-xs text-right hidden md:table-cell">{farmer.landAreaHa ? formatNumber(farmer.landAreaHa) : '-'}</TableCell>
-                        <TableCell className="text-xs hidden lg:table-cell">{farmer.farmerGroup || '-'}</TableCell>
-                        <TableCell className="text-xs text-right">{farmer._count?.orders || 0}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenDetail(farmer)}>
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(farmer)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(farmer.id); setDeleteOpen(true) }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Users className="h-10 w-10 opacity-30" />
+                            <p className="text-sm font-medium">
+                              {search ? 'Tidak ada petani yang cocok' : 'Belum ada data petani'}
+                            </p>
+                            {search && (
+                              <p className="text-xs">Coba ubah kata kunci pencarian</p>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ) : (
+                      paged.map((farmer) => (
+                        <TableRow key={farmer.id}>
+                          <TableCell className="text-xs font-mono">{farmer.nik}</TableCell>
+                          <TableCell className="text-sm font-medium">{farmer.name}</TableCell>
+                          <TableCell className="text-xs hidden md:table-cell">{farmer.phone || '-'}</TableCell>
+                          <TableCell className="text-xs hidden lg:table-cell">{farmer.farmerGroup || '-'}</TableCell>
+                          <TableCell className="text-xs hidden xl:table-cell">{farmer.regency || '-'}</TableCell>
+                          <TableCell className="text-xs text-right hidden sm:table-cell font-mono">{farmer.landAreaHa ? formatNumber(farmer.landAreaHa) : '-'}</TableCell>
+                          <TableCell className="text-xs text-right">{farmer._count?.orders || 0}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenDetail(farmer)}>
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(farmer)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(farmer.id); setDeleteOpen(true) }}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {filtered.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Menampilkan {startIndex}-{endIndex} dari {filtered.length} data
+                  </p>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                      {safePage > 3 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink>
+                          </PaginationItem>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                        </>
+                      )}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((p) => p >= safePage - 1 && p <= safePage + 1)
+                        .map((p) => (
+                          <PaginationItem key={p}>
+                            <PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                          </PaginationItem>
+                        ))
+                      }
+                      {safePage < totalPages - 2 && (
+                        <>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink>
+                          </PaginationItem>
+                        </>
+                      )}
+                      <PaginationItem>
+                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -321,20 +422,22 @@ export function FarmersView() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="nik">NIK *</Label>
-              <Input
-                id="nik"
-                value={form.nik}
-                onChange={(e) => { setForm({ ...form, nik: e.target.value.replace(/\D/g, '').slice(0, 16) }); if (nikError) validateNik(e.target.value.replace(/\D/g, '').slice(0, 16)) }}
-                placeholder="16 digit NIK"
-                maxLength={16}
-              />
-              {nikError && <p className="text-xs text-destructive">{nikError}</p>}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="fname">Nama Lengkap *</Label>
-              <Input id="fname" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama lengkap" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="nik">NIK *</Label>
+                <Input
+                  id="nik"
+                  value={form.nik}
+                  onChange={(e) => { setForm({ ...form, nik: e.target.value.replace(/\D/g, '').slice(0, 16) }); if (nikError) validateNik(e.target.value.replace(/\D/g, '').slice(0, 16)) }}
+                  placeholder="16 digit NIK"
+                  maxLength={16}
+                />
+                {nikError && <p className="text-xs text-destructive">{nikError}</p>}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="fname">Nama Lengkap *</Label>
+                <Input id="fname" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama lengkap" />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
@@ -346,19 +449,17 @@ export function FarmersView() {
                 <Input id="landArea" type="number" value={form.landAreaHa || ''} onChange={(e) => setForm({ ...form, landAreaHa: parseFloat(e.target.value) || 0 })} />
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="farmerGroup">Kelompok Tani</Label>
-              <Input id="farmerGroup" value={form.farmerGroup} onChange={(e) => setForm({ ...form, farmerGroup: e.target.value })} placeholder="Nama kelompok tani" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="address">Alamat</Label>
-              <Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Alamat lengkap" />
-            </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="farmerGroup">Kelompok Tani</Label>
+                <Input id="farmerGroup" value={form.farmerGroup} onChange={(e) => setForm({ ...form, farmerGroup: e.target.value })} placeholder="Nama kelompok tani" />
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="village">Desa</Label>
                 <Input id="village" value={form.village} onChange={(e) => setForm({ ...form, village: e.target.value })} />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="district">Kecamatan</Label>
                 <Input id="district" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
@@ -367,6 +468,10 @@ export function FarmersView() {
                 <Label htmlFor="regency">Kabupaten</Label>
                 <Input id="regency" value={form.regency} onChange={(e) => setForm({ ...form, regency: e.target.value })} />
               </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="address">Alamat</Label>
+              <Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Alamat lengkap" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="province">Provinsi</Label>

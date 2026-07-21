@@ -6,9 +6,9 @@ import { useAppStore } from '@/lib/store'
 import {
   fetchStock, addStock, updateStock, deleteStock,
   fetchWarehouses, fetchProducts,
-  type StockWithProductAndWarehouse, type Warehouse, type Product,
+  type StockWithProductAndWarehouse,
 } from '@/lib/api'
-import { formatNumber, formatDateTime, getStockStatusColor, getStockStatusLabel } from '@/lib/format'
+import { formatNumber, getTypeBadgeColor } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,23 +41,118 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, Boxes, AlertTriangle } from 'lucide-react'
+import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Package, Warehouse as WarehouseIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Switch } from '@/components/ui/switch'
+
+const ITEMS_PER_PAGE = 10
+
+function StockLevelBar({ quantity, minStock }: { quantity: number; minStock: number }) {
+  const ratio = quantity / minStock
+  const percent = Math.min((ratio / 2) * 100, 100)
+
+  let barColor = 'bg-green-500'
+  let bgColor = 'bg-green-100 dark:bg-green-900/30'
+  if (ratio < 1) {
+    barColor = 'bg-red-500'
+    bgColor = 'bg-red-100 dark:bg-red-900/30'
+  } else if (ratio < 1.5) {
+    barColor = 'bg-yellow-500'
+    bgColor = 'bg-yellow-100 dark:bg-yellow-900/30'
+  }
+
+  return (
+    <div className={`w-full h-2 rounded-full ${bgColor} overflow-hidden`}>
+      <div
+        className={`h-full rounded-full ${barColor} transition-all duration-500`}
+        style={{ width: `${percent}%` }}
+      />
+    </div>
+  )
+}
+
+function StockCard({ stock, onEdit, onDelete }: {
+  stock: StockWithProductAndWarehouse
+  onEdit: (s: StockWithProductAndWarehouse) => void
+  onDelete: (id: string) => void
+}) {
+  const ratio = stock.quantity / stock.minStock
+
+  let statusColor = 'text-green-700 dark:text-green-400'
+  let statusLabel = 'Aman'
+  let statusBg = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+  if (ratio < 1) {
+    statusColor = 'text-red-700 dark:text-red-400'
+    statusLabel = 'Kritis'
+    statusBg = 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+  } else if (ratio < 1.5) {
+    statusColor = 'text-yellow-700 dark:text-yellow-400'
+    statusLabel = 'Rendah'
+    statusBg = 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+  }
+
+  return (
+    <Card className={`border ${statusBg} hover:shadow-md transition-shadow`}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+              <Package className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold truncate">{stock.product.name}</p>
+              <div className="flex items-center gap-1.5">
+                <WarehouseIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+                <p className="text-xs text-muted-foreground truncate">{stock.warehouse.name}</p>
+              </div>
+            </div>
+          </div>
+          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 ${getTypeBadgeColor(stock.product.type)}`}>
+            {stock.product.type}
+          </Badge>
+        </div>
+
+        <div className="mb-3">
+          <p className={`text-3xl font-bold tabular-nums ${statusColor}`}>{formatNumber(stock.quantity)}</p>
+          <p className="text-xs text-muted-foreground">kilogram</p>
+        </div>
+
+        <StockLevelBar quantity={stock.quantity} minStock={stock.minStock} />
+
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span>Min: {formatNumber(stock.minStock)} kg</span>
+            <span className={`font-medium ${statusColor}`}>{statusLabel}</span>
+          </div>
+          <div className="flex items-center gap-0.5">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(stock)}>
+              <Pencil className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(stock.id)}>
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export function StockView() {
   const { refreshKey, triggerRefresh } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [warehouseFilter, setWarehouseFilter] = useState<string>('all')
+  const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -70,6 +165,7 @@ export function StockView() {
   const [isRestock, setIsRestock] = useState(false)
   const [editQty, setEditQty] = useState(0)
   const [editMinStock, setEditMinStock] = useState(500)
+  const [page, setPage] = useState(1)
 
   const { data: stocks, isLoading } = useQuery({
     queryKey: ['stock', refreshKey],
@@ -169,29 +265,47 @@ export function StockView() {
   }
 
   const filtered = (stocks || []).filter(
-    (s) => warehouseFilter === 'all' || s.warehouseId === warehouseFilter
+    (s) =>
+      (warehouseFilter === 'all' || s.warehouseId === warehouseFilter) &&
+      (s.product.name.toLowerCase().includes(search.toLowerCase()) ||
+       s.warehouse.name.toLowerCase().includes(search.toLowerCase()))
   )
 
   const alertCount = (stocks || []).filter((s) => s.quantity / s.minStock <= 1).length
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card>
+      <Card className="border-l-2 border-l-teal-500">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Boxes className="h-5 w-5" />
               Manajemen Stok
               {alertCount > 0 && (
-                <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 text-[10px] gap-1">
+                <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 text-[10px] gap-1 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800">
                   <AlertTriangle className="h-3 w-3" />
                   {alertCount} peringatan
                 </Badge>
               )}
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
-                <SelectTrigger className="h-9 w-full sm:w-48">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari stok..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                  className="pl-9 h-9 w-full sm:w-48"
+                />
+              </div>
+              <Select value={warehouseFilter} onValueChange={(v) => { setWarehouseFilter(v); setPage(1) }}>
+                <SelectTrigger className="h-9 w-full sm:w-44">
                   <SelectValue placeholder="Filter Gudang" />
                 </SelectTrigger>
                 <SelectContent>
@@ -208,65 +322,77 @@ export function StockView() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent>
           {isLoading ? (
-            <div className="p-4 space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-44 w-full rounded-lg" />
               ))}
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Gudang</TableHead>
-                    <TableHead className="text-xs">Produk</TableHead>
-                    <TableHead className="text-xs text-right">Stok (kg)</TableHead>
-                    <TableHead className="text-xs text-right">Stok Min.</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Terakhir Restock</TableHead>
-                    <TableHead className="text-xs text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
-                        {warehouseFilter !== 'all' ? 'Tidak ada stok untuk gudang ini' : 'Belum ada data stok'}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filtered.map((stock, idx) => (
-                      <TableRow key={stock.id}>
-                        <TableCell className="text-sm">{stock.warehouse.name}</TableCell>
-                        <TableCell className="text-sm font-medium">{stock.product.name}</TableCell>
-                        <TableCell className="text-sm text-right font-mono">{formatNumber(stock.quantity)}</TableCell>
-                        <TableCell className="text-sm text-right text-muted-foreground font-mono">{formatNumber(stock.minStock)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStockStatusColor(stock.quantity, stock.minStock)}`}>
-                            {getStockStatusLabel(stock.quantity, stock.minStock)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs hidden md:table-cell text-muted-foreground">
-                          {stock.lastRestocked ? formatDateTime(stock.lastRestocked) : '-'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(stock)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(stock.id); setDeleteOpen(true) }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Boxes className="h-12 w-12 opacity-30 mb-3" />
+              <p className="text-sm font-medium">
+                {warehouseFilter !== 'all' || search ? 'Tidak ada stok yang cocok' : 'Belum ada data stok'}
+              </p>
+              {(warehouseFilter !== 'all' || search) && (
+                <p className="text-xs mt-1">Coba ubah filter atau kata kunci pencarian</p>
+              )}
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {paged.map((stock) => (
+                  <StockCard
+                    key={stock.id}
+                    stock={stock}
+                    onEdit={handleOpenEdit}
+                    onDelete={(id) => { setDeletingId(id); setDeleteOpen(true) }}
+                  />
+                ))}
+              </div>
+              {filtered.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+                  <p className="text-xs text-muted-foreground">
+                    Menampilkan {startIndex}-{endIndex} dari {filtered.length} data
+                  </p>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                      {safePage > 3 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink>
+                          </PaginationItem>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                        </>
+                      )}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((p) => p >= safePage - 1 && p <= safePage + 1)
+                        .map((p) => (
+                          <PaginationItem key={p}>
+                            <PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                          </PaginationItem>
+                        ))
+                      }
+                      {safePage < totalPages - 2 && (
+                        <>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink>
+                          </PaginationItem>
+                        </>
+                      )}
+                      <PaginationItem>
+                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

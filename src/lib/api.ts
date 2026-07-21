@@ -19,9 +19,11 @@ export interface Product {
   subsidyPrice: number
   description: string | null
   isActive: boolean
+  totalStock?: number
+  stockByWarehouse?: { warehouseName: string; warehouseCode: string; quantity: number }[]
+  orderItemCount?: number
   createdAt: string
   updatedAt: string
-  _count?: { stock: number; orderItems: number }
 }
 
 export interface Farmer {
@@ -55,7 +57,10 @@ export interface Warehouse {
   isActive: boolean
   createdAt: string
   updatedAt: string
-  _count?: { stock: number; distributions: number; orders: number }
+  totalStock?: number
+  stockEntries?: number
+  orderCount?: number
+  distributionCount?: number
 }
 
 export interface StockWithProductAndWarehouse {

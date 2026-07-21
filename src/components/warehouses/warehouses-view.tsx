@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import { fetchWarehouses, createWarehouse, updateWarehouse, deleteWarehouse, type Warehouse } from '@/lib/api'
-import { formatDate } from '@/lib/format'
+import { formatNumber } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,9 +37,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
 import { Plus, Search, Pencil, Trash2, Warehouse as WarehouseIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+
+const ITEMS_PER_PAGE = 10
 
 const emptyForm = {
   code: '',
@@ -63,6 +74,7 @@ export function WarehousesView() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
+  const [page, setPage] = useState(1)
 
   const { data: warehouses, isLoading } = useQuery({
     queryKey: ['warehouses', refreshKey],
@@ -152,9 +164,15 @@ export function WarehousesView() {
       w.regency?.toLowerCase().includes(search.toLowerCase())
   )
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card>
+      <Card className="border-l-2 border-l-amber-500">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -167,7 +185,7 @@ export function WarehousesView() {
                 <Input
                   placeholder="Cari gudang..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                   className="pl-9 h-9 w-full sm:w-60"
                 />
               </div>
@@ -186,59 +204,110 @@ export function WarehousesView() {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Kode</TableHead>
-                    <TableHead className="text-xs">Nama Gudang</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Alamat</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Kabupaten</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Provinsi</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Pengelola</TableHead>
-                    <TableHead className="text-xs text-right">Stok</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
-                        {search ? 'Tidak ada gudang yang cocok' : 'Belum ada data gudang'}
-                      </TableCell>
+                      <TableHead className="text-xs">Kode</TableHead>
+                      <TableHead className="text-xs">Nama Gudang</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Alamat</TableHead>
+                      <TableHead className="text-xs hidden lg:table-cell">Kabupaten</TableHead>
+                      <TableHead className="text-xs hidden lg:table-cell">Provinsi</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Pengelola</TableHead>
+                      <TableHead className="text-xs text-right">Stok</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-xs text-right">Aksi</TableHead>
                     </TableRow>
-                  ) : (
-                    filtered.map((wh, idx) => (
-                      <TableRow key={wh.id}>
-                        <TableCell className="text-xs font-mono font-medium">{wh.code}</TableCell>
-                        <TableCell className="text-sm font-medium">{wh.name}</TableCell>
-                        <TableCell className="text-xs hidden md:table-cell max-w-[200px] truncate">{wh.address}</TableCell>
-                        <TableCell className="text-xs hidden lg:table-cell">{wh.regency || '-'}</TableCell>
-                        <TableCell className="text-xs hidden lg:table-cell">{wh.province}</TableCell>
-                        <TableCell className="text-xs hidden md:table-cell">{wh.managerName || '-'}</TableCell>
-                        <TableCell className="text-xs text-right">{wh._count?.stock || 0}</TableCell>
-                        <TableCell>
-                          <Badge variant={wh.isActive ? 'default' : 'secondary'} className="text-[10px]">
-                            {wh.isActive ? 'Aktif' : 'Tidak Aktif'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(wh)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(wh.id); setDeleteOpen(true) }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <WarehouseIcon className="h-10 w-10 opacity-30" />
+                            <p className="text-sm font-medium">
+                              {search ? 'Tidak ada gudang yang cocok' : 'Belum ada data gudang'}
+                            </p>
+                            {search && (
+                              <p className="text-xs">Coba ubah kata kunci pencarian</p>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ) : (
+                      paged.map((wh) => (
+                        <TableRow key={wh.id}>
+                          <TableCell className="text-xs font-mono font-medium">{wh.code}</TableCell>
+                          <TableCell className="text-sm font-medium">{wh.name}</TableCell>
+                          <TableCell className="text-xs hidden md:table-cell max-w-[200px] truncate">{wh.address}</TableCell>
+                          <TableCell className="text-xs hidden lg:table-cell">{wh.regency || '-'}</TableCell>
+                          <TableCell className="text-xs hidden lg:table-cell">{wh.province}</TableCell>
+                          <TableCell className="text-xs hidden md:table-cell">{wh.managerName || '-'}</TableCell>
+                          <TableCell className="text-xs text-right font-mono">{formatNumber(wh.totalStock ?? 0)} kg</TableCell>
+                          <TableCell>
+                            <Badge variant={wh.isActive ? 'default' : 'secondary'} className="text-[10px]">
+                              {wh.isActive ? 'Aktif' : 'Tidak Aktif'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(wh)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(wh.id); setDeleteOpen(true) }}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {filtered.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Menampilkan {startIndex}-{endIndex} dari {filtered.length} data
+                  </p>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                      {safePage > 3 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink>
+                          </PaginationItem>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                        </>
+                      )}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((p) => p >= safePage - 1 && p <= safePage + 1)
+                        .map((p) => (
+                          <PaginationItem key={p}>
+                            <PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                          </PaginationItem>
+                        ))
+                      }
+                      {safePage < totalPages - 2 && (
+                        <>
+                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink>
+                          </PaginationItem>
+                        </>
+                      )}
+                      <PaginationItem>
+                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

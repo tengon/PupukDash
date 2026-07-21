@@ -71,26 +71,33 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item, index) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    isActive={activeTab === item.id}
-                    tooltip={item.label}
-                    onClick={() => handleNavClick(item.id)}
-                    className={`relative transition-all duration-200 ${activeTab === item.id
-                      ? 'bg-sidebar-accent/80 font-medium border-l-[3px] border-l-emerald-400 rounded-l-none pl-[calc(0.5rem-3px)]'
-                      : 'hover:bg-sidebar-accent/50 hover:border-l-[3px] hover:border-l-emerald-400/40 hover:rounded-l-none hover:pl-[calc(0.5rem-3px)]'
-                    } ${index === 3 ? 'mt-1' : ''}`}
-                  >
-                    <item.icon className={`h-4 w-4 transition-colors duration-200 ${activeTab === item.id ? 'text-emerald-400' : ''}`} />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                  {/* Subtle separator between menu groups: nav (0-3) and operations (4-6) */}
-                  {index === 3 && (
-                    <div className="my-2 mx-3 h-px bg-sidebar-border/50" />
-                  )}
-                </SidebarMenuItem>
-              ))}
+              {navItems.map((item, index) => {
+                const isActive = activeTab === item.id
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      tooltip={item.label}
+                      onClick={() => handleNavClick(item.id)}
+                      className={`relative transition-all duration-200 ${isActive
+                        ? 'bg-sidebar-accent/80 font-medium border-l-[3px] border-l-emerald-400 rounded-l-none pl-[calc(0.5rem-3px)]'
+                        : 'hover:bg-sidebar-accent/50 hover:border-l-[3px] hover:border-l-emerald-400/40 hover:rounded-l-none hover:pl-[calc(0.5rem-3px)]'
+                      } ${index === 3 ? 'mt-1' : ''}`}
+                    >
+                      <div className="relative flex items-center">
+                        {isActive && (
+                          <span className="absolute -left-2 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                        )}
+                        <item.icon className={`h-4 w-4 transition-colors duration-200 ${isActive ? 'text-emerald-400' : ''}`} />
+                      </div>
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                    {index === 3 && (
+                      <div className="my-2 mx-3 h-px bg-sidebar-border/50" />
+                    )}
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

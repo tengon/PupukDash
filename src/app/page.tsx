@@ -14,6 +14,8 @@ import { DistributionsView } from '@/components/distributions/distributions-view
 import { OrdersView } from '@/components/orders/orders-view'
 import { seedData } from '@/lib/api'
 import { Leaf, Database, Clock } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { NotificationBell } from '@/components/notification-bell'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -141,6 +143,8 @@ export default function HomePage() {
                 <span className="font-mono tabular-nums">{wibTime}</span>
               </div>
             )}
+            <NotificationBell />
+            <ThemeToggle />
             {/* Keyboard shortcut hints */}
             <div className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground">
               <kbd className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded border border-border bg-muted/50 font-mono text-[10px]">N</kbd>

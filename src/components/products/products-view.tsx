@@ -163,7 +163,7 @@ export function ProductsView() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card>
+      <Card className="border-l-2 border-l-primary">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -226,7 +226,7 @@ export function ProductsView() {
                         </TableCell>
                         <TableCell className="text-sm text-right">{formatRupiah(product.pricePerKg)}/kg</TableCell>
                         <TableCell className="text-sm text-right text-primary font-medium">{formatRupiah(product.subsidyPrice)}/kg</TableCell>
-                        <TableCell className="text-sm text-right">{formatNumber(product._count?.stock || 0)}</TableCell>
+                        <TableCell className="text-sm text-right font-mono">{formatNumber(product.totalStock ?? 0)} kg</TableCell>
                         <TableCell>
                           <Badge variant={product.isActive ? 'default' : 'secondary'} className="text-[10px]">
                             {product.isActive ? 'Aktif' : 'Tidak Aktif'}
