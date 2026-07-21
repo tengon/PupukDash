@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/table'
 import { motion } from 'framer-motion'
 import { Plus, Search, Pencil, Trash2, Package, CircleDot } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 
 const PRODUCT_TYPES = ['UREA', 'NPK', 'SP-36', 'ZA', 'ORGANIK']
@@ -57,6 +58,14 @@ const TYPE_ICONS: Record<string, string> = {
   'SP-36': '💎',
   ZA: '⚡',
   ORGANIK: '🍃',
+}
+
+const TYPE_BORDER_COLORS: Record<string, string> = {
+  UREA: 'border-l-emerald-500',
+  NPK: 'border-l-teal-500',
+  'SP-36': 'border-l-lime-500',
+  ZA: 'border-l-green-500',
+  ORGANIK: 'border-l-amber-500',
 }
 
 const TYPE_PILL_COLORS: Record<string, string> = {
@@ -252,11 +261,11 @@ export function ProductsView() {
                     </TableRow>
                   ) : (
                     filtered.map((product) => (
-                      <TableRow key={product.id} className="hover:border-l-2 hover:border-l-primary/30">
+                      <TableRow key={product.id} className={`border-l-2 ${TYPE_BORDER_COLORS[product.type] || 'border-l-gray-300'} hover:border-l-primary/30`}>
                         <TableCell className="text-sm font-medium">
                           <div className="flex flex-col">
                             <span className="text-xs leading-tight">{TYPE_ICONS[product.type] || ''}</span>
-                            <span className="font-semibold">{product.name}</span>
+                            <span className="font-semibold text-sm">{product.name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -286,14 +295,26 @@ export function ProductsView() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
+                          <TooltipProvider>
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(product)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(product.id); setDeleteOpen(true) }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(product)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit Produk</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(product.id); setDeleteOpen(true) }}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Hapus Produk</TooltipContent>
+                            </Tooltip>
                           </div>
+                          </TooltipProvider>
                         </TableCell>
                       </TableRow>
                     ))

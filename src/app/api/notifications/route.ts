@@ -109,7 +109,7 @@ export async function GET() {
           id: `restock-${stock.id}`,
           type: 'STOCK_ADDED',
           title: `Stok ${stock.product.name} Ditambahkan`,
-          message: `Gudang ${stock.warehouse.name}: ${Math.round(stock.quantity)} kg tersedia`,
+          message: `${stock.warehouse.name}: ${Math.round(stock.quantity)} kg tersedia`,
           icon: 'package',
           color: 'green',
           createdAt: stock.lastRestocked,

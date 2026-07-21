@@ -490,3 +490,150 @@ tbody tr:nth-child(even):hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md, 0 4px 6px -1px oklch(0 0 0 / 0.1));
 }
+
+/* ===== Ripple Effect on Buttons ===== */
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* ===== Number Counter Animation ===== */
+@keyframes count-up {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-count-up {
+  animation: count-up 0.4s ease-out both;
+}
+
+/* ===== Tooltip Enhancement ===== */
+[role="tooltip"] {
+  font-size: 0.75rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  padding: 0.375rem 0.75rem;
+}
+
+/* ===== Badge Micro-animation ===== */
+@keyframes badge-pop {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.badge-animate {
+  animation: badge-pop 0.3s ease-out;
+}
+
+/* ===== Dialog Entrance ===== */
+@keyframes dialog-overlay-fade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes dialog-content-scale {
+  0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ===== Skeleton Shimmer ===== */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--muted) 25%, var(--accent) 50%, var(--muted) 75%);
+  background-size: 200px 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ===== Staggered Children Animation ===== */
+.stagger-children > * {
+  opacity: 0;
+  animation: count-up 0.4s ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ===== Hover Card Glow ===== */
+.hover-glow:hover {
+  box-shadow: 0 0 20px 2px oklch(0.55 0.14 152 / 0.15);
+}
+
+.dark .hover-glow:hover {
+  box-shadow: 0 0 20px 2px oklch(0.60 0.15 152 / 0.12);
+}
+
+/* ===== Progress Bar Enhanced ===== */
+.progress-bar-animated {
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-animated::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 30%), transparent);
+  animation: skeleton-shimmer 2s ease-in-out infinite;
+}
+
+/* ===== Text Gradient ===== */
+.text-gradient-green {
+  background: linear-gradient(135deg, oklch(0.45 0.15 152), oklch(0.55 0.12 160));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .text-gradient-green {
+  background: linear-gradient(135deg, oklch(0.60 0.15 152), oklch(0.70 0.12 160));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== Card Inner Highlight ===== */
+.card-highlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, oklch(0.55 0.14 152), oklch(0.65 0.12 148), oklch(0.55 0.14 152));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-highlight:hover::before {
+  opacity: 1;
+}
+
+/* ===== Focus Ring for Input Fields ===== */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 3px oklch(0.55 0.14 152 / 0.15);
+}
+
+.dark input:focus, .dark textarea:focus, .dark select:focus {
+  box-shadow: 0 0 0 3px oklch(0.60 0.15 152 / 0.12);
+}
+
+/* ===== Improved Scrollable Container ===== */
+.scrollable-container {
+  scrollbar-gutter: stable;
+}

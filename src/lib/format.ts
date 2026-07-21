@@ -122,6 +122,10 @@ export function getActivityActionColor(action: string): string {
     CREATE_DISTRIBUTION: 'bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-900/40 dark:text-lime-400 dark:border-lime-800',
     UPDATE_DISTRIBUTION_STATUS: 'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/40 dark:text-cyan-400 dark:border-cyan-800',
     CANCEL_DISTRIBUTION: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800',
+    VIEW_MONTHLY_REPORT: 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-400 dark:border-indigo-800',
+    VIEW_RPKP: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800',
+    SEED_DATA: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/40 dark:text-gray-400 dark:border-gray-800',
+    IMPORT_FARMERS: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-800',
   }
   return colors[action] || 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/40 dark:text-gray-400 dark:border-gray-800'
 }
@@ -137,6 +141,19 @@ export function getActivityActionLabel(action: string): string {
     CREATE_DISTRIBUTION: 'Distribusi Baru',
     UPDATE_DISTRIBUTION_STATUS: 'Status Distribusi',
     CANCEL_DISTRIBUTION: 'Distribusi Dibatalkan',
+    VIEW_MONTHLY_REPORT: 'Lihat Laporan Bulanan',
+    VIEW_RPKP: 'Lihat RPKP',
+    SEED_DATA: 'Muat Data Sample',
+    IMPORT_FARMERS: 'Import Petani',
+    CREATE_FARMER: 'Petani Baru',
+    UPDATE_FARMER: 'Petani Diperbarui',
+    DELETE_FARMER: 'Petani Dihapus',
+    CREATE_PRODUCT: 'Produk Baru',
+    UPDATE_PRODUCT: 'Produk Diperbarui',
+    DELETE_PRODUCT: 'Produk Dihapus',
+    CREATE_WAREHOUSE: 'Gudang Baru',
+    UPDATE_WAREHOUSE: 'Gudang Diperbarui',
+    DELETE_WAREHOUSE: 'Gudang Dihapus',
   }
   return labels[action] || action
 }

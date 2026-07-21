@@ -1,0 +1,644 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useRef } from 'react'
+     4→     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+     5→     5→import { useAppStore } from '@/lib/store'
+     6→     6→import { fetchFarmers, createFarmer, updateFarmer, deleteFarmer, fetchOrders, fetchFarmerOrders, type Farmer, type FarmerOrdersResponse } from '@/lib/api'
+     7→     7→import { formatNumber, formatDate, formatRupiah, getStatusColor, getStatusLabel } from '@/lib/format'
+     8→     8→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     9→     9→import { Button } from '@/components/ui/button'
+    10→    10→import { Input } from '@/components/ui/input'
+    11→    11→import { Label } from '@/components/ui/label'
+    12→    12→import { Badge } from '@/components/ui/badge'
+    13→    13→import { Skeleton } from '@/components/ui/skeleton'
+    14→    14→import {
+    15→    15→  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+    16→    16→} from '@/components/ui/dialog'
+    17→    17→import {
+    18→    18→  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+    19→    19→} from '@/components/ui/alert-dialog'
+    20→    20→import {
+    21→    21→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    22→    22→} from '@/components/ui/table'
+    23→    23→import {
+    24→    24→  Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis,
+    25→    25→} from '@/components/ui/pagination'
+    26→    26→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    27→    27→import { ScrollArea } from '@/components/ui/scroll-area'
+    28→    28→import { Separator } from '@/components/ui/separator'
+    29→    29→import { motion } from 'framer-motion'
+    30→    30→import { Plus, Search, Pencil, Trash2, Users, Eye, Download, UserCheck, Wheat, RotateCcw, MapPin, ShoppingCart, Banknote, Package, Phone, MapPinned, Upload, FileSpreadsheet, CheckCircle2, X, AlertCircle } from 'lucide-react'
+    31→    31→import { exportToCSV } from '@/lib/export'
+    32→    32→import { useToast } from '@/hooks/use-toast'
+    33→    33→import { parseFarmerCSV } from '@/lib/import'
+    34→    34→
+    35→    35→const ITEMS_PER_PAGE = 10
+    36→    36→
+    37→    37→const emptyForm = {
+    38→    38→  nik: '', name: '', phone: '', address: '', village: '',
+    39→    39→  district: '', regency: '', province: '', landAreaHa: 0, farmerGroup: '', isActive: true,
+    40→    40→}
+    41→    41→
+    42→    42→export function FarmersView() {
+    43→    43→  const { refreshKey, triggerRefresh, setActiveTab, setPrefillFarmerId } = useAppStore()
+    44→    44→  const { toast } = useToast()
+    45→    45→  const queryClient = useQueryClient()
+    46→    46→  const [search, setSearch] = useState('')
+    47→    47→  const [dialogOpen, setDialogOpen] = useState(false)
+    48→    48→  const [deleteOpen, setDeleteOpen] = useState(false)
+    49→    49→  const [detailOpen, setDetailOpen] = useState(false)
+    50→    50→  const [editingId, setEditingId] = useState<string | null>(null)
+    51→    51→  const [deletingId, setDeletingId] = useState<string | null>(null)
+    52→    52→  const [detailFarmer, setDetailFarmer] = useState<Farmer | null>(null)
+    53→    53→  const [form, setForm] = useState(emptyForm)
+    54→    54→  const [nikError, setNikError] = useState('')
+    55→    55→  const [page, setPage] = useState(1)
+    56→    56→
+    57→    57→  const { data: farmers, isLoading } = useQuery({
+    58→    58→    queryKey: ['farmers', refreshKey],
+    59→    59→    queryFn: fetchFarmers,
+    60→    60→  })
+    61→    61→
+    62→    62→  const { data: ordersData } = useQuery({
+    63→    63→    queryKey: ['orders', refreshKey],
+    64→    64→    queryFn: fetchOrders,
+    65→    65→    enabled: detailOpen && !!detailFarmer,
+    66→    66→  })
+    67→    67→
+    68→    68→  // Purchase history dialog
+    69→    69→  const [purchaseOpen, setPurchaseOpen] = useState(false)
+    70→    70→  const [purchaseFarmerId, setPurchaseFarmerId] = useState<string | null>(null)
+    71→    71→
+    72→    72→  const { data: purchaseData, isLoading: purchaseLoading } = useQuery<FarmerOrdersResponse>({
+    73→    73→    queryKey: ['farmer-orders', purchaseFarmerId],
+    74→    74→    queryFn: () => fetchFarmerOrders(purchaseFarmerId!),
+    75→    75→    enabled: purchaseOpen && !!purchaseFarmerId,
+    76→    76→  })
+    77→    77→
+    78→    78→  const handleRowClick = (farmer: Farmer) => {
+    79→    79→    setPurchaseFarmerId(farmer.id)
+    80→    80→    setPurchaseOpen(true)
+    81→    81→  }
+    82→    82→
+    83→    83→  const orders = ordersData?.orders ?? []
+    84→    84→
+    85→    85→  const createMutation = useMutation({
+    86→    86→    mutationFn: createFarmer,
+    87→    87→    onSuccess: () => {
+    88→    88→      queryClient.invalidateQueries({ queryKey: ['farmers'] })
+    89→    89→      triggerRefresh(); setDialogOpen(false); setForm(emptyForm); setEditingId(null)
+    90→    90→      toast({ title: 'Berhasil', description: 'Petani berhasil ditambahkan' })
+    91→    91→    },
+    92→    92→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+    93→    93→  })
+    94→    94→
+    95→    95→  const updateMutation = useMutation({
+    96→    96→    mutationFn: ({ id, data }: { id: string; data: Partial<Farmer> }) => updateFarmer(id, data),
+    97→    97→    onSuccess: () => {
+    98→    98→      queryClient.invalidateQueries({ queryKey: ['farmers'] })
+    99→    99→      triggerRefresh(); setDialogOpen(false); setForm(emptyForm); setEditingId(null)
+   100→   100→      toast({ title: 'Berhasil', description: 'Data petani berhasil diperbarui' })
+   101→   101→    },
+   102→   102→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   103→   103→  })
+   104→   104→
+   105→   105→  const deleteMutation = useMutation({
+   106→   106→    mutationFn: deleteFarmer,
+   107→   107→    onSuccess: () => {
+   108→   108→      queryClient.invalidateQueries({ queryKey: ['farmers'] })
+   109→   109→      triggerRefresh(); setDeleteOpen(false); setDeletingId(null)
+   110→   110→      toast({ title: 'Berhasil', description: 'Petani berhasil dihapus' })
+   111→   111→    },
+   112→   112→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   113→   113→  })
+   114→   114→
+   115→   115→  const validateNik = (nik: string) => {
+   116→   116→    if (!/^\d{16}$/.test(nik)) { setNikError('NIK harus 16 digit angka'); return false }
+   117→   117→    setNikError(''); return true
+   118→   118→  }
+   119→   119→
+   120→   120→  const handleOpenAdd = () => { setForm(emptyForm); setEditingId(null); setNikError(''); setDialogOpen(true) }
+   121→   121→
+   122→   122→  const handleOpenEdit = (farmer: Farmer) => {
+   123→   123→    setForm({
+   124→   124→      nik: farmer.nik, name: farmer.name, phone: farmer.phone || '', address: farmer.address || '',
+   125→   125→      village: farmer.village || '', district: farmer.district || '', regency: farmer.regency || '',
+   126→   126→      province: farmer.province || '', landAreaHa: farmer.landAreaHa || 0,
+   127→   127→      farmerGroup: farmer.farmerGroup || '', isActive: farmer.isActive,
+   128→   128→    })
+   129→   129→    setEditingId(farmer.id); setNikError(''); setDialogOpen(true)
+   130→   130→  }
+   131→   131→
+   132→   132→  const handleOpenDetail = (farmer: Farmer) => { setDetailFarmer(farmer); setDetailOpen(true) }
+   133→   133→
+   134→   134→  const handleRepeatOrder = (farmer: Farmer) => {
+   135→   135→    setPrefillFarmerId(farmer.id)
+   136→   136→    setDetailOpen(false)
+   137→   137→    setActiveTab('orders')
+   138→   138→  }
+   139→   139→
+   140→   140→  const handleSave = () => {
+   141→   141→    if (!form.name.trim()) { toast({ title: 'Validasi', description: 'Nama wajib diisi', variant: 'destructive' }); return }
+   142→   142→    if (!validateNik(form.nik)) { toast({ title: 'Validasi', description: 'NIK harus 16 digit angka', variant: 'destructive' }); return }
+   143→   143→    if (editingId) { updateMutation.mutate({ id: editingId, data: form }) }
+   144→   144→    else { createMutation.mutate(form as Parameters<typeof createFarmer>[0]) }
+   145→   145→  }
+   146→   146→
+   147→   147→  // Import CSV state
+   148→   148→  const fileInputRef = useRef<HTMLInputElement | null>(null)
+   149→   149→  const [importOpen, setImportOpen] = useState(false)
+   150→   150→  const [importStep, setImportStep] = useState<'upload' | 'preview' | 'result'>('upload')
+   151→   151→  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+   152→   152→  const [previewData, setPreviewData] = useState<Array<{
+   153→   153→    row: number; nik: string; name: string; valid: boolean; error?: string
+   154→   154→  }>>([])
+   155→   155→  const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null)
+   156→   156→
+   157→   157→  const handleFileSelect = (file: File) => {
+   158→   158→    setSelectedFile(file)
+   159→   159→    setPreviewData([])
+   160→   160→    setImportResult(null)
+   161→   161→    // Parse CSV for preview
+   162→   162→    const reader = new FileReader()
+   163→   163→    reader.onload = async (e) => {
+   164→   164→      try {
+   165→   165→        const rows = await parseFarmerCSV(e.target?.result as string)
+   166→   166→        setPreviewData(rows)
+   167→   167→      } catch (err) {
+   168→   168→        setPreviewData([{ row: 0, nik: '', name: '', valid: false, error: err instanceof Error ? err.message : 'Gagal memparse file CSV' }])
+   169→   169→      }
+   170→   170→    }
+   171→   171→    reader.readAsText(file)
+   172→   172→  }
+   173→   173→
+   174→   174→  const handlePreview = () => {
+   175→   175→    if (!selectedFile) return
+   176→   176→    setImportStep('preview')
+   177→   177→  }
+   178→   178→
+   179→   179→  const importMutation = useMutation({
+   180→   180→    mutationFn: async () => {
+   181→   181→      if (!selectedFile) throw new Error('Tidak ada file')
+   182→   182→      const formData = new FormData()
+   183→   183→      formData.append('file', selectedFile)
+   184→   184→      const res = await fetch('/api/farmers/import', { method: 'POST', body: formData })
+   185→   185→      if (!res.ok) {
+   186→   186→        const data = await res.json().catch(() => ({ error: 'Gagal mengimpor' }))
+   187→   187→        throw new Error(data.error || 'Gagal mengimpor data')
+   188→   188→      }
+   189→   189→      return res.json()
+   190→   190→    },
+   191→   191→    onSuccess: (data: { imported: number; skipped: number; errors: string[] }) => {
+   192→   192→      setImportResult(data)
+   193→   193→    },
+   194→   194→    onError: (err: Error) => {
+   195→   195→      toast({ title: 'Gagal Import', description: err.message, variant: 'destructive' })
+   196→   196→    },
+   197→   197→  })
+   198→   198→
+   199→   199→  const handleImport = () => {
+   200→   200→    importMutation.mutate()
+   201→   201→  }
+   202→   202→
+   203→   203→  const handleDelete = () => { if (deletingId) deleteMutation.mutate(deletingId) }
+   204→   204→
+   205→   205→  const filtered = (farmers || []).filter(
+   206→   206→    (f) => f.name.toLowerCase().includes(search.toLowerCase()) || f.nik.includes(search) ||
+   207→   207→      (f.farmerGroup || '').toLowerCase().includes(search.toLowerCase()) ||
+   208→   208→      (f.regency || '').toLowerCase().includes(search.toLowerCase())
+   209→   209→  )
+   210→   210→
+   211→   211→  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+   212→   212→  const safePage = Math.min(page, totalPages)
+   213→   213→  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+   214→   214→  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+   215→   215→  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+   216→   216→
+   217→   217→  const farmerOrders = orders.filter((o) => o.farmerId === detailFarmer?.id)
+   218→   218→
+   219→   219→  const purchaseSummary = farmerOrders.reduce(
+   220→   220→    (acc, o) => ({
+   221→   221→      totalAmount: acc.totalAmount + o.totalAmount,
+   222→   222→      totalSubsidy: acc.totalSubsidy + o.totalSubsidy,
+   223→   223→      totalKg: acc.totalKg + o.items.reduce((s, i) => s + i.quantity, 0),
+   224→   224→    }), { totalAmount: 0, totalSubsidy: 0, totalKg: 0 }
+   225→   225→  )
+   226→   226→
+   227→   227→  const activeFarmers = (farmers || []).filter((f) => f.isActive).length
+   228→   228→  const allFarmers = farmers || []
+   229→   229→  const avgLandArea = allFarmers.length > 0 ? allFarmers.reduce((sum, f) => sum + (f.landAreaHa || 0), 0) / allFarmers.length : 0
+   230→   230→  const uniqueGroups = new Set(allFarmers.map((f) => f.farmerGroup).filter(Boolean)).size
+   231→   231→
+   232→   232→  return (
+   233→   233→    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
+   234→   234→      {!isLoading && farmers && farmers.length > 0 && (
+   235→   235→        <div>
+   236→   236→          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Statistik Petani</p>
+   237→   237→          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   238→   238→            <Card className="border-l-3 border-l-emerald-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"><CardContent className="p-4 flex items-center gap-3">
+   239→   239→              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 shrink-0"><UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /></div>
+   240→   240→              <div><p className="text-xl font-bold text-foreground">{formatNumber(allFarmers.length)}</p><p className="text-[10px] text-muted-foreground">Total Petani Terdaftar</p></div>
+   241→   241→            </CardContent></Card>
+   242→   242→            <Card className="border-l-3 border-l-teal-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"><CardContent className="p-4 flex items-center gap-3">
+   243→   243→              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/40 shrink-0"><Wheat className="h-4 w-4 text-teal-600 dark:text-teal-400" /></div>
+   244→   244→              <div><p className="text-xl font-bold text-foreground">{avgLandArea.toFixed(2)}</p><p className="text-[10px] text-muted-foreground">Rata-rata Luas Lahan (Ha)</p></div>
+   245→   245→            </CardContent></Card>
+   246→   246→            <Card className="border-l-3 border-l-amber-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"><CardContent className="p-4 flex items-center gap-3">
+   247→   247→              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40 shrink-0"><Users className="h-4 w-4 text-amber-600 dark:text-amber-400" /></div>
+   248→   248→              <div><p className="text-xl font-bold text-foreground">{formatNumber(uniqueGroups)}</p><p className="text-[10px] text-muted-foreground">Kelompok Tani Aktif</p></div>
+   249→   249→            </CardContent></Card>
+   250→   250→          </div>
+   251→   251→        </div>
+   252→   252→      )}
+   253→   253→
+   254→   254→      <Card className="border-l-2 border-l-emerald-500">
+   255→   255→        <CardHeader className="pb-3">
+   256→   256→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   257→   257→            <CardTitle className="text-base font-semibold flex items-center gap-2"><Users className="h-5 w-5" /> Data Petani</CardTitle>
+   258→   258→            <div className="flex items-center gap-2">
+   259→   259→              <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input placeholder="Cari petani..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-9 w-full sm:w-60" /></div>
+   260→   260→              <Button variant="outline" size="sm" className="shrink-0 gap-1.5" disabled={!farmers || farmers.length === 0}
+   261→   261→                onClick={() => { exportToCSV('data-petani', ['NIK', 'Nama', 'Telepon', 'Alamat', 'Desa', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Luas Lahan (Ha)', 'Kelompok Tani', 'Status'],
+   262→   262→                  (farmers || []).map((f) => [f.nik, f.name, f.phone || '', f.address || '', f.village || '', f.district || '', f.regency || '', f.province || '', f.landAreaHa || '', f.farmerGroup || '', f.isActive ? 'Aktif' : 'Tidak Aktif']),) }}>
+   263→   263→                <Download className="h-4 w-4" /><span className="hidden sm:inline">Export CSV</span>
+   264→   264→              </Button>
+   265→   265→              <Button variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => { setImportOpen(true); setImportStep('upload'); setImportResult(null); setPreviewData([]); setSelectedFile(null) }}>
+   266→   266→                <Upload className="h-4 w-4" /><span className="hidden sm:inline">Import CSV</span>
+   267→   267→              </Button>
+   268→   268→              <Button onClick={handleOpenAdd} size="sm" className="shrink-0"><Plus className="h-4 w-4 mr-1" /> Tambah Petani</Button>
+   269→   269→            </div>
+   270→   270→          </div>
+   271→   271→        </CardHeader>
+   272→   272→        <CardContent className="p-0">
+   273→   273→          {isLoading ? (<div className="p-4 space-y-3">{Array.from({ length: 5 }).map((_, i) => (<Skeleton key={i} className="h-12 w-full" />))}</div>) : (<>
+   274→   274→            <div className="overflow-x-auto">
+   275→   275→              <Table><TableHeader><TableRow>
+   276→   276→                <TableHead className="text-xs">NIK</TableHead><TableHead className="text-xs">Nama</TableHead>
+   277→   277→                <TableHead className="text-xs hidden md:table-cell">Telepon</TableHead><TableHead className="text-xs hidden lg:table-cell">Kelompok Tani</TableHead>
+   278→   278→                <TableHead className="text-xs hidden xl:table-cell">Lokasi</TableHead><TableHead className="text-xs text-right hidden sm:table-cell">Luas Lahan</TableHead>
+   279→   279→                <TableHead className="text-xs text-right">Pesanan</TableHead><TableHead className="text-xs text-right">Aksi</TableHead>
+   280→   280→              </TableRow></TableHeader>
+   281→   281→              <TableBody>
+   282→   282→                {filtered.length === 0 ? (<TableRow><TableCell colSpan={8} className="text-center py-12"><div className="flex flex-col items-center gap-2 text-muted-foreground"><Users className="h-10 w-10 opacity-30" /><p className="text-sm font-medium">{search ? 'Tidak ada petani yang cocok' : 'Belum ada data petani'}</p></div></TableCell></TableRow>) : paged.map((farmer) => (
+   283→   283→                  <TableRow key={farmer.id} className={`cursor-pointer border-l-[3px] ${!farmer.landAreaHa || farmer.landAreaHa < 0.5 ? 'border-l-gray-300 dark:border-l-gray-600' : farmer.landAreaHa >= 1 ? 'border-l-green-500' : 'border-l-amber-400'}`} onClick={() => handleRowClick(farmer)}>
+   284→   284→                    <TableCell className="text-xs font-mono">{farmer.nik}</TableCell>
+   285→   285→                    <TableCell className="text-sm font-medium">{farmer.name}</TableCell>
+   286→   286→                    <TableCell className="text-xs hidden md:table-cell">{farmer.phone || '-'}</TableCell>
+   287→   287→                    <TableCell className="text-xs hidden lg:table-cell">{farmer.farmerGroup || '-'}</TableCell>
+   288→   288→                    <TableCell className="text-xs hidden xl:table-cell">
+   289→   289→                      {farmer.village || farmer.regency ? (
+   290→   290→                        <div className="flex items-center gap-1 text-muted-foreground">
+   291→   291→                          <MapPin className="h-3 w-3 shrink-0" />
+   292→   292→                          <span className="truncate max-w-[120px]">{farmer.village ? `${farmer.village}, ${farmer.district || ''}` : farmer.regency || '-'}</span>
+   293→   293→                        </div>
+   294→   294→                      ) : '-'}
+   295→   295→                    </TableCell>
+   296→   296→                    <TableCell className="text-xs text-right hidden sm:table-cell">
+   297→   297→                      <div className="flex items-center justify-end gap-1.5">
+   298→   298→                        {farmer.landAreaHa ? <span className="font-mono">{formatNumber(farmer.landAreaHa)}</span> : <span>-</span>}
+   299→   299→                        {farmer.landAreaHa && (
+   300→   300→                          <Badge variant="outline" className={`text-[9px] px-1 py-0 font-semibold ${farmer.landAreaHa < 1 ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700' : farmer.landAreaHa <= 2 ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700' : 'bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-700'}`}>
+   301→   301→                            {farmer.landAreaHa < 1 ? 'Kecil' : farmer.landAreaHa <= 2 ? 'Sedang' : 'Besar'}
+   302→   302→                          </Badge>
+   303→   303→                        )}
+   304→   304→                      </div>
+   305→   305→                    </TableCell>
+   306→   306→                    <TableCell className="text-xs text-right">{farmer._count?.orders || 0}</TableCell>
+   307→   307→                    <TableCell className="text-right"><div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+   308→   308→                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenDetail(farmer)}><Eye className="h-3.5 w-3.5" /></Button>
+   309→   309→                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(farmer)}><Pencil className="h-3.5 w-3.5" /></Button>
+   310→   310→                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(farmer.id); setDeleteOpen(true) }}><Trash2 className="h-3.5 w-3.5" /></Button>
+   311→   311→                    </div></TableCell>
+   312→   312→                  </TableRow>
+   313→   313→                ))}
+   314→   314→              </TableBody></Table>
+   315→   315→            </div>
+   316→   316→            {filtered.length > ITEMS_PER_PAGE && (
+   317→   317→              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
+   318→   318→                <p className="text-xs text-muted-foreground">Menampilkan {startIndex}-{endIndex} dari {filtered.length} data</p>
+   319→   319→                <Pagination><PaginationContent>
+   320→   320→                  <PaginationItem><PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} /></PaginationItem>
+   321→   321→                  {safePage > 3 && (<><PaginationItem><PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink></PaginationItem><PaginationItem><PaginationEllipsis /></PaginationItem></>)}
+   322→   322→                  {Array.from({ length: totalPages }, (_, i) => i + 1).filter((p) => p >= safePage - 1 && p <= safePage + 1).map((p) => (<PaginationItem key={p}><PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink></PaginationItem>))}
+   323→   323→                  {safePage < totalPages - 2 && (<><PaginationItem><PaginationEllipsis /></PaginationItem><PaginationItem><PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink></PaginationItem></>)}
+   324→   324→                  <PaginationItem><PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} /></PaginationItem>
+   325→   325→                </PaginationContent></Pagination>
+   326→   326→              </div>
+   327→   327→            )}
+   328→   328→          </>)}
+   329→   329→        </CardContent>
+   330→   330→      </Card>
+   331→   331→
+   332→   332→      {/* Add/Edit Dialog */}
+   333→   333→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}><DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{editingId ? 'Edit Data Petani' : 'Tambah Petani Baru'}</DialogTitle><DialogDescription>{editingId ? 'Perbarui informasi petani' : 'Isi data petani baru'}</DialogDescription></DialogHeader>
+   334→   334→        <div className="grid gap-3 py-2">
+   335→   335→          <div className="grid grid-cols-2 gap-3"><div className="grid gap-2"><Label htmlFor="nik">NIK *</Label><Input id="nik" value={form.nik} onChange={(e) => { setForm({ ...form, nik: e.target.value.replace(/\D/g, '').slice(0, 16) }); if (nikError) validateNik(e.target.value.replace(/\D/g, '').slice(0, 16)) }} placeholder="16 digit NIK" maxLength={16} />{nikError && <p className="text-xs text-destructive">{nikError}</p>}</div><div className="grid gap-2"><Label htmlFor="fname">Nama Lengkap *</Label><Input id="fname" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama lengkap" /></div></div>
+   336→   336→          <div className="grid grid-cols-2 gap-3"><div className="grid gap-2"><Label htmlFor="phone">No. HP</Label><Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08xxxxxxxxxx" /></div><div className="grid gap-2"><Label htmlFor="landArea">Luas Lahan (Ha)</Label><Input id="landArea" type="number" value={form.landAreaHa || ''} onChange={(e) => setForm({ ...form, landAreaHa: parseFloat(e.target.value) || 0 })} /></div></div>
+   337→   337→          <div className="grid grid-cols-2 gap-3"><div className="grid gap-2"><Label htmlFor="farmerGroup">Kelompok Tani</Label><Input id="farmerGroup" value={form.farmerGroup} onChange={(e) => setForm({ ...form, farmerGroup: e.target.value })} placeholder="Nama kelompok tani" /></div><div className="grid gap-2"><Label htmlFor="village">Desa</Label><Input id="village" value={form.village} onChange={(e) => setForm({ ...form, village: e.target.value })} /></div></div>
+   338→   338→          <div className="grid grid-cols-2 gap-3"><div className="grid gap-2"><Label htmlFor="district">Kecamatan</Label><Input id="district" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} /></div><div className="grid gap-2"><Label htmlFor="regency">Kabupaten</Label><Input id="regency" value={form.regency} onChange={(e) => setForm({ ...form, regency: e.target.value })} /></div></div>
+   339→   339→          <div className="grid gap-2"><Label htmlFor="address">Alamat</Label><Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Alamat lengkap" /></div>
+   340→   340→          <div className="grid gap-2"><Label htmlFor="province">Provinsi</Label><Input id="province" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} /></div>
+   341→   341→        </div>
+   342→   342→        <DialogFooter><Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button><Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>{createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}</Button></DialogFooter>
+   343→   343→      </DialogContent></Dialog>
+   344→   344→
+   345→   345→      {/* Detail Dialog */}
+   346→   346→      <Dialog open={detailOpen} onOpenChange={setDetailOpen}><DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>Detail Petani</DialogTitle>{detailFarmer && <DialogDescription className="sr-only">Detail informasi {detailFarmer.name}</DialogDescription>}</DialogHeader>
+   347→   347→        {detailFarmer && (<div className="space-y-4">
+   348→   348→          <Tabs defaultValue="info">
+   349→   349→            <TabsList className="w-full"><TabsTrigger value="info" className="flex-1">Informasi</TabsTrigger><TabsTrigger value="orders" className="flex-1">Pesanan ({farmerOrders.length})</TabsTrigger></TabsList>
+   350→   350→            <TabsContent value="info" className="mt-3 space-y-4">
+   351→   351→              <div className="grid grid-cols-2 gap-3 text-sm">
+   352→   352→                <div><span className="text-muted-foreground">NIK:</span> <span className="font-mono">{detailFarmer.nik}</span></div>
+   353→   353→                <div><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{detailFarmer.name}</span></div>
+   354→   354→                <div><span className="text-muted-foreground">No. HP:</span> {detailFarmer.phone || '-'}</div>
+   355→   355→                <div><span className="text-muted-foreground">Luas Lahan:</span> {detailFarmer.landAreaHa ? `${formatNumber(detailFarmer.landAreaHa)} Ha` : '-'}</div>
+   356→   356→                <div><span className="text-muted-foreground">Kel. Tani:</span> {detailFarmer.farmerGroup || '-'}</div>
+   357→   357→                <div><span className="text-muted-foreground">Status:</span> <Badge variant="outline" className={getStatusColor(detailFarmer.isActive ? 'ACTIVE' : 'INACTIVE')}>{detailFarmer.isActive ? 'Aktif' : 'Tidak Aktif'}</Badge></div>
+   358→   358→              </div>
+   359→   359→              <div className="text-sm"><span className="text-muted-foreground">Alamat:</span> {detailFarmer.address || '-'}, {detailFarmer.village || '-'}, {detailFarmer.district || '-'}, {detailFarmer.regency || '-'}, {detailFarmer.province || '-'}</div>
+   360→   360→              {farmerOrders.length > 0 && (<><Separator /><div className="bg-muted/50 rounded-lg p-3 space-y-1.5"><p className="text-xs font-semibold text-muted-foreground mb-2">Ringkasan Pembelian</p><div className="flex justify-between text-sm"><span className="text-muted-foreground">Total Pembelian</span><span className="font-medium">{formatRupiah(purchaseSummary.totalAmount)}</span></div><div className="flex justify-between text-sm"><span className="text-muted-foreground">Total Subsidi</span><span className="font-medium text-primary">{formatRupiah(purchaseSummary.totalSubsidy)}</span></div><div className="flex justify-between text-sm"><span className="text-muted-foreground">Total Berat</span><span className="font-medium">{formatNumber(purchaseSummary.totalKg)} kg</span></div></div></>)}
+   361→   361→              <Button variant="outline" className="w-full gap-2" onClick={() => handleRepeatOrder(detailFarmer)}><RotateCcw className="h-4 w-4" /> Pesan Ulang untuk Petani Ini</Button>
+   362→   362→            </TabsContent>
+   363→   363→            <TabsContent value="orders" className="mt-3">
+   364→   364→              {farmerOrders.length === 0 ? (<div className="text-center py-8 text-muted-foreground"><p className="text-sm">Belum ada pesanan</p></div>) : (
+   365→   365→                <ScrollArea className="max-h-64"><Table><TableHeader><TableRow><TableHead className="text-xs">No. Pesanan</TableHead><TableHead className="text-xs text-right">Total</TableHead><TableHead className="text-xs">Status</TableHead><TableHead className="text-xs">Tanggal</TableHead></TableRow></TableHeader>
+   366→   366→                  <TableBody>{farmerOrders.map((order) => (<TableRow key={order.id}><TableCell className="text-xs font-mono">{order.orderNumber}</TableCell><TableCell className="text-xs text-right">{formatRupiah(order.totalAmount)}</TableCell><TableCell><Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>{getStatusLabel(order.status)}</Badge></TableCell><TableCell className="text-xs">{formatDate(order.createdAt)}</TableCell></TableRow>))}</TableBody></Table></ScrollArea>
+   367→   367→              )}
+   368→   368→            </TabsContent>
+   369→   369→          </Tabs>
+   370→   370→        </div>)}
+   371→   371→      </DialogContent></Dialog>
+   372→   372→
+   373→   373→      {/* Import CSV Dialog */}
+   374→   374→      <Dialog open={importOpen} onOpenChange={(open) => { if (!open) { setImportStep('upload'); setImportResult(null); setPreviewData([]); setSelectedFile(null) } }}>
+   375→   375→        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+   376→   376→          <DialogHeader>
+   377→   377→            <DialogTitle>Import Data Petani dari CSV</DialogTitle>
+   378→   378→            <DialogDescription>Unggah file CSV berisi data petani untuk diimpor ke sistem</DialogDescription>
+   379→   379→          </DialogHeader>
+   380→   380→
+   381→   381→          {importStep === 'upload' && (
+   382→   382→            <div className="py-4">
+   383→   383→              <div
+   384→   384→                className="border-2 border-dashed rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+   385→   385→                onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
+   386→   386→                onDragLeave={(e) => e.preventDefault()}
+   387→   387→                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const file = e.dataTransfer.files[0]; if (file) handleFileSelect(file) }}
+   388→   388→                onClick={() => fileInputRef.current?.click()}
+   389→   389→              >
+   390→   390→                <input
+   391→   391→                  ref={fileInputRef}
+   392→   392→                  type="file"
+   393→   393→                  accept=".csv"
+   394→   394→                  className="hidden"
+   395→   395→                  onChange={(e) => { const file = e.target.files[0]; if (file) handleFileSelect(file) }}
+   396→   396→                />
+   397→   397→                <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+   398→   398→                <p className="text-sm font-medium">Seret & letakkan file CSV di sini</p>
+   399→   399→                <p className="text-xs text-muted-foreground mt-1">atau klik untuk memilih file (.csv maks. 5MB)</p>
+   400→   400→              </div>
+   401→   401→              {selectedFile && (
+   402→   402→                <div className="flex items-center gap-2 mt-3 p-3 bg-muted/50 rounded-lg">
+   403→   403→                  <FileSpreadsheet className="h-4 w-4 text-primary shrink-0" />
+   404→   404→                  <div className="min-w-0 flex-1">
+   405→   405→                    <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+   406→   406→                    <p className="text-[11px] text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+   407→   407→                  </div>
+   408→   408→                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelectedFile(null)}>
+   409→   409→                    <X className="h-4 w-4" />
+   410→   410→                  </Button>
+   411→   411→                </div>
+   412→   412→              )}
+   413→   413→              <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+   414→   414→                <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">Format CSV yang dibutuhkan:</p>
+   415→   415→                <p className="text-[11px] text-amber-600 dark:text-amber-500 font-mono">NIK, Nama, Telepon, Alamat, Desa, Kecamatan, Kabupaten, Provinsi, Luas Lahan (ha), Kelompok Tani</p>
+   416→   416→              </div>
+   417→   417→              <div className="flex justify-end mt-4">
+   418→   418→                <Button onClick={handlePreview} disabled={!selectedFile} className="btn-gradient">
+   419→   419→                  Lihat Preview
+   420→   420→                </Button>
+   421→   421→              </div>
+   422→   422→            </div>
+   423→   423→          )}
+   424→   424→
+   425→   425→          {importStep === 'preview' && (
+   426→   426→            <div className="py-2">
+   427→   427→              <div className="mb-3">
+   428→   428→                <p className="text-sm font-medium">Preview Data ({previewData.length} baris)</p>
+   429→   429→                <p className="text-xs text-muted-foreground">Periksa data sebelum mengimpor</p>
+   430→   430→              </div>
+   431→   431→              {previewData.some((r) => !r.valid) && (
+   432→   432→                <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+   433→   433→                  <div className="flex items-center gap-2 mb-1">
+   434→   434→                    <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+   435→   435→                    <p className="text-sm font-medium text-red-700 dark:text-red-400">Ada data yang tidak valid</p>
+   436→   436→                  </div>
+   437→   437→                  <ul className="text-xs text-red-600 dark:text-red-400 list-disc list-inside space-y-0.5 ml-6">
+   438→   438→                    {previewData.filter((r) => !r.valid).slice(0, 5).map((r, i) => (
+   439→   439→                      <li key={i}><span className="font-medium">Baris {r.row}</span>: {r.error}</li>
+   440→   440→                    ))}
+   441→   441→                    {previewData.filter((r) => !r.valid).length > 5 && (
+   442→   442→                      <li>...dan {previewData.filter((r) => !r.valid).length - 5} baris lainnya</li>
+   443→   443→                    )}
+   444→   444→                  </ul>
+   445→   445→                </div>
+   446→   446→              )}
+   447→   447→              <ScrollArea className="max-h-64">
+   448→   448→                <Table>
+   449→   449→                  <TableHeader>
+   450→   450→                    <TableRow>
+   451→   451→                      <TableHead className="text-[10px]">#</TableHead>
+   452→   452→                      <TableHead className="text-[10px]">NIK</TableHead>
+   453→   453→                      <TableHead className="text-[10px]">Nama</TableHead>
+   454→   454→                  </TableRow>
+   455→   455→                  </TableHeader>
+   456→   456→                  <TableBody>
+   457→   457→                    {previewData.slice(0, 100).map((row) => (
+   458→   458→                      <TableRow key={row.row} className={!row.valid ? 'bg-red-50/50 dark:bg-red-900/10' : ''}>
+   459→   459→                        <TableCell className="text-[10px] font-mono">{row.row}</TableCell>
+   460→   460→                        <TableCell className={`text-[10px] font-mono ${!row.valid ? 'text-red-500' : ''}`}>{row.nik}</TableCell>
+   461→   461→                        <TableCell className="text-[10px]">{row.name}</TableCell>
+   462→   462→                      </TableRow>
+   463→   463→                    ))}
+   464→   464→                  </TableBody>
+   465→   465→                </Table>
+   466→   466→              </ScrollArea>
+   467→   467→              <div className="flex justify-between mt-4">
+   468→   468→                <Button variant="outline" onClick={() => setImportStep('upload')}>Kembali</Button>
+   469→   469→                <Button
+   470→   470→                  onClick={handleImport}
+   471→   471→                  disabled={importMutation.isPending || previewData.every((r) => !r.valid)}
+   472→   472→                  className="btn-gradient"
+   473→   473→                >
+   474→   474→                  {importMutation.isPending ? 'Mengimpor...' : `Import ${previewData.filter((r) => r.valid).length} Petani`}
+   475→   475→                </Button>
+   476→   476→              </div>
+   477→   477→            </div>
+   478→   478→          )}
+   479→   479→
+   480→   480→          {importStep === 'result' && importResult && (
+   481→   481→            <div className="py-4 space-y-4">
+   482→   482→              <div className="grid grid-cols-2 gap-3">
+   483→   483→                <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 p-4 text-center">
+   484→   484→                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-600 dark:text-emerald-400" />
+   485→   485→                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{importResult.imported}</p>
+   486→   486→                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Berhasil Diimpor</p>
+   487→   487→                </div>
+   488→   488→                <div className="rounded-lg border bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 p-4 text-center">
+   489→   489→                  <AlertCircle className="h-8 w-8 mx-auto mb-2 text-amber-600 dark:text-amber-400" />
+   490→   490→                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{importResult.skipped}</p>
+   491→   491→                  <p className="text-[10px] text-amber-600 dark:text-amber-400">Dilewati (NIK sudah ada)</p>
+   492→   492→                </div>
+   493→   493→              </div>
+   494→   494→              {importResult.errors.length > 0 && (
+   495→   495→                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+   496→   496→                  <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">Error ({importResult.errors.length})</p>
+   497→   497→                  <ScrollArea className="max-h-32">
+   498→   498→                    <ul className="text-[11px] text-red-600 dark:text-red-400 list-disc list-inside space-y-0.5">
+   499→   499→                      {importResult.errors.slice(0, 10).map((err, i) => (
+   500→   500→                        <li key={i}>{err}</li>
+   501→   501→                      ))}
+   502→   502→                      {importResult.errors.length > 10 && <li>...dan {importResult.errors.length - 10} error lainnya</li>}
+   503→   503→                    </ul>
+   504→   504→                  </ScrollArea>
+   505→   505→                </div>
+   506→   506→              )}
+   507→   507→              <div className="flex justify-end">
+   508→   508→                <Button onClick={() => { setImportOpen(false); triggerRefresh(); queryClient.invalidateQueries({ queryKey: ['farmers'] }) }} className="btn-gradient">
+   509→   509→                  Selesai
+   510→   510→                </Button>
+   511→   511→              </div>
+   512→   512→            </div>
+   513→   513→          )}
+   514→   514→        </DialogContent>
+   515→   515→      </Dialog>
+   516→   516→
+   517→   517→      {/* Delete Dialog */}
+   518→   518→      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Hapus Data Petani?</AlertDialogTitle><AlertDialogDescription>Tindakan ini tidak dapat dibatalkan. Data petani akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Batal</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Hapus</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+   519→   519→
+   520→   520→      {/* Purchase History Dialog (opened on row click) */}
+   521→   521→      <Dialog open={purchaseOpen} onOpenChange={setPurchaseOpen}>
+   522→   522→        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+   523→   523→          {purchaseLoading ? (
+   524→   524→            <div className="p-6 space-y-4">
+   525→   525→              <Skeleton className="h-6 w-48" />
+   526→   526→              <Skeleton className="h-4 w-full" />
+   527→   527→              <div className="grid grid-cols-3 gap-3">
+   528→   528→                <Skeleton className="h-20 w-full rounded-lg" />
+   529→   529→                <Skeleton className="h-20 w-full rounded-lg" />
+   530→   530→                <Skeleton className="h-20 w-full rounded-lg" />
+   531→   531→              </div>
+   532→   532→              <Skeleton className="h-40 w-full" />
+   533→   533→            </div>
+   534→   534→          ) : purchaseData ? (
+   535→   535→            <>
+   536→   536→              <DialogHeader>
+   537→   537→                <DialogTitle className="flex items-center gap-2">
+   538→   538→                  <ShoppingCart className="h-5 w-5 text-primary" />
+   539→   539→                  Riwayat Pembelian
+   540→   540→                </DialogTitle>
+   541→   541→                <DialogDescription className="sr-only">Riwayat pembelian {purchaseData.farmer.name}</DialogDescription>
+   542→   542→              </DialogHeader>
+   543→   543→
+   544→   544→              {/* Farmer info header */}
+   545→   545→              <div className="rounded-lg border bg-muted/30 p-4">
+   546→   546→                <div className="flex items-start justify-between gap-3">
+   547→   547→                  <div className="min-w-0">
+   548→   548→                    <h3 className="text-base font-bold truncate">{purchaseData.farmer.name}</h3>
+   549→   549→                    <p className="text-xs font-mono text-muted-foreground">NIK: {purchaseData.farmer.nik}</p>
+   550→   550→                  </div>
+   551→   551→                  <Badge variant="outline" className={getStatusColor(purchaseData.farmer.isActive ? 'ACTIVE' : 'INACTIVE')}>
+   552→   552→                    {purchaseData.farmer.isActive ? 'Aktif' : 'Tidak Aktif'}
+   553→   553→                  </Badge>
+   554→   554→                </div>
+   555→   555→                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1.5 mt-3 text-xs">
+   556→   556→                  <div className="flex items-center gap-1.5 text-muted-foreground">
+   557→   557→                    <Phone className="h-3 w-3 shrink-0" />
+   558→   558→                    <span className="truncate">{purchaseData.farmer.phone || '-'}</span>
+   559→   559→                  </div>
+   560→   560→                  <div className="flex items-center gap-1.5 text-muted-foreground">
+   561→   561→                    <MapPinned className="h-3 w-3 shrink-0" />
+   562→   562→                    <span className="truncate">{purchaseData.farmer.village || purchaseData.farmer.district || '-'}</span>
+   563→   563→                  </div>
+   564→   564→                  <div className="flex items-center gap-1.5 text-muted-foreground">
+   565→   565→                    <Wheat className="h-3 w-3 shrink-0" />
+   566→   566→                    <span className="truncate">{purchaseData.farmer.farmerGroup || '-'}</span>
+   567→   567→                  </div>
+   568→   568→                  <div className="flex items-center gap-1.5 text-muted-foreground">
+   569→   569→                    <MapPin className="h-3 w-3 shrink-0" />
+   570→   570→                    <span className="truncate">{purchaseData.farmer.district || purchaseData.farmer.regency || '-'}</span>
+   571→   571→                  </div>
+   572→   572→                </div>
+   573→   573→                {purchaseData.farmer.landAreaHa && (
+   574→   574→                  <p className="text-xs text-muted-foreground mt-1.5">Luas Lahan: <span className="font-medium text-foreground">{formatNumber(purchaseData.farmer.landAreaHa)} Ha</span></p>
+   575→   575→                )}
+   576→   576→              </div>
+   577→   577→
+   578→   578→              {/* Summary stats */}
+   579→   579→              <div className="grid grid-cols-3 gap-3">
+   580→   580→                <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 p-3 text-center">
+   581→   581→                  <ShoppingCart className="h-4 w-4 mx-auto mb-1 text-emerald-600 dark:text-emerald-400" />
+   582→   582→                  <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{purchaseData.summary.totalOrders}</p>
+   583→   583→                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Total Pesanan</p>
+   584→   584→                </div>
+   585→   585→                <div className="rounded-lg border bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 p-3 text-center">
+   586→   586→                  <Package className="h-4 w-4 mx-auto mb-1 text-teal-600 dark:text-teal-400" />
+   587→   587→                  <p className="text-lg font-bold text-teal-700 dark:text-teal-300">{formatNumber(purchaseData.summary.totalKg)}</p>
+   588→   588→                  <p className="text-[10px] text-teal-600 dark:text-teal-400">Total Kg Dibeli</p>
+   589→   589→                </div>
+   590→   590→                <div className="rounded-lg border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 p-3 text-center">
+   591→   591→                  <Banknote className="h-4 w-4 mx-auto mb-1 text-green-600 dark:text-green-400" />
+   592→   592→                  <p className="text-lg font-bold text-green-700 dark:text-green-300">{formatRupiah(purchaseData.summary.totalSubsidy)}</p>
+   593→   593→                  <p className="text-[10px] text-green-600 dark:text-green-400">Total Subsidi</p>
+   594→   594→                </div>
+   595→   595→              </div>
+   596→   596→
+   597→   597→              {/* Purchase history table */}
+   598→   598→              <div>
+   599→   599→                <p className="text-sm font-semibold mb-2">Riwayat Pesanan</p>
+   600→   600→                {purchaseData.orders.length === 0 ? (
+   601→   601→                  <div className="text-center py-10 text-muted-foreground">
+   602→   602→                    <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-30" />
+   603→   603→                    <p className="text-sm">Belum ada riwayat pesanan</p>
+   604→   604→                  </div>
+   605→   605→                ) : (
+   606→   606→                  <ScrollArea className="max-h-64">
+   607→   607→                    <Table>
+   608→   608→                      <TableHeader>
+   609→   609→                        <TableRow>
+   610→   610→                          <TableHead className="text-xs">No. Pesanan</TableHead>
+   611→   611→                          <TableHead className="text-xs">Tanggal</TableHead>
+   612→   612→                          <TableHead className="text-xs">Gudang</TableHead>
+   613→   613→                          <TableHead className="text-xs text-right">Total</TableHead>
+   614→   614→                          <TableHead className="text-xs text-right">Subsidi</TableHead>
+   615→   615→                          <TableHead className="text-xs">Status</TableHead>
+   616→   616→                        </TableRow>
+   617→   617→                      </TableHeader>
+   618→   618→                      <TableBody>
+   619→   619→                        {purchaseData.orders.map((order) => (
+   620→   620→                          <TableRow key={order.id}>
+   621→   621→                            <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
+   622→   622→                            <TableCell className="text-xs whitespace-nowrap">{formatDate(order.createdAt)}</TableCell>
+   623→   623→                            <TableCell className="text-xs">{order.warehouse.name}</TableCell>
+   624→   624→                            <TableCell className="text-xs text-right font-medium">{formatRupiah(order.totalAmount)}</TableCell>
+   625→   625→                            <TableCell className="text-xs text-right text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
+   626→   626→                            <TableCell>
+   627→   627→                              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>
+   628→   628→                                {getStatusLabel(order.status)}
+   629→   629→                              </Badge>
+   630→   630→                            </TableCell>
+   631→   631→                          </TableRow>
+   632→   632→                        ))}
+   633→   633→                      </TableBody>
+   634→   634→                    </Table>
+   635→   635→                  </ScrollArea>
+   636→   636→                )}
+   637→   637→              </div>
+   638→   638→            </>
+   639→   639→          ) : null}
+   640→   640→        </DialogContent>
+   641→   641→      </Dialog>
+   642→   642→    </motion.div>
+   643→   643→  )
+   644→   644→}

@@ -27,6 +27,7 @@ import {
   Leaf,
   FileBarChart,
   ClipboardList,
+  History,
 } from 'lucide-react'
 
 const navItems = [
@@ -39,6 +40,7 @@ const navItems = [
   { id: 'orders', label: 'Penjualan', icon: ShoppingCart },
   { id: 'rpkp', label: 'RPKP', icon: ClipboardList, separator: true },
   { id: 'reports', label: 'Laporan', icon: FileBarChart },
+  { id: 'activity', label: 'Aktivitas', icon: History },
 ]
 
 export function AppSidebar() {

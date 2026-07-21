@@ -34,6 +34,17 @@ import { parseFarmerCSV } from '@/lib/import'
 
 const ITEMS_PER_PAGE = 10
 
+const AVATAR_COLORS = [
+  'bg-emerald-600',
+  'bg-teal-600',
+  'bg-green-600',
+  'bg-amber-600',
+  'bg-lime-600',
+  'bg-cyan-600',
+  'bg-sky-600',
+  'bg-indigo-600',
+]
+
 const emptyForm = {
   nik: '', name: '', phone: '', address: '', village: '',
   district: '', regency: '', province: '', landAreaHa: 0, farmerGroup: '', isActive: true,
@@ -279,10 +290,20 @@ export function FarmersView() {
                 <TableHead className="text-xs text-right">Pesanan</TableHead><TableHead className="text-xs text-right">Aksi</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {filtered.length === 0 ? (<TableRow><TableCell colSpan={8} className="text-center py-12"><div className="flex flex-col items-center gap-2 text-muted-foreground"><Users className="h-10 w-10 opacity-30" /><p className="text-sm font-medium">{search ? 'Tidak ada petani yang cocok' : 'Belum ada data petani'}</p></div></TableCell></TableRow>) : paged.map((farmer) => (
+                {filtered.length === 0 ? (<TableRow><TableCell colSpan={8} className="text-center py-12"><div className="flex flex-col items-center gap-2 text-muted-foreground"><Users className="h-10 w-10 opacity-30" /><p className="text-sm font-medium">{search ? 'Tidak ada petani yang cocok' : 'Belum ada data petani'}</p></div></TableCell></TableRow>) : paged.map((farmer, index) => (
                   <TableRow key={farmer.id} className={`cursor-pointer border-l-[3px] ${!farmer.landAreaHa || farmer.landAreaHa < 0.5 ? 'border-l-gray-300 dark:border-l-gray-600' : farmer.landAreaHa >= 1 ? 'border-l-green-500' : 'border-l-amber-400'}`} onClick={() => handleRowClick(farmer)}>
                     <TableCell className="text-xs font-mono">{farmer.nik}</TableCell>
-                    <TableCell className="text-sm font-medium">{farmer.name}</TableCell>
+                    <TableCell className="text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white shrink-0 ${AVATAR_COLORS[(startIndex + index) % AVATAR_COLORS.length]}`}>
+                          {farmer.name.charAt(0).toUpperCase()}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${farmer.isActive ? 'bg-green-500' : 'bg-red-400'}`} />
+                          {farmer.name}
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-xs hidden md:table-cell">{farmer.phone || '-'}</TableCell>
                     <TableCell className="text-xs hidden lg:table-cell">{farmer.farmerGroup || '-'}</TableCell>
                     <TableCell className="text-xs hidden xl:table-cell">
@@ -297,7 +318,8 @@ export function FarmersView() {
                       <div className="flex items-center justify-end gap-1.5">
                         {farmer.landAreaHa ? <span className="font-mono">{formatNumber(farmer.landAreaHa)}</span> : <span>-</span>}
                         {farmer.landAreaHa && (
-                          <Badge variant="outline" className={`text-[9px] px-1 py-0 font-semibold ${farmer.landAreaHa < 1 ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700' : farmer.landAreaHa <= 2 ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700' : 'bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-700'}`}>
+                          <Badge variant="outline" className={`text-[9px] px-1.5 py-0 gap-0.5 font-semibold ${farmer.landAreaHa < 1 ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700' : farmer.landAreaHa <= 2 ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700' : 'bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-700'}`}>
+                            <Wheat className="h-2.5 w-2.5" />
                             {farmer.landAreaHa < 1 ? 'Kecil' : farmer.landAreaHa <= 2 ? 'Sedang' : 'Besar'}
                           </Badge>
                         )}

@@ -630,7 +630,7 @@ export function OrdersView() {
                       </TableRow>
                     ) : (
                       paged.map((order) => (
-                        <TableRow key={order.id}>
+                        <TableRow key={order.id} className="transition-transform duration-200 hover:-translate-y-px">
                           <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
                           <TableCell className="text-sm font-medium">{order.farmer.name}</TableCell>
                           <TableCell className="text-xs hidden md:table-cell">{order.warehouse.name}</TableCell>
@@ -638,9 +638,7 @@ export function OrdersView() {
                           <TableCell className="text-xs text-right hidden sm:table-cell text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1.5">
-                              {order.status === 'PENDING' && (
-                                <span className="inline-block h-2 w-2 rounded-full bg-green-500 pulse-dot shrink-0" />
-                              )}
+                              <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${order.status === 'PENDING' ? 'bg-green-500 pulse-dot' : order.status === 'CONFIRMED' ? 'bg-blue-500' : order.status === 'PICKED_UP' ? 'bg-emerald-500' : 'bg-red-400'}`} />
                               <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>
                                 {getStatusLabel(order.status)}
                               </Badge>
@@ -774,7 +772,7 @@ export function OrdersView() {
                     {formItems.map((item, idx) => {
                       const hetPrice = item.productType ? getHETPrice(item.productType) : null
                       return (
-                      <div key={idx} className="grid grid-cols-12 gap-2 items-start p-3 bg-muted/50 rounded-lg">
+                      <div key={idx} className={`grid grid-cols-12 gap-2 items-start p-3 rounded-lg ${idx % 2 === 0 ? 'bg-muted/50' : 'bg-muted/20'}`}>
                         <div className="col-span-12 sm:col-span-5">
                           <Label className="text-[10px] text-muted-foreground">Produk</Label>
                           <Select value={item.productId} onValueChange={(v) => updateItem(idx, 'productId', v)}>
@@ -815,7 +813,7 @@ export function OrdersView() {
                             onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
                           />
                           {item.hetWarning && (
-                            <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 leading-tight">{item.hetWarning}</p>
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 leading-tight animate-pulse-gentle font-medium">{item.hetWarning}</p>
                           )}
                         </div>
                         <div className="col-span-3 sm:col-span-2">
@@ -844,7 +842,7 @@ export function OrdersView() {
             </div>
 
             {formItems.length > 0 && (
-              <div className="rounded-lg p-4 space-y-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/60 dark:border-green-700/40">
+              <div className="card-highlight rounded-lg p-4 space-y-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/60 dark:border-green-700/40">
                 <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-2">Ringkasan Pesanan</p>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total Harga Normal</span>

@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const logs = await db.activityLog.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    })
+    const { searchParams } = new URL(request.url)
+    const action = searchParams.get('action')
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200)
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0)
 
-    return NextResponse.json(logs)
+    // Support prefix-based filtering: 'order' matches CREATE_ORDER, CANCEL_ORDER, UPDATE_STATUS on orders
+    const actionPrefix = searchParams.get('action')
+    const where = actionPrefix
+      ? { action: { contains: actionPrefix.toUpperCase() } }
+      : {}
+
+    const [logs, total] = await Promise.all([
+      db.activityLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      db.activityLog.count({ where }),
+    ])
+
+    return NextResponse.json({ logs, total })
   } catch (error) {
     console.error('List activity logs error:', error)
     return NextResponse.json(

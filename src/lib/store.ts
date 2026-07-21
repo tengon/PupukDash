@@ -12,6 +12,9 @@ interface AppState {
   /** Pre-fill farmer ID when creating a repeat order */
   prefillFarmerId: string | null
   setPrefillFarmerId: (id: string | null) => void
+  /** Command palette open state */
+  commandPaletteOpen: boolean
+  setCommandPaletteOpen: (open: boolean) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -24,4 +27,6 @@ export const useAppStore = create<AppState>((set) => ({
   clearShortcut: () => set({ shortcutAction: null }),
   prefillFarmerId: null,
   setPrefillFarmerId: (id) => set({ prefillFarmerId: id }),
+  commandPaletteOpen: false,
+  setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
 }))

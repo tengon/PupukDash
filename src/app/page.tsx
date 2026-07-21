@@ -15,8 +15,10 @@ import { DistributionsView } from '@/components/distributions/distributions-view
 import { OrdersView } from '@/components/orders/orders-view'
 import { RPKPView } from '@/components/rpkp/rpkp-view'
 import { ReportsView } from '@/components/reports/reports-view'
+import { ActivityLogView } from '@/components/activity/activity-log-view'
+import { CommandPalette } from '@/components/command-palette'
 import { seedData, fetchFarmers, fetchStock, fetchOrders } from '@/lib/api'
-import { Leaf, Database, Clock, Users, Package, ShoppingCart } from 'lucide-react'
+import { Leaf, Database, Clock, Users, Package, ShoppingCart, Sparkles } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/notification-bell'
 import { useEffect, useState, useCallback, useRef } from 'react'
@@ -35,6 +37,7 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   orders: { title: 'Penjualan', description: 'Kelola pesanan penjualan pupuk bersubsidi' },
   rpkp: { title: 'RPKP', description: 'Rencana Kebutuhan Pupuk — Perencanaan alokasi tahunan' },
   reports: { title: 'Laporan', description: 'Laporan bulanan penjualan pupuk bersubsidi' },
+  activity: { title: 'Aktivitas', description: 'Riwayat aktivitas sistem penjualan pupuk' },
 }
 
 function useWIBClock() {
@@ -61,7 +64,7 @@ function useWIBClock() {
 }
 
 export default function HomePage() {
-  const { activeTab, triggerShortcut, refreshKey } = useAppStore()
+  const { activeTab, triggerShortcut, refreshKey, setCommandPaletteOpen } = useAppStore()
   const { toast } = useToast()
   const [isSeeding, setIsSeeding] = useState(false)
   const wibTime = useWIBClock()
@@ -113,8 +116,17 @@ export default function HomePage() {
         return
       }
 
-      // Ignore if a dialog is open (Radix sets data-state="open")
+      // Ignore if a dialog is open (Radix sets data-state="open") — but allow Ctrl+K
       if (document.querySelector('[data-state="open"]')) {
+        if (!(e.ctrlKey || e.metaKey) || e.key !== 'k') {
+          return
+        }
+      }
+
+      // Ctrl+K / Cmd+K → open command palette
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setCommandPaletteOpen(true)
         return
       }
 
@@ -141,7 +153,7 @@ export default function HomePage() {
         return
       }
     },
-    [triggerShortcut],
+    [triggerShortcut, setCommandPaletteOpen],
   )
 
   useEffect(() => {
@@ -156,7 +168,7 @@ export default function HomePage() {
       <AppSidebar />
       <SidebarInset className="flex flex-col min-h-screen">
         {/* Header */}
-        <header className="flex h-14 shrink-0 items-center gap-2 px-4 glass sticky top-0 z-10 header-gradient" style={{ borderBottom: '1px solid transparent', backgroundImage: 'linear-gradient(to bottom, var(--background), var(--background)), linear-gradient(to right, oklch(0.65 0.15 150 / 0.2), oklch(0.55 0.10 145 / 0.15), oklch(0.65 0.12 160 / 0.2))', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderBottomWidth: '1px', borderBottomStyle: 'solid' }}>
+        <header className="flex h-14 shrink-0 items-center gap-2 px-4 glass sticky top-0 z-10 header-gradient" style={{ borderBottom: '1px solid transparent', backgroundImage: 'linear-gradient(to bottom, var(--background), var(--background)), linear-gradient(to right, oklch(0.65 0.15 150 / 0.2), oklch(0.55 0.10 145 / 0.15), oklch(0.65 0.12 160 / 0.2))', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderBottomWidth: '1px', borderBottomStyle: 'solid', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex flex-1 items-center gap-2">
@@ -182,11 +194,12 @@ export default function HomePage() {
               <span>Pesanan</span>
               <kbd className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded border border-border bg-muted/50 font-mono text-[10px] ml-1">/</kbd>
               <span>Cari</span>
+              <kbd className="inline-flex items-center justify-center h-5 min-w-[28px] px-1 rounded border border-border bg-muted/50 font-mono text-[10px] ml-1">⌘K</kbd>
             </div>
             <Button
               variant="outline"
               size="sm"
-              className="text-xs h-8 gap-1.5"
+              className="text-[10px] h-7 gap-1.5 opacity-70 hover:opacity-100"
               onClick={handleSeed}
               disabled={isSeeding}
             >
@@ -201,19 +214,20 @@ export default function HomePage() {
 
         {/* Quick Stats Bar */}
         <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b overflow-x-auto">
-          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-3 py-1 shrink-0">
+          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 border-l-2 border-l-emerald-500 px-3 py-1 shrink-0">
             <Users className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">{formatNumber(activeFarmerCount)}</span>
+            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 animate-count-up">{formatNumber(activeFarmerCount)}</span>
             <span className="text-[10px] text-emerald-600 dark:text-emerald-400">Petani Aktif</span>
+            <Sparkles className="h-2.5 w-2.5 text-emerald-400 dark:text-emerald-500" />
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 px-3 py-1 shrink-0">
+          <div className="flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 border-l-2 border-l-teal-500 px-3 py-1 shrink-0">
             <Package className="h-3 w-3 text-teal-600 dark:text-teal-400" />
-            <span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300">{formatNumber(totalStockKg)}</span>
+            <span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 animate-count-up">{formatNumber(totalStockKg)}</span>
             <span className="text-[10px] text-teal-600 dark:text-teal-400">kg Stok</span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-1 shrink-0">
+          <div className="flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 border-l-2 border-l-amber-500 px-3 py-1 shrink-0">
             <ShoppingCart className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">{formatNumber(ordersThisMonth)}</span>
+            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 animate-count-up">{formatNumber(ordersThisMonth)}</span>
             <span className="text-[10px] text-amber-600 dark:text-amber-400">Pesanan Bulan Ini</span>
           </div>
         </div>
@@ -237,18 +251,19 @@ export default function HomePage() {
               {activeTab === 'orders' && <OrdersView />}
               {activeTab === 'rpkp' && <RPKPView />}
               {activeTab === 'reports' && <ReportsView />}
+              {activeTab === 'activity' && <ActivityLogView />}
             </motion.div>
           </AnimatePresence>
         </main>
 
         {/* Footer */}
-        <footer className="border-t-2 footer-gradient-border bg-card/50 px-4 py-3 mt-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-1.5 text-[11px] text-muted-foreground">
+        <footer className="border-t-2 footer-gradient-border bg-card/50 px-4 py-2 mt-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-1 text-[11px] text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <Leaf className="h-3 w-3 text-primary" />
+              <Leaf className="h-3 w-3 text-primary transition-transform duration-500 hover:rotate-12" />
               <span className="font-medium text-foreground/80">SiPUPUK</span>
               <span className="hidden sm:inline">— Sistem Informasi Penjualan Pupuk Bersubsidi</span>
-              <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1 font-mono">v1.1.0</Badge>
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1 font-mono">v1.2.0</Badge>
             </div>
             <div className="flex items-center gap-2">
               <span>Dibangun dengan <span className="font-medium text-foreground/70">Next.js</span></span>
@@ -258,6 +273,7 @@ export default function HomePage() {
           </div>
         </footer>
       </SidebarInset>
+      <CommandPalette />
     </SidebarProvider>
   )
 }

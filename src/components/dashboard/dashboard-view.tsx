@@ -70,7 +70,7 @@ function StatsCards({ data }: { data: DashboardData }) {
     { title: 'Total Subsidi', value: formatRupiah(data.totalSubsidy), icon: Banknote, trend: '+8%', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-900/20', borderColor: 'border-l-red-500', gradient: 'from-red-50/40 to-white dark:from-red-900/10 dark:to-card' },
   ]
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
       {stats.map((stat, idx) => (
         <motion.div
           key={stat.title}
@@ -81,16 +81,17 @@ function StatsCards({ data }: { data: DashboardData }) {
           whileHover={{ scale: 1.02, y: -2 }}
           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
         >
-          <Card className={`border-l-4 ${stat.borderColor} bg-gradient-to-br ${stat.gradient} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden`} style={{ boxShadow: 'var(--shadow-sm), inset 0 1px 2px 0 oklch(0.42 0.14 152 / 0.04)' }}>
+          <Card className={`card-highlight border-l-4 ${stat.borderColor} bg-gradient-to-br ${stat.gradient} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden`} style={{ boxShadow: 'var(--shadow-sm), inset 0 1px 2px 0 oklch(0.42 0.14 152 / 0.04)' }}>
             <CardContent className="p-5">
               <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" style={{ animationDelay: `${idx * 150}ms` }} />
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{stat.title}</p>
-                  <p className="text-2xl font-bold mt-2">{stat.value}</p>
+                  <p className="text-2xl font-bold mt-2 animate-count-up">{stat.value}</p>
                   <div className="flex items-center gap-1 mt-2.5">
                     <TrendingUp className="h-3 w-3 text-green-600 dark:text-green-400" />
                     <span className="text-xs text-green-600 dark:text-green-400 font-semibold">{stat.trend}</span>
+                    <ArrowUp className="h-2.5 w-2.5 text-green-600 dark:text-green-400" />
                     <span className="text-xs text-muted-foreground">dari bulan lalu</span>
                   </div>
                 </div>
@@ -264,7 +265,7 @@ function RecentOrders({ data }: { data: DashboardData }) {
                     <div className="flex items-center gap-1.5">
                       {order.orderNumber}
                       {isToday && (
-                        <Badge className="text-[8px] px-1 py-0 h-4 bg-green-500 text-white border-0 font-bold">BARU</Badge>
+                        <Badge className="badge-animate text-[8px] px-1 py-0 h-4 bg-green-500 text-white border-0 font-bold">BARU</Badge>
                       )}
                     </div>
                   </TableCell>
@@ -427,7 +428,7 @@ function TopFarmers({ data }: { data: DashboardData }) {
                   <TableCell className="text-xs font-medium">
                     <div className="flex items-center gap-2">
                       {i < 3 && (
-                        <span className="text-sm">
+                        <span className="text-sm inline-block transition-transform duration-300 hover:scale-125 cursor-default">
                           {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
                         </span>
                       )}
@@ -577,28 +578,28 @@ export function DashboardView() {
         <div className="grid grid-cols-3 gap-3">
           <button
             onClick={() => useAppStore.getState().setActiveTab('orders')}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50"
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50 hover-glow"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
-              <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400 transition-transform duration-200 group-hover:scale-110" />
             </div>
             <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Buat Pesanan</span>
           </button>
           <button
             onClick={() => useAppStore.getState().setActiveTab('stock')}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50"
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50 hover-glow"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-              <PackagePlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <PackagePlus className="h-5 w-5 text-blue-600 dark:text-blue-400 transition-transform duration-200 group-hover:scale-110" />
             </div>
             <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Restok Stok</span>
           </button>
           <button
             onClick={() => useAppStore.getState().setActiveTab('distributions')}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50"
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50 hover-glow"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50 transition-colors">
-              <Truck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <Truck className="h-5 w-5 text-amber-600 dark:text-amber-400 transition-transform duration-200 group-hover:scale-110" />
             </div>
             <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Lihat Distribusi</span>
           </button>

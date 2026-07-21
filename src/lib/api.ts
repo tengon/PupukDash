@@ -260,7 +260,25 @@ export interface ActivityLog {
   createdAt: string
 }
 
-export const fetchActivityLogs = () => apiFetch<ActivityLog[]>('/api/activity-log')
+export const fetchActivityLogs = (params?: { action?: string; limit?: number; offset?: number }) => {
+  const searchParams = new URLSearchParams()
+  if (params?.action) searchParams.set('action', params.action)
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.offset) searchParams.set('offset', String(params.offset))
+  const qs = searchParams.toString()
+  return apiFetch<{ logs: ActivityLog[]; total: number }>(`/api/activity-log${qs ? `?${qs}` : ''}`)
+}
+
+// Search
+export interface SearchResult {
+  products: Array<{ id: string; name: string; type: string; subtitle: string }>
+  farmers: Array<{ id: string; name: string; nik: string; subtitle: string }>
+  orders: Array<{ id: string; orderNumber: string; subtitle: string; status: string }>
+  warehouses: Array<{ id: string; name: string; code: string; subtitle: string }>
+}
+
+export const fetchSearch = (query: string) =>
+  apiFetch<SearchResult>(`/api/search?q=${encodeURIComponent(query)}`)
 
 // Warehouse Stock Detail
 export interface WarehouseStockEntry {

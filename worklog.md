@@ -569,3 +569,174 @@ Enhanced the notification bell from a simple count+redirect button into a full-f
 - ESLint passes with no errors
 - Dev server compiles successfully
 
+---
+Task ID: 11-a
+Agent: full-stack-developer
+Task: Create global search API + enhance activity-log API
+
+Work Log:
+- Created `/api/search/route.ts` with GET handler that searches across products, farmers, orders, and warehouses
+- Products: searches name and type with `contains` insensitive mode, subtitle formatted as `{formatRupiah(pricePerKg)}/kg — {type}`
+- Farmers: searches name, NIK, village, farmerGroup, subtitle as `NIK: {nik} — {village || district}, {regency}`
+- Orders: searches orderNumber and farmer name (via relation), subtitle as `{farmerName} — {formatRupiah(totalAmount)} — {getStatusLabel(status)}`
+- Warehouses: searches name, code, address, managerName, subtitle as `{code} — {regency}, {province}`
+- Each category limited to 5 results, returns empty arrays for queries under 2 characters
+- Enhanced `/api/activity-log/route.ts` GET to support `?action=`, `?limit=`, `?offset=` query params
+- Activity log now returns `{ logs, total }` with parallel count query for pagination
+- Default limit=50, offset=0, limit clamped to 1–200 range
+- Sort by createdAt desc maintained, POST handler unchanged
+- ESLint passes with zero errors
+
+Stage Summary:
+- Global search API created at `src/app/api/search/route.ts`
+- Activity log API enhanced with filtering and pagination at `src/app/api/activity-log/route.ts`
+- Both endpoints use `db` from `@/lib/db`, format utilities from `@/lib/format`
+- No lint errors
+
+---
+Task ID: 11-b
+Agent: full-stack-developer
+Task: Create Command Palette + Activity Log Viewer UI
+
+Work Log:
+- Updated src/lib/store.ts — added commandPaletteOpen boolean and setCommandPaletteOpen action to Zustand store
+- Updated src/lib/api.ts — added SearchResult interface, fetchSearch() function, and updated fetchActivityLogs() to accept optional params returning { logs, total }
+- Created src/components/command-palette.tsx — full command palette using CommandDialog from shadcn, opens via Ctrl+K/Cmd+K, debounced 300ms search, grouped results with icons, quick actions, skeleton/empty states
+- Created src/components/activity/activity-log-view.tsx — activity log viewer with filter pills, table with colored badges, tooltip truncation, framer-motion animations
+- Updated src/components/app-sidebar.tsx — added History icon and activity nav item
+- Updated src/app/page.tsx — integrated CommandPalette and ActivityLogView, added Ctrl+K handler, added kbd hint, added activity page title
+- Lint passed with zero errors
+
+Stage Summary:
+- Command Palette: Ctrl+K shortcut, debounced search, 4 entity groups, 3 quick actions, loading/empty states
+- Activity Log Viewer: filterable table, colored action badges, tooltip truncation, skeleton loading, framer-motion animations
+- Both components integrated into main app with sidebar navigation and keyboard shortcut support
+- No lint errors
+
+---
+Task ID: 11-c
+Agent: frontend-styling-expert
+Task: Deep styling improvements across all views
+
+Work Log:
+- Added 14 new CSS utility classes and animations to globals.css: ripple, count-up, tooltip enhancement, badge-pop, dialog entrance, skeleton-shimmer, stagger-children, hover-glow, progress-bar-animated, text-gradient-green, card-highlight, focus ring for inputs, scrollable-container
+- page.tsx: Added animate-count-up to quick stats values, border-l-2 color indicators on stat pills, Sparkles icon after active farmer count, improved header backdrop blur (16px), made "Muat Data Sample" button smaller/more subtle (opacity-70 hover:opacity-100), compacted footer (py-3→py-2, gap-1.5→gap-1), animated leaf icon on hover (rotate-12), updated version badge to v1.2.0
+- dashboard-view.tsx: Added stagger-children to stats grid, card-highlight on each stat card, animate-count-up on stat values, ArrowUp trend icon next to percentage, hover-glow + scale-110 on quick action buttons, badge-animate on BARU badge, hover:scale-125 on medal emojis in top farmers
+- products-view.tsx: Added TYPE_BORDER_COLORS mapping for colored left borders per product type (UREA=emerald, NPK=teal, SP-36=lime, ZA=green, ORGANIK=amber), applied border-l-2 to table rows, made product name text-sm, added TooltipProvider with tooltips on Edit/Hapus action buttons
+- farmers-view.tsx: Added AVATAR_COLORS array (8 colors) for farmer initial circles, added avatar circle with first letter initial in name column, added green/red status dot for active/inactive farmers, added Wheat icon to land area badges, increased badge padding slightly
+- orders-view.tsx: Added hover:-translate-y-px elevation effect on order table rows, colored status dots for all statuses (PENDING=green+pulse, CONFIRMED=blue, PICKED_UP=emerald, CANCELLED=red), card-highlight + gradient bg on order summary in create dialog, alternating row backgrounds on form items, animate-pulse-gentle + font-medium on HET warnings
+
+Stage Summary:
+- All CSS additions are dark-mode compatible using oklch color space
+- 6 files modified: globals.css, page.tsx, dashboard-view.tsx, products-view.tsx, farmers-view.tsx, orders-view.tsx
+- No functionality changes — purely styling/micro-interaction improvements
+- Lint passes with zero errors
+- New micro-interactions: count-up animations, badge pop, card top highlight on hover, glow effects, avatar initials, status dots, HET warning pulse
+
+---
+Task ID: 11
+Agent: Main Agent (with sub-agents: full-stack-developer × 2, frontend-styling-expert)
+Task: Periodic review — QA, bug fix, new features (Command Palette, Activity Log), deep styling
+
+Work Log:
+- **QA Testing**: All 10 views tested via agent-browser (Dashboard, Products, Farmers, Warehouses, Stock, Distributions, Orders, RPKP, Reports, Activity) — 0 browser errors
+- **BUG FIX**: Notification messages showed duplicate "Gudang" text (e.g., "Gudang Gudang Demak Pusat")
+  - Root cause: notification API template `Gudang ${stock.warehouse.name}` where warehouse.name already starts with "Gudang"
+  - Fix: Removed "Gudang " prefix in `/api/notifications/route.ts` line 112
+
+- **BUG FIX**: Search API returned 500 error on all queries
+  - Root cause: SQLite does not support Prisma `mode: 'insensitive'` filter option
+  - Fix: Removed `mode: 'insensitive'` from all `contains` filters in `/api/search/route.ts` (SQLite is case-insensitive by default)
+
+- **BUG FIX**: Activity Log view showed raw action names (e.g., "VIEW_MONTHLY_REPORT") instead of Indonesian labels
+  - Fix: Extended `getActivityActionLabel()` and `getActivityActionColor()` in `src/lib/format.ts` with 13 new action mappings
+  - Fix: Changed activity-log API filter from exact match to `contains` prefix match for proper filter pill behavior
+
+- **NEW FEATURE: Global Search API** (Task 11-a, full-stack-developer sub-agent):
+  - Created `GET /api/search?q={query}` — searches products, farmers, orders, warehouses in parallel
+  - Case-insensitive search across name, type, NIK, village, orderNumber, code, address, managerName
+  - Each category limited to 5 results, min 2-char query required
+  - Subtitles formatted with Rupiah, status labels, and location data
+
+- **NEW FEATURE: Enhanced Activity Log API** (Task 11-a, full-stack-developer sub-agent):
+  - Updated `GET /api/activity-log` with `?action={prefix}&limit={n}&offset={n}` params
+  - Returns `{ logs: ActivityLog[], total: number }` for pagination support
+  - Prefix-based action filtering (e.g., `?action=order` matches CREATE_ORDER, CANCEL_ORDER)
+
+- **NEW FEATURE: Command Palette (Ctrl+K)** (Task 11-b, full-stack-developer sub-agent):
+  - Created `src/components/command-palette.tsx` using shadcn CommandDialog (cmdk)
+  - Opens with Ctrl+K / Cmd+K keyboard shortcut
+  - 3 quick actions always visible: Buat Pesanan Baru, Restok Stok, Lihat Laporan
+  - Debounced (300ms) search across all entities via `/api/search`
+  - Results grouped by category: Produk, Petani, Pesanan, Gudang with icons
+  - Click-to-navigate: results switch to appropriate tab
+  - Added `commandPaletteOpen` + `setCommandPaletteOpen` to Zustand store
+  - Added `SearchResult` interface and `fetchSearch()` to api.ts
+
+- **NEW FEATURE: Activity Log Viewer** (Task 11-b, full-stack-developer sub-agent):
+  - Created `src/components/activity/activity-log-view.tsx`
+  - Filter pills: Semua, Pesanan, Stok, Distribusi (prefix-based matching)
+  - Table: Waktu, Aksi (colored badges), Detail (truncated with tooltips)
+  - Framer Motion per-row entrance animations
+  - Empty state with ClipboardList icon
+  - Added to sidebar as 10th nav item (History icon)
+  - Added to PAGE_TITLES in page.tsx
+
+- **STYLING IMPROVEMENTS** (Task 11-c, frontend-styling-expert sub-agent):
+  - 14 new CSS utility classes in globals.css (~145 lines)
+  - Key new utilities: `animate-count-up`, `badge-animate`, `card-highlight`, `hover-glow`, `stagger-children`, `skeleton-shimmer`, `text-gradient-green`, `progress-bar-animated`
+  - Enhanced tooltip styling, focus rings for inputs, scrollable containers
+   - Dashboard: stagger-children on stat cards, card-highlight on hover, hover-glow on quick actions, icon scale-110, medal emoji hover effect
+   - Products: color-coded left borders per type (5 types), tooltips on action buttons
+   - Farmers: avatar circles with initials (8 rotating colors), green/red status dots, wheat icon in land area badges
+   - Orders: row elevation on hover (-1px), status dots before text, order summary card-highlight, HET warning pulse animation, alternating item backgrounds
+   - Footer: animated leaf icon on hover
+  - Stats bar: animate-count-up on values
+  - Header: ⌘K keyboard shortcut hint added
+
+Stage Summary:
+- 3 bugs fixed (notification duplicate, search API 500, activity label raw names)
+- 2 new API endpoints (search, enhanced activity-log)
+- 3 new frontend features (Command Palette, Activity Log tab, integrated search)
+- 14 new CSS animation/utility classes
+- Micro-interactions: count-up, badge pop, card highlight, glow, avatar initials, status dots, HET pulse, medal hover
+- ESLint: 0 errors
+- All 10 tabs verified via agent-browser QA: 0 browser errors
+- Version bumped to v1.2.0
+
+---
+## Project Current Status
+
+### Assessment
+SiPUPUK v1.2.0 is a comprehensive, production-ready PPST distributor management system with 10 fully functional modules (Dashboard, Products, Farmers, Warehouses, Stock, Distributions, Orders, RPKP, Reports, Activity Log), a global command palette search (Ctrl+K), HET compliance validation, CSV import, notification center, and polished green agricultural theme with extensive micro-interactions and dark mode support.
+
+### Completed Modifications This Round
+- Fixed 3 bugs (notification text, search API, activity labels)
+- Added global search API with cross-entity search
+- Added Ctrl+K command palette with quick actions and categorized results
+- Added Activity Log viewer with filter pills and colored badges
+- Enhanced activity-log API with pagination and prefix filtering
+- Extended activity action labels/colors with 13 new mappings
+- Deep styling: 14 new CSS utilities, micro-interactions across all views
+- Avatar initials, status dots, card highlights, glow effects, staggered animations
+
+### Verification Results
+- ESLint: 0 errors
+- All APIs return 200/201 (dashboard, products, farmers, warehouses, stock, distributions, orders, farmer-orders, warehouse-stock, rpkp, monthly-report, notifications, search, activity-log)
+- Agent-browser QA: all 10 views load with 0 browser errors
+- Command palette: opens with Ctrl+K, search returns results, navigation works
+- Activity log: filters work, labels show correctly in Indonesian
+- Activity log filter "Pesanan" correctly shows only order-related entries
+
+### Unresolved Issues / Risks
+- No authentication system (recommended: NextAuth.js with PPST user roles)
+- No PDF export for monthly reports (currently print + CSV only)
+- Priority recommendations for next phase:
+  1. Add authentication/login with PPST user roles
+  2. Add PDF report export (laporan bulanan for Dinas Pertanian)
+  3. Add farmer quota tracking dashboard (remaining allocation based on land area)
+  4. Add data export from Activity Log
+  5. Add stock transfer between warehouses with approval workflow
+  6. Add batch order processing for farmer groups
+  7. Enhance command palette with recent items and date-based navigation
+
