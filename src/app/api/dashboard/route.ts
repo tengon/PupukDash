@@ -85,6 +85,40 @@ export async function GET() {
     const topFarmerThisMonth = Array.from(farmerOrderCount.values())
       .sort((a, b) => b.totalOrders - a.totalOrders || b.totalAmount - a.totalAmount)[0] || null
 
+    // Daily sales this month
+    const nowDaily = new Date()
+    const daysInMonth = new Date(nowDaily.getFullYear(), nowDaily.getMonth() + 1, 0).getDate()
+    const dailyOrders = await db.order.findMany({
+      where: {
+        createdAt: { gte: startOfThisMonth, lte: endOfThisMonth },
+        status: { not: 'CANCELLED' },
+      },
+      include: { items: { select: { quantity: true } } },
+    })
+
+    // Initialize all days with zeros
+    const dailyMap = new Map<number, { orders: number; totalKg: number; revenue: number }>()
+    for (let d = 1; d <= daysInMonth; d++) {
+      dailyMap.set(d, { orders: 0, totalKg: 0, revenue: 0 })
+    }
+    // Aggregate orders into daily buckets
+    for (const o of dailyOrders) {
+      const day = o.createdAt.getDate()
+      const entry = dailyMap.get(day)!
+      entry.orders++
+      entry.revenue += o.totalAmount
+      for (const item of o.items) {
+        entry.totalKg += item.quantity
+      }
+    }
+
+    const dailySalesThisMonth = Array.from(dailyMap.entries()).map(([day, data]) => ({
+      day,
+      orders: data.orders,
+      totalKg: Math.round(data.totalKg),
+      revenue: data.revenue,
+    }))
+
     return NextResponse.json({
       totalFarmers, totalProducts, totalWarehouses, totalOrders,
       totalSalesAmount: salesAggregate._sum.totalAmount ?? 0,
@@ -96,7 +130,7 @@ export async function GET() {
         warehouse: { id: o.warehouseId, name: o.warehouse.name, code: o.warehouse.code },
         createdAt: o.createdAt,
       })),
-      stockAlerts, monthlySales, productDistribution, topFarmers, topFarmerThisMonth,
+      stockAlerts, monthlySales, productDistribution, topFarmers, topFarmerThisMonth, dailySalesThisMonth,
     })
   } catch (error) {
     console.error('Dashboard error:', error)

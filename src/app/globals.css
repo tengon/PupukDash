@@ -637,3 +637,118 @@ input:focus, textarea:focus, select:focus {
 .scrollable-container {
   scrollbar-gutter: stable;
 }
+
+/* ===== Animated Underline Link ===== */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+  border-radius: 1px;
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* ===== Status Dot Colors ===== */
+.dot-green { @apply bg-green-500; }
+.dot-yellow { @apply bg-yellow-500; }
+.dot-red { @apply bg-red-500; }
+.dot-amber { @apply bg-amber-500; }
+.dot-blue { @apply bg-blue-500; }
+.dot-teal { @apply bg-teal-500; }
+
+/* ===== Subtle Background Pattern for Cards ===== */
+.card-pattern {
+  background-image: radial-gradient(circle at 1px 1px, oklch(0.5 0.02 155 / 0.04) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+.dark .card-pattern {
+  background-image: radial-gradient(circle at 1px 1px, oklch(0.7 0.02 155 / 0.06) 1px, transparent 0);
+}
+
+/* ===== Smooth Number Transition ===== */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Hover Card Border Glow ===== */
+@keyframes border-glow {
+  0%, 100% { border-color: oklch(0.55 0.14 152 / 0.2); }
+  50% { border-color: oklch(0.55 0.14 152 / 0.5); }
+}
+
+.border-glow-animate {
+  animation: border-glow 2s ease-in-out infinite;
+}
+
+/* ===== Improved Badge Variants ===== */
+.badge-soft {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* ===== Data Table Row Transition ===== */
+@keyframes row-fade-in {
+  0% { opacity: 0; transform: translateX(-8px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.row-animate {
+  animation: row-fade-in 0.3s ease-out both;
+}
+
+/* ===== Tooltip Arrow Enhancement ===== */
+[role="tooltip"]::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: var(--popover);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+/* ===== Truck Pulse for In-Transit ===== */
+@keyframes truck-pulse-amber {
+  0%, 100% { color: oklch(0.75 0.15 75); }
+  50% { color: oklch(0.85 0.16 80); }
+}
+
+.truck-pulse-amber {
+  animation: truck-pulse-amber 1.5s ease-in-out infinite;
+}
+
+.dark .truck-pulse-amber {
+  animation: truck-pulse-amber 1.5s ease-in-out infinite;
+}
+
+/* ===== Inline Mini Bar Chart ===== */
+.mini-bar-track {
+  width: 100px;
+  height: 6px;
+  border-radius: 9999px;
+  background: oklch(0.92 0.01 155);
+  overflow: hidden;
+}
+
+.dark .mini-bar-track {
+  background: oklch(0.30 0.02 155);
+}
+
+.mini-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}

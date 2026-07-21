@@ -14,7 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { motion } from 'framer-motion'
-import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles, PackagePlus, ArrowUp, ArrowDown, Crown, Eye, RefreshCw } from 'lucide-react'
+import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles, PackagePlus, ArrowUp, ArrowDown, Crown, Eye, RefreshCw, BarChart3 } from 'lucide-react'
 import { QuickRestockDialog } from '@/components/stock/quick-restock-dialog'
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -452,6 +452,117 @@ function TopFarmers({ data }: { data: DashboardData }) {
   )
 }
 
+function DailySalesChart({ data }: { data: DashboardData }) {
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null)
+  const dailyData = data.dailySalesThisMonth
+  const maxRevenue = Math.max(...dailyData.map((d) => d.revenue), 1)
+  const totalDays = dailyData.length
+  const activeDays = dailyData.filter((d) => d.orders > 0)
+  const avgDailyRevenue = activeDays.length > 0
+    ? activeDays.reduce((sum, d) => sum + d.revenue, 0) / activeDays.length
+    : 0
+  const bestDay = dailyData.reduce((best, d) => d.revenue > best.revenue ? d : best, dailyData[0])
+  const hasAnySales = activeDays.length > 0
+
+  // Which days to show labels for
+  const labelDays = new Set([1, 5, 10, 15, 20, 25, 30, 31])
+
+  return (
+    <motion.div variants={itemVariants}>
+      <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/20 shrink-0">
+              <BarChart3 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            </div>
+            <span>Penjualan Harian</span>
+          </CardTitle>
+          <CardDescription>Bulan ini</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Tooltip */}
+          <div className="relative">
+            {hoveredDay !== null && (
+              <div
+                className="absolute z-10 -top-20 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground border rounded-lg px-3 py-2 shadow-lg text-xs pointer-events-none whitespace-nowrap"
+                style={{ transform: `translateX(${hoveredDay <= totalDays / 2 ? '-30%' : '-70%'})` }}
+              >
+                <p className="font-semibold">Tanggal: {hoveredDay}</p>
+                <p className="text-muted-foreground">Pesanan: {dailyData[hoveredDay - 1].orders}</p>
+                <p className="text-muted-foreground">Kg: {formatNumber(dailyData[hoveredDay - 1].totalKg)}</p>
+                <p className="text-muted-foreground">Pendapatan: {formatRupiah(dailyData[hoveredDay - 1].revenue)}</p>
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-popover border-r border-b" />
+              </div>
+            )}
+
+            {/* Bar Chart */}
+            <div className="flex items-end gap-[2px] h-24">
+              {dailyData.map((d, i) => {
+                const heightPercent = d.revenue > 0 ? (d.revenue / maxRevenue) * 100 : 4
+                const isToday = new Date().getDate() === d.day
+                return (
+                  <motion.div
+                    key={d.day}
+                    className="relative flex-1 flex flex-col items-center"
+                    initial={{ height: 0 }}
+                    animate={{ height: '100%' }}
+                    transition={{ duration: 0.4, delay: i * 0.02, ease: 'easeOut' }}
+                  >
+                    <div className="w-full flex-1 flex items-end">
+                      <div
+                        className={`w-full rounded-t-sm transition-all duration-300 hover:opacity-80 cursor-default ${
+                          isToday
+                            ? 'bg-primary dark:bg-primary'
+                            : d.revenue > 0
+                              ? 'bg-primary/70 dark:bg-primary/60'
+                              : 'bg-muted dark:bg-muted'
+                        }`}
+                        style={{ height: `${heightPercent}%`, minHeight: d.revenue > 0 ? '3px' : '2px' }}
+                        onMouseEnter={() => setHoveredDay(d.day)}
+                        onMouseLeave={() => setHoveredDay(null)}
+                      />
+                    </div>
+                    {/* Day labels */}
+                    {labelDays.has(d.day) && d.day <= totalDays && (
+                      <span className="text-[9px] text-muted-foreground mt-1 leading-none select-none">
+                        {d.day}
+                      </span>
+                    )}
+                  </motion.div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="mt-4 pt-3 border-t grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hari Aktif</p>
+              <p className="text-xs font-bold mt-0.5">
+                {activeDays.length} <span className="font-normal text-muted-foreground">/ {totalDays}</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Rata-rata Harian</p>
+              <p className="text-xs font-bold mt-0.5">
+                {hasAnySales ? formatRupiah(Math.round(avgDailyRevenue)) : '-'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hari Terbaik</p>
+              <p className="text-xs font-bold mt-0.5">
+                {hasAnySales ? (
+                  <>Tgl {bestDay.day} <span className="font-normal text-muted-foreground">({formatRupiah(bestDay.revenue)})</span></>
+                ) : '-'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
 function QuickInfoCards() {
   const { refreshKey } = useAppStore()
 
@@ -611,6 +722,7 @@ export function DashboardView() {
         <MonthlySales data={data} />
         <ProductDistribution data={data} />
       </div>
+      <DailySalesChart data={data} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentOrders data={data} />
         <StockAlerts data={data} />

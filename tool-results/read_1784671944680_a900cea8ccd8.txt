@@ -1,0 +1,648 @@
+     1→'use client'
+     2→
+     3→import { useState } from 'react'
+     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+     5→import { useAppStore } from '@/lib/store'
+     6→import {
+     7→  fetchDistributions, createDistribution, updateDistribution, deleteDistribution,
+     8→  fetchWarehouses, fetchProducts,
+     9→  type Distribution,
+    10→} from '@/lib/api'
+    11→import { formatNumber, formatDate, getStatusLabel } from '@/lib/format'
+    12→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    13→import { Button } from '@/components/ui/button'
+    14→import { Input } from '@/components/ui/input'
+    15→import { Label } from '@/components/ui/label'
+    16→import { Badge } from '@/components/ui/badge'
+    17→import { Textarea } from '@/components/ui/textarea'
+    18→import { Skeleton } from '@/components/ui/skeleton'
+    19→import {
+    20→  Dialog,
+    21→  DialogContent,
+    22→  DialogDescription,
+    23→  DialogFooter,
+    24→  DialogHeader,
+    25→  DialogTitle,
+    26→} from '@/components/ui/dialog'
+    27→import {
+    28→  AlertDialog,
+    29→  AlertDialogAction,
+    30→  AlertDialogCancel,
+    31→  AlertDialogContent,
+    32→  AlertDialogDescription,
+    33→  AlertDialogFooter,
+    34→  AlertDialogHeader,
+    35→  AlertDialogTitle,
+    36→} from '@/components/ui/alert-dialog'
+    37→import {
+    38→  Select,
+    39→  SelectContent,
+    40→  SelectItem,
+    41→  SelectTrigger,
+    42→  SelectValue,
+    43→} from '@/components/ui/select'
+    44→import {
+    45→  Table,
+    46→  TableBody,
+    47→  TableCell,
+    48→  TableHead,
+    49→  TableHeader,
+    50→  TableRow,
+    51→} from '@/components/ui/table'
+    52→import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    53→import {
+    54→  Pagination,
+    55→  PaginationContent,
+    56→  PaginationItem,
+    57→  PaginationLink,
+    58→  PaginationNext,
+    59→  PaginationPrevious,
+    60→  PaginationEllipsis,
+    61→} from '@/components/ui/pagination'
+    62→import { motion } from 'framer-motion'
+    63→import { Plus, Truck, Pencil, Trash2, ArrowRight, FileText, CheckCircle, XCircle, Search, Package, MapPin, UserCircle, ClipboardList, BarChart3, Navigation } from 'lucide-react'
+    64→import { useToast } from '@/hooks/use-toast'
+    65→
+    66→const ITEMS_PER_PAGE = 10
+    67→
+    68→const STATUS_TABS = [
+    69→  { value: 'all', label: 'Semua', icon: null },
+    70→  { value: 'DRAFT', label: 'Draft', icon: FileText },
+    71→  { value: 'IN_TRANSIT', label: 'Dikirim', icon: Truck },
+    72→  { value: 'DELIVERED', label: 'Diterima', icon: CheckCircle },
+    73→  { value: 'CANCELLED', label: 'Dibatalkan', icon: XCircle },
+    74→]
+    75→
+    76→const STATUS_FLOW: Record<string, string[]> = {
+    77→  DRAFT: ['IN_TRANSIT', 'CANCELLED'],
+    78→  IN_TRANSIT: ['DELIVERED', 'CANCELLED'],
+    79→  DELIVERED: [],
+    80→  CANCELLED: [],
+    81→}
+    82→
+    83→const STATUS_BADGE_STYLES: Record<string, string> = {
+    84→  DRAFT: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700',
+    85→  IN_TRANSIT: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
+    86→  DELIVERED: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+    87→  CANCELLED: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+    88→}
+    89→
+    90→const STATUS_PROGRESS: Record<string, { width: string; color: string }> = {
+    91→  DRAFT: { width: '25%', color: 'bg-gray-400' },
+    92→  IN_TRANSIT: { width: '60%', color: 'bg-blue-500' },
+    93→  DELIVERED: { width: '100%', color: 'bg-green-500' },
+    94→  CANCELLED: { width: '0%', color: 'bg-red-500' },
+    95→}
+    96→
+    97→export function DistributionsView() {
+    98→  const { refreshKey, triggerRefresh } = useAppStore()
+    99→  const { toast } = useToast()
+   100→  const queryClient = useQueryClient()
+   101→  const [statusFilter, setStatusFilter] = useState('all')
+   102→  const [dialogOpen, setDialogOpen] = useState(false)
+   103→  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+   104→  const [deleteOpen, setDeleteOpen] = useState(false)
+   105→  const [editingDist, setEditingDist] = useState<Distribution | null>(null)
+   106→  const [deletingId, setDeletingId] = useState<string | null>(null)
+   107→  const [formWarehouse, setFormWarehouse] = useState('')
+   108→  const [formProduct, setFormProduct] = useState('')
+   109→  const [formQty, setFormQty] = useState(0)
+   110→  const [formVillage, setFormVillage] = useState('')
+   111→  const [formGroup, setFormGroup] = useState('')
+   112→  const [formNotes, setFormNotes] = useState('')
+   113→  const [statusNotes, setStatusNotes] = useState('')
+   114→  const [page, setPage] = useState(1)
+   115→
+   116→  const { data: distributions, isLoading } = useQuery({
+   117→    queryKey: ['distributions', refreshKey],
+   118→    queryFn: fetchDistributions,
+   119→  })
+   120→
+   121→  const { data: warehouses } = useQuery({
+   122→    queryKey: ['warehouses', refreshKey],
+   123→    queryFn: fetchWarehouses,
+   124→  })
+   125→
+   126→  const { data: products } = useQuery({
+   127→    queryKey: ['products', refreshKey],
+   128→    queryFn: () => fetchProducts(),
+   129→  })
+   130→
+   131→  const createMutation = useMutation({
+   132→    mutationFn: createDistribution,
+   133→    onSuccess: () => {
+   134→      queryClient.invalidateQueries({ queryKey: ['distributions'] })
+   135→      triggerRefresh()
+   136→      setDialogOpen(false)
+   137→      resetForm()
+   138→      toast({ title: 'Berhasil', description: 'Distribusi berhasil dibuat' })
+   139→    },
+   140→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   141→  })
+   142→
+   143→  const updateMutation = useMutation({
+   144→    mutationFn: ({ id, data }: { id: string; data: { status?: string; notes?: string } }) => updateDistribution(id, data),
+   145→    onSuccess: () => {
+   146→      queryClient.invalidateQueries({ queryKey: ['distributions'] })
+   147→      triggerRefresh()
+   148→      setStatusDialogOpen(false)
+   149→      setEditingDist(null)
+   150→      toast({ title: 'Berhasil', description: 'Status distribusi diperbarui' })
+   151→    },
+   152→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   153→  })
+   154→
+   155→  const deleteMutation = useMutation({
+   156→    mutationFn: deleteDistribution,
+   157→    onSuccess: () => {
+   158→      queryClient.invalidateQueries({ queryKey: ['distributions'] })
+   159→      triggerRefresh()
+   160→      setDeleteOpen(false)
+   161→      setDeletingId(null)
+   162→      toast({ title: 'Berhasil', description: 'Distribusi berhasil dihapus' })
+   163→    },
+   164→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   165→  })
+   166→
+   167→  const resetForm = () => {
+   168→    setFormWarehouse('')
+   169→    setFormProduct('')
+   170→    setFormQty(0)
+   171→    setFormVillage('')
+   172→    setFormGroup('')
+   173→    setFormNotes('')
+   174→  }
+   175→
+   176→  const handleSave = () => {
+   177→    if (!formWarehouse || !formProduct || formQty <= 0) {
+   178→      toast({ title: 'Validasi', description: 'Lengkapi semua field yang wajib', variant: 'destructive' })
+   179→      return
+   180→    }
+   181→    const product = (products || []).find((p) => p.id === formProduct)
+   182→    createMutation.mutate({
+   183→      warehouseId: formWarehouse,
+   184→      productId: formProduct,
+   185→      productName: product?.name || '',
+   186→      quantity: formQty,
+   187→      targetVillage: formVillage || undefined,
+   188→      targetGroup: formGroup || undefined,
+   189→      notes: formNotes || undefined,
+   190→    })
+   191→  }
+   192→
+   193→  const handleStatusUpdate = (newStatus: string) => {
+   194→    if (editingDist) {
+   195→      updateMutation.mutate({ id: editingDist.id, data: { status: newStatus, notes: statusNotes || undefined } })
+   196→    }
+   197→  }
+   198→
+   199→  const handleDelete = () => {
+   200→    if (deletingId) deleteMutation.mutate(deletingId)
+   201→  }
+   202→
+   203→  const filtered = (distributions || []).filter(
+   204→    (d) => statusFilter === 'all' || d.status === statusFilter
+   205→  )
+   206→
+   207→  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+   208→  const safePage = Math.min(page, totalPages)
+   209→  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+   210→  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+   211→  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+   212→
+   213→  return (
+   214→    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
+   215→      {/* Summary Stats Cards */}
+   216→      {!isLoading && distributions && (
+   217→        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   218→          <div className="flex items-center gap-3 rounded-xl border border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/60 to-white dark:from-blue-900/10 dark:to-card p-3">
+   219→            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+   220→              <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+   221→            </div>
+   222→            <div>
+   223→              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Distribusi</p>
+   224→              <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{distributions.length}</p>
+   225→            </div>
+   226→          </div>
+   227→          <div className="flex items-center gap-3 rounded-xl border border-amber-200/60 dark:border-amber-800/40 bg-gradient-to-r from-amber-50/60 to-white dark:from-amber-900/10 dark:to-card p-3">
+   228→            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+   229→              <Navigation className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+   230→            </div>
+   231→            <div>
+   232→              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Dalam Pengiriman</p>
+   233→              <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{distributions.filter(d => d.status === 'IN_TRANSIT').length}</p>
+   234→            </div>
+   235→          </div>
+   236→          <div className="flex items-center gap-3 rounded-xl border border-green-200/60 dark:border-green-800/40 bg-gradient-to-r from-green-50/60 to-white dark:from-green-900/10 dark:to-card p-3">
+   237→            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+   238→              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+   239→            </div>
+   240→            <div>
+   241→              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Diterima</p>
+   242→              <p className="text-lg font-bold text-green-700 dark:text-green-300">{distributions.filter(d => d.status === 'DELIVERED').length}</p>
+   243→            </div>
+   244→          </div>
+   245→        </div>
+   246→      )}
+   247→      <Card className="border-l-4 border-blue-500">
+   248→        <CardHeader className="pb-3">
+   249→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   250→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   251→              <Truck className="h-5 w-5" />
+   252→              Distribusi Pupuk
+   253→            </CardTitle>
+   254→            <Button onClick={() => { resetForm(); setDialogOpen(true) }} size="sm" className="shrink-0">
+   255→              <Plus className="h-4 w-4 mr-1" />
+   256→              Buat Distribusi
+   257→            </Button>
+   258→          </div>
+   259→          <div className="pt-2">
+   260→            <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
+   261→              <TabsList className="h-8">
+   262→                {STATUS_TABS.map((tab) => {
+   263→                  const TabIcon = tab.icon
+   264→                  return (
+   265→                    <TabsTrigger key={tab.value} value={tab.value} className="text-xs px-3 gap-1">
+   266→                      {TabIcon && <TabIcon className="h-3 w-3" />}
+   267→                      {tab.label}
+   268→                    </TabsTrigger>
+   269→                  )
+   270→                })}
+   271→              </TabsList>
+   272→            </Tabs>
+   273→          </div>
+   274→        </CardHeader>
+   275→        <CardContent className="p-0">
+   276→          {isLoading ? (
+   277→            <div className="p-4 space-y-3">
+   278→              {Array.from({ length: 5 }).map((_, i) => (
+   279→                <Skeleton key={i} className="h-12 w-full" />
+   280→              ))}
+   281→            </div>
+   282→          ) : (
+   283→            <>
+   284→              <div className="overflow-x-auto">
+   285→                <Table>
+   286→                  <TableHeader>
+   287→                    <TableRow>
+   288→                      <TableHead className="text-xs">No. Distribusi</TableHead>
+   289→                      <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
+   290→                      <TableHead className="text-xs">Produk</TableHead>
+   291→                      <TableHead className="text-xs text-right">Jumlah (kg)</TableHead>
+   292→                      <TableHead className="text-xs hidden lg:table-cell">Desa Tujuan</TableHead>
+   293→                      <TableHead className="text-xs hidden lg:table-cell">Kel. Tani</TableHead>
+   294→                      <TableHead className="text-xs">Status</TableHead>
+   295→                      <TableHead className="text-xs hidden md:table-cell">Tanggal</TableHead>
+   296→                      <TableHead className="text-xs text-right">Aksi</TableHead>
+   297→                    </TableRow>
+   298→                  </TableHeader>
+   299→                  <TableBody>
+   300→                    {filtered.length === 0 ? (
+   301→                      <TableRow>
+   302→                        <TableCell colSpan={9} className="text-center py-12">
+   303→                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+   304→                            <Truck className="h-10 w-10 opacity-30" />
+   305→                            <p className="text-sm font-medium">Tidak ada data distribusi</p>
+   306→                          </div>
+   307→                        </TableCell>
+   308→                      </TableRow>
+   309→                    ) : (
+   310→                      paged.map((dist) => {
+   311→                        const progress = STATUS_PROGRESS[dist.status] || STATUS_PROGRESS.DRAFT
+   312→                        return (
+   313→                          <TableRow key={dist.id}>
+   314→                            <TableCell className="text-xs font-mono">
+   315→                              <div className="flex items-center gap-1.5">
+   316→                                <Truck className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+   317→                                {dist.distributionNo}
+   318→                              </div>
+   319→                            </TableCell>
+   320→                            <TableCell className="text-xs hidden md:table-cell">{dist.warehouse.name}</TableCell>
+   321→                            <TableCell className="text-sm font-medium">{dist.productName}</TableCell>
+   322→                            <TableCell className="text-sm text-right font-mono">{formatNumber(dist.quantity)}</TableCell>
+   323→                            <TableCell className="text-xs hidden lg:table-cell">{dist.targetVillage || '-'}</TableCell>
+   324→                            <TableCell className="text-xs hidden lg:table-cell">{dist.targetGroup || '-'}</TableCell>
+   325→                            <TableCell>
+   326→                              <div className="space-y-1">
+   327→                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE_STYLES[dist.status] || ''}`}>
+   328→                                  {getStatusLabel(dist.status)}
+   329→                                </Badge>
+   330→                                <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+   331→                                  <div className={`h-full rounded-full transition-all duration-500 ${progress.color}`} style={{ width: progress.width }} />
+   332→                                </div>
+   333→                              </div>
+   334→                            </TableCell>
+   335→                            <TableCell className="text-xs hidden md:table-cell">{formatDate(dist.createdAt)}</TableCell>
+   336→                            <TableCell className="text-right">
+   337→                              <div className="flex items-center justify-end gap-1">
+   338→                                {STATUS_FLOW[dist.status]?.length > 0 && (
+   339→                                  <Button
+   340→                                    variant="ghost"
+   341→                                    size="icon"
+   342→                                    className="h-8 w-8"
+   343→                                    onClick={() => { setEditingDist(dist); setStatusDialogOpen(true) }}
+   344→                                    title="Update Status"
+   345→                                  >
+   346→                                    <ArrowRight className="h-3.5 w-3.5" />
+   347→                                  </Button>
+   348→                                )}
+   349→                                <Button
+   350→                                  variant="ghost"
+   351→                                  size="icon"
+   352→                                  className="h-8 w-8 text-destructive hover:text-destructive"
+   353→                                  onClick={() => { setDeletingId(dist.id); setDeleteOpen(true) }}
+   354→                                >
+   355→                                  <Trash2 className="h-3.5 w-3.5" />
+   356→                                </Button>
+   357→                              </div>
+   358→                            </TableCell>
+   359→                          </TableRow>
+   360→                        )
+   361→                      })
+   362→                    )}
+   363→                  </TableBody>
+   364→                </Table>
+   365→              </div>
+   366→              {filtered.length > ITEMS_PER_PAGE && (
+   367→                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
+   368→                  <p className="text-xs text-muted-foreground">
+   369→                    Menampilkan {startIndex}-{endIndex} dari {filtered.length} data
+   370→                  </p>
+   371→                  <Pagination>
+   372→                    <PaginationContent>
+   373→                      <PaginationItem>
+   374→                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+   375→                      </PaginationItem>
+   376→                      {safePage > 3 && (
+   377→                        <>
+   378→                          <PaginationItem>
+   379→                            <PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink>
+   380→                          </PaginationItem>
+   381→                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+   382→                        </>
+   383→                      )}
+   384→                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+   385→                        .filter((p) => p >= safePage - 1 && p <= safePage + 1)
+   386→                        .map((p) => (
+   387→                          <PaginationItem key={p}>
+   388→                            <PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+   389→                          </PaginationItem>
+   390→                        ))
+   391→                      }
+   392→                      {safePage < totalPages - 2 && (
+   393→                        <>
+   394→                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+   395→                          <PaginationItem>
+   396→                            <PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink>
+   397→                          </PaginationItem>
+   398→                        </>
+   399→                      )}
+   400→                      <PaginationItem>
+   401→                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+   402→                      </PaginationItem>
+   403→                    </PaginationContent>
+   404→                  </Pagination>
+   405→                </div>
+   406→              )}
+   407→            </>
+   408→          )}
+   409→        </CardContent>
+   410→      </Card>
+   411→
+   412→      {/* Create Distribution Dialog */}
+   413→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+   414→        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+   415→          <DialogHeader>
+   416→            <DialogTitle>Buat Distribusi Baru</DialogTitle>
+   417→            <DialogDescription>Isi data distribusi pupuk</DialogDescription>
+   418→          </DialogHeader>
+   419→          <div className="grid gap-4 py-2">
+   420→            <div className="grid gap-2">
+   421→              <Label>Gudang Asal *</Label>
+   422→              <Select value={formWarehouse} onValueChange={setFormWarehouse}>
+   423→                <SelectTrigger><SelectValue placeholder="Pilih gudang" /></SelectTrigger>
+   424→                <SelectContent>
+   425→                  {(warehouses || []).map((w) => (
+   426→                    <SelectItem key={w.id} value={w.id}>{w.name} ({w.code})</SelectItem>
+   427→                  ))}
+   428→                </SelectContent>
+   429→              </Select>
+   430→            </div>
+   431→            <div className="grid gap-2">
+   432→              <Label>Produk *</Label>
+   433→              <Select value={formProduct} onValueChange={setFormProduct}>
+   434→                <SelectTrigger><SelectValue placeholder="Pilih produk" /></SelectTrigger>
+   435→                <SelectContent>
+   436→                  {(products || []).map((p) => (
+   437→                    <SelectItem key={p.id} value={p.id}>{p.name} ({p.type})</SelectItem>
+   438→                  ))}
+   439→                </SelectContent>
+   440→              </Select>
+   441→            </div>
+   442→            <div className="grid gap-2">
+   443→              <Label>Jumlah (kg) *</Label>
+   444→              <Input type="number" value={formQty || ''} onChange={(e) => setFormQty(parseFloat(e.target.value) || 0)} placeholder="Jumlah dalam kg" />
+   445→            </div>
+   446→            <div className="grid grid-cols-2 gap-3">
+   447→              <div className="grid gap-2">
+   448→                <Label>Desa Tujuan</Label>
+   449→                <Input value={formVillage} onChange={(e) => setFormVillage(e.target.value)} placeholder="Nama desa" />
+   450→              </div>
+   451→              <div className="grid gap-2">
+   452→                <Label>Kelompok Tani</Label>
+   453→                <Input value={formGroup} onChange={(e) => setFormGroup(e.target.value)} placeholder="Nama kelompok" />
+   454→              </div>
+   455→            </div>
+   456→            <div className="grid gap-2">
+   457→              <Label>Catatan</Label>
+   458→              <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Catatan tambahan..." rows={3} />
+   459→            </div>
+   460→          </div>
+   461→          <DialogFooter>
+   462→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
+   463→            <Button onClick={handleSave} disabled={createMutation.isPending}>
+   464→              {createMutation.isPending ? 'Menyimpan...' : 'Buat Distribusi'}
+   465→            </Button>
+   466→          </DialogFooter>
+   467→        </DialogContent>
+   468→      </Dialog>
+   469→
+   470→      {/* Status Update Dialog */}
+   471→      <Dialog open={statusDialogOpen} onOpenChange={(open) => { setStatusDialogOpen(open); if (!open) { setStatusNotes(''); setEditingDist(null) } }}>
+   472→        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+   473→          <DialogHeader>
+   474→            <DialogTitle className="flex items-center gap-2">
+   475→              <ClipboardList className="h-5 w-5 text-blue-500" />
+   476→              Detail & Update Status
+   477→            </DialogTitle>
+   478→            <DialogDescription>Perbarui status distribusi</DialogDescription>
+   479→          </DialogHeader>
+   480→          {editingDist && (
+   481→            <div className="space-y-4">
+   482→              {/* Distribution Info */}
+   483→              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+   484→                <div className="flex items-center gap-2">
+   485→                  <span className="font-mono text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 px-1.5 py-0.5 rounded">{editingDist.distributionNo}</span>
+   486→                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE_STYLES[editingDist.status] || ''}`}>
+   487→                    {getStatusLabel(editingDist.status)}
+   488→                  </Badge>
+   489→                </div>
+   490→                <div className="grid grid-cols-2 gap-2 text-xs">
+   491→                  <div className="flex items-start gap-1.5 text-muted-foreground">
+   492→                    <Package className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+   493→                    <div>
+   494→                      <p className="font-medium text-foreground">{editingDist.productName}</p>
+   495→                      <p>{formatNumber(editingDist.quantity)} kg</p>
+   496→                    </div>
+   497→                  </div>
+   498→                  <div className="flex items-start gap-1.5 text-muted-foreground">
+   499→                    <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+   500→                    <div>
+   501→                      <p className="font-medium text-foreground">{editingDist.warehouse.name}</p>
+   502→                      <p className="text-[10px]">{editingDist.warehouse.code}</p>
+   503→                    </div>
+   504→                  </div>
+   505→                </div>
+   506→                {(editingDist.targetVillage || editingDist.targetGroup) && (
+   507→                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+   508→                    {editingDist.targetVillage && (
+   509→                      <div className="flex items-center gap-1.5">
+   510→                        <MapPin className="h-3 w-3" />
+   511→                        <span>{editingDist.targetVillage}</span>
+   512→                      </div>
+   513→                    )}
+   514→                    {editingDist.targetGroup && (
+   515→                      <div className="flex items-center gap-1.5">
+   516→                        <UserCircle className="h-3 w-3" />
+   517→                        <span>{editingDist.targetGroup}</span>
+   518→                      </div>
+   519→                    )}
+   520→                  </div>
+   521→                )}
+   522→              </div>
+   523→
+   524→              {/* Visual Status Flow */}
+   525→              <div className="space-y-2">
+   526→                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Alur Status</p>
+   527→                <div className="flex items-center justify-between gap-1 px-1">
+   528→                  {[
+   529→                    { key: 'DRAFT', label: 'Draft', Icon: FileText },
+   530→                    { key: 'IN_TRANSIT', label: 'Dalam Pengiriman', Icon: Truck },
+   531→                    { key: 'DELIVERED', label: 'Diterima', Icon: CheckCircle },
+   532→                  ].map((step, i) => {
+   533→                    const statusOrder = ['DRAFT', 'IN_TRANSIT', 'DELIVERED']
+   534→                    const currentIdx = statusOrder.indexOf(editingDist.status)
+   535→                    const stepIdx = i
+   536→                    const isCompleted = stepIdx < currentIdx
+   537→                    const isCurrent = step.key === editingDist.status
+   538→                    const isCancelled = editingDist.status === 'CANCELLED'
+   539→
+   540→                    return (
+   541→                      <div key={step.key} className="flex-1 flex items-center">
+   542→                        <div className={`flex-1 flex flex-col items-center gap-1.5`}>
+   543→                          <div className={`flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all ${
+   544→                            isCancelled
+   545→                              ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+   546→                              : isCompleted
+   547→                                ? 'border-green-500 bg-green-500 text-white'
+   548→                                : isCurrent
+   549→                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20 ring-2 ring-green-200 dark:ring-green-800'
+   550→                                  : 'border-muted-foreground/30 bg-muted/30'
+   551→                          }`}>
+   552→                            {isCancelled && step.key === 'DRAFT' ? (
+   553→                              <XCircle className="h-4 w-4 text-red-500" />
+   554→                            ) : isCompleted ? (
+   555→                              <CheckCircle className="h-4 w-4" />
+   556→                            ) : (
+   557→                              <step.Icon className={`h-4 w-4 ${isCurrent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground/50'}`} />
+   558→                            )}
+   559→                          </div>
+   560→                          <span className={`text-[10px] text-center leading-tight ${isCurrent ? 'font-semibold text-green-600 dark:text-green-400' : isCompleted ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+   561→                            {step.label}
+   562→                          </span>
+   563→                        </div>
+   564→                        {i < 2 && (
+   565→                          <div className={`h-0.5 w-4 -mx-0.5 shrink-0 ${isCompleted || (isCurrent && i < currentIdx) ? 'bg-green-500' : 'bg-muted-foreground/20'}`} />
+   566→                        )}
+   567→                      </div>
+   568→                    )
+   569→                  })}
+   570→                </div>
+   571→                {editingDist.status === 'CANCELLED' && (
+   572→                  <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
+   573→                    <XCircle className="h-3.5 w-3.5" />
+   574→                    <span className="font-medium">Distribusi dibatalkan</span>
+   575→                  </div>
+   576→                )}
+   577→              </div>
+   578→
+   579→              {/* Notes Field */}
+   580→              {STATUS_FLOW[editingDist.status]?.length > 0 && (
+   581→                <div className="space-y-2">
+   582→                  <Label htmlFor="status-notes" className="text-xs">Catatan (opsional)</Label>
+   583→                  <Textarea
+   584→                    id="status-notes"
+   585→                    value={statusNotes}
+   586→                    onChange={(e) => setStatusNotes(e.target.value)}
+   587→                    placeholder="Tambahkan catatan untuk perubahan status ini..."
+   588→                    rows={2}
+   589→                    className="text-sm"
+   590→                  />
+   591→                </div>
+   592→              )}
+   593→
+   594→              {/* Action Buttons */}
+   595→              <div className="space-y-2 pt-1">
+   596→                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Aksi</p>
+   597→                {STATUS_FLOW[editingDist.status]?.map((nextStatus) => (
+   598→                  <Button
+   599→                    key={nextStatus}
+   600→                    variant="outline"
+   601→                    className={`justify-start h-12 w-full ${nextStatus === 'CANCELLED' ? 'border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20' : 'hover:bg-green-50 dark:hover:bg-green-900/20'}`}
+   602→                    onClick={() => handleStatusUpdate(nextStatus)}
+   603→                    disabled={updateMutation.isPending}
+   604→                  >
+   605→                    {nextStatus === 'CANCELLED' ? (
+   606→                      <XCircle className="h-4 w-4 mr-2 shrink-0 text-red-500" />
+   607→                    ) : (
+   608→                      <ArrowRight className="h-4 w-4 mr-2 shrink-0 text-green-600 dark:text-green-400" />
+   609→                    )}
+   610→                    <div className="text-left">
+   611→                      <div className="text-sm font-medium">{getStatusLabel(nextStatus)}</div>
+   612→                      <div className="text-[10px] text-muted-foreground">
+   613→                        {nextStatus === 'IN_TRANSIT' && 'Distribusi sedang dalam perjalanan'}
+   614→                        {nextStatus === 'DELIVERED' && 'Pupuk telah diterima di tujuan'}
+   615→                        {nextStatus === 'CANCELLED' && 'Batalkan distribusi ini'}
+   616→                      </div>
+   617→                    </div>
+   618→                  </Button>
+   619→                ))}
+   620→                {STATUS_FLOW[editingDist.status]?.length === 0 && (
+   621→                  <p className="text-xs text-muted-foreground text-center py-3">
+   622→                    Status sudah final, tidak dapat diubah lagi.
+   623→                  </p>
+   624→                )}
+   625→              </div>
+   626→            </div>
+   627→          )}
+   628→        </DialogContent>
+   629→      </Dialog>
+   630→
+   631→      {/* Delete Dialog */}
+   632→      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+   633→        <AlertDialogContent>
+   634→          <AlertDialogHeader>
+   635→            <AlertDialogTitle>Hapus Distribusi?</AlertDialogTitle>
+   636→            <AlertDialogDescription>
+   637→              Tindakan ini tidak dapat dibatalkan. Data distribusi akan dihapus permanen.
+   638→            </AlertDialogDescription>
+   639→          </AlertDialogHeader>
+   640→          <AlertDialogFooter>
+   641→            <AlertDialogCancel>Batal</AlertDialogCancel>
+   642→            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Hapus</AlertDialogAction>
+   643→          </AlertDialogFooter>
+   644→        </AlertDialogContent>
+   645→      </AlertDialog>
+   646→    </motion.div>
+   647→  )
+   648→}

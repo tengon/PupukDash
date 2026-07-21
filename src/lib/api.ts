@@ -10,6 +10,12 @@ export interface DashboardData {
   stockAlerts: StockWithProductAndWarehouse[]
   topFarmers: { id: string; name: string; totalOrders: number; totalAmount: number }[]
   topFarmerThisMonth: { id: string; name: string; totalOrders: number; totalAmount: number } | null
+  dailySalesThisMonth: Array<{
+    day: number
+    orders: number
+    totalKg: number
+    revenue: number
+  }>
 }
 
 export interface Product {
@@ -250,6 +256,21 @@ export const updateOrder = (id: string, data: { status?: string; notes?: string 
 // Stock transfer
 export const transferStock = (data: { fromWarehouseId: string; toWarehouseId: string; productId: string; quantity: number }) =>
   apiFetch<{ message: string }>('/api/stock/transfer', { method: 'POST', body: JSON.stringify(data) })
+
+// Farmer Quota
+export interface FarmerQuota {
+  farmer: { name: string; nik: string; landAreaHa: number | null; farmerGroup: string | null }
+  quotas: Array<{
+    productType: string
+    maxQuantityKg: number
+    usedQuantityKg: number
+    remainingKg: number
+    utilizationPercent: number
+  }>
+}
+
+export const fetchFarmerQuota = (farmerId: string) =>
+  apiFetch<FarmerQuota>(`/api/farmers/${farmerId}/quota`)
 
 // Activity Log
 export interface ActivityLog {

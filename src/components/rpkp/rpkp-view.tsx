@@ -131,19 +131,19 @@ export function RPKPView() {
         </Card>
       ) : data ? (
         <>
-          <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
             {/* Card 1: Total Lahan Terdaftar */}
-            <Card className="border-l-4 border-l-emerald-500 dark:border-l-emerald-400">
+            <Card className="card-highlight border-l-4 border-l-emerald-500 dark:border-l-emerald-400">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total Lahan Terdaftar
                 </CardTitle>
-                <div className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
+                <div className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 transition-transform duration-200 hover:scale-110">
                   <Sprout className="h-4 w-4" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold tabular-nums">
                   {formatNumber(data.totalLandAreaHa)} ha
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -153,17 +153,17 @@ export function RPKPView() {
             </Card>
 
             {/* Card 2: Total Alokasi Tahunan */}
-            <Card className="border-l-4 border-l-teal-500 dark:border-l-teal-400">
+            <Card className="card-highlight border-l-4 border-l-teal-500 dark:border-l-teal-400">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total Alokasi Tahunan
                 </CardTitle>
-                <div className="p-1.5 rounded-md bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400">
+                <div className="p-1.5 rounded-md bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 transition-transform duration-200 hover:scale-110">
                   <Package className="h-4 w-4" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold tabular-nums">
                   {formatNumber(data.summary.totalAllocationKg)} kg
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -173,17 +173,17 @@ export function RPKPView() {
             </Card>
 
             {/* Card 3: Pemanfaatan Keseluruhan */}
-            <Card className="border-l-4 border-l-amber-500 dark:border-l-amber-400">
+            <Card className="card-highlight border-l-4 border-l-amber-500 dark:border-l-amber-400">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Pemanfaatan Keseluruhan
                 </CardTitle>
-                <div className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400">
+                <div className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 transition-transform duration-200 hover:scale-110">
                   <BarChart3 className="h-4 w-4" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${getUtilizationTextColor(data.summary.overallUtilizationPercent)}`}>
+                <div className={`text-2xl font-bold tabular-nums ${getUtilizationTextColor(data.summary.overallUtilizationPercent)}`}>
                   {data.summary.overallUtilizationPercent.toFixed(1)}%
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -205,7 +205,7 @@ export function RPKPView() {
                 </div>
                 <div className="h-3 rounded-full bg-muted overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${getUtilizationColor(data.summary.overallUtilizationPercent)}`}
+                    className={`h-full rounded-full progress-bar-animated ${getUtilizationColor(data.summary.overallUtilizationPercent)}`}
                     style={{ width: `${Math.min(data.summary.overallUtilizationPercent, 100)}%` }}
                   />
                 </div>
@@ -261,13 +261,13 @@ export function RPKPView() {
                             {formatNumber(product.remainingKg)}
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex flex-col items-end gap-1">
+                            <div className="flex flex-col items-end gap-1.5">
                               <span className={`text-sm font-semibold ${getUtilizationTextColor(product.utilizationPercent)}`}>
                                 {product.utilizationPercent.toFixed(1)}%
                               </span>
-                              <div className="w-20 h-2 rounded-full bg-muted overflow-hidden">
+                              <div className="mini-bar-track">
                                 <div
-                                  className={`h-full rounded-full ${getUtilizationColor(product.utilizationPercent)}`}
+                                  className={`mini-bar-fill ${getUtilizationColor(product.utilizationPercent)}`}
                                   style={{ width: `${Math.min(product.utilizationPercent, 100)}%` }}
                                 />
                               </div>
@@ -309,7 +309,7 @@ export function RPKPView() {
 
           {/* Info Box */}
           <motion.div variants={itemVariants}>
-            <div className="rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/30 p-4 flex gap-3">
+            <div className="rounded-lg border border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/30 p-4 flex gap-3">
               <Info className="h-5 w-5 text-teal-600 dark:text-teal-400 mt-0.5 shrink-0" />
               <div className="text-sm text-teal-800 dark:text-teal-300 leading-relaxed">
                 <span className="font-semibold">Data RPKP</span> dihitung berdasarkan luas lahan petani aktif &times; alokasi per hektar sesuai Permentan.{' '}

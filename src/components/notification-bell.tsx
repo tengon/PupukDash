@@ -24,6 +24,20 @@ const colorClasses: Record<string, string> = {
   teal: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
 }
 
+const borderColorClasses: Record<string, string> = {
+  red: 'border-l-red-400',
+  amber: 'border-l-amber-400',
+  green: 'border-l-green-400',
+  teal: 'border-l-teal-400',
+}
+
+const dotColorClasses: Record<string, string> = {
+  red: 'bg-red-500',
+  amber: 'bg-amber-500',
+  green: 'bg-green-500',
+  teal: 'bg-teal-500',
+}
+
 function NotificationItem({
   notification,
   onClick,
@@ -33,12 +47,14 @@ function NotificationItem({
 }) {
   const Icon = iconMap[notification.icon] || Bell
   const colorClass = colorClasses[notification.color] || colorClasses.amber
+  const borderClass = borderColorClasses[notification.color] || ''
+  const dotClass = dotColorClasses[notification.color] || 'bg-amber-500'
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-start gap-3 rounded-lg p-3 text-left hover:bg-muted/50 transition-colors cursor-pointer"
+      className={`flex w-full items-start gap-3 rounded-lg p-3 text-left hover:bg-muted/50 transition-colors cursor-pointer border-l-2 ${borderClass}`}
     >
       <div
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${colorClass}`}
@@ -46,13 +62,16 @@ function NotificationItem({
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold leading-tight truncate">
-          {notification.title}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`} />
+          <p className="text-sm font-semibold leading-tight truncate">
+            {notification.title}
+          </p>
+        </div>
         <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
           {notification.message}
         </p>
-        <p className="mt-1 text-[11px] text-muted-foreground/70">
+        <p className="mt-1 text-[10px] text-muted-foreground/50">
           {formatRelativeTime(notification.createdAt)}
         </p>
       </div>
@@ -170,7 +189,7 @@ export function NotificationBell() {
                   setActiveTab('dashboard')
                   setOpen(false)
                 }}
-                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors link-underline"
               >
                 Lihat Semua di Dashboard →
               </button>

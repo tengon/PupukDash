@@ -94,6 +94,42 @@ const STATUS_PROGRESS: Record<string, { width: string; color: string }> = {
   CANCELLED: { width: '0%', color: 'bg-red-500' },
 }
 
+const STATUS_LEFT_BORDER: Record<string, string> = {
+  DRAFT: 'border-l-2 border-l-gray-300 dark:border-l-gray-600',
+  IN_TRANSIT: 'border-l-2 border-l-amber-500',
+  DELIVERED: 'border-l-2 border-l-green-500',
+  CANCELLED: 'border-l-2 border-l-red-400',
+}
+
+function StatusFlowDots({ status }: { status: string }) {
+  const steps = ['DRAFT', 'IN_TRANSIT', 'DELIVERED']
+  const currentIdx = steps.indexOf(status)
+  const isCancelled = status === 'CANCELLED'
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {steps.map((step, idx) => {
+        const isActive = !isCancelled && idx <= currentIdx
+        const isCurrent = !isCancelled && idx === currentIdx
+        return (
+          <div key={step} className="flex items-center">
+            <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+              isCancelled ? 'bg-red-300 dark:bg-red-700' :
+              isActive ? (isCurrent ? 'bg-blue-500 dark:bg-blue-400 scale-110' : 'bg-green-500 dark:bg-green-400') :
+              'bg-muted-foreground/25'
+            }`} />
+            {idx < steps.length - 1 && (
+              <div className={`w-3 h-0.5 transition-all duration-300 ${
+                !isCancelled && idx < currentIdx ? 'bg-green-400' : 'bg-muted-foreground/15'
+              }`} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function DistributionsView() {
   const { refreshKey, triggerRefresh } = useAppStore()
   const { toast } = useToast()
@@ -289,8 +325,7 @@ export function DistributionsView() {
                       <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
                       <TableHead className="text-xs">Produk</TableHead>
                       <TableHead className="text-xs text-right">Jumlah (kg)</TableHead>
-                      <TableHead className="text-xs hidden lg:table-cell">Desa Tujuan</TableHead>
-                      <TableHead className="text-xs hidden lg:table-cell">Kel. Tani</TableHead>
+                      <TableHead className="text-xs hidden lg:table-cell">Tujuan</TableHead>
                       <TableHead className="text-xs">Status</TableHead>
                       <TableHead className="text-xs hidden md:table-cell">Tanggal</TableHead>
                       <TableHead className="text-xs text-right">Aksi</TableHead>
@@ -299,7 +334,7 @@ export function DistributionsView() {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-12">
+                        <TableCell colSpan={8} className="text-center py-12">
                           <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <Truck className="h-10 w-10 opacity-30" />
                             <p className="text-sm font-medium">Tidak ada data distribusi</p>
@@ -309,24 +344,39 @@ export function DistributionsView() {
                     ) : (
                       paged.map((dist) => {
                         const progress = STATUS_PROGRESS[dist.status] || STATUS_PROGRESS.DRAFT
+                        const leftBorder = STATUS_LEFT_BORDER[dist.status] || STATUS_LEFT_BORDER.DRAFT
+                        const isInTransit = dist.status === 'IN_TRANSIT'
                         return (
-                          <TableRow key={dist.id}>
+                          <TableRow key={dist.id} className={`row-animate ${leftBorder}`}>
                             <TableCell className="text-xs font-mono">
                               <div className="flex items-center gap-1.5">
-                                <Truck className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                <Truck className={`h-3.5 w-3.5 text-blue-500 shrink-0 ${isInTransit ? 'truck-pulse-amber' : ''}`} />
                                 {dist.distributionNo}
                               </div>
                             </TableCell>
                             <TableCell className="text-xs hidden md:table-cell">{dist.warehouse.name}</TableCell>
                             <TableCell className="text-sm font-medium">{dist.productName}</TableCell>
                             <TableCell className="text-sm text-right font-mono">{formatNumber(dist.quantity)}</TableCell>
-                            <TableCell className="text-xs hidden lg:table-cell">{dist.targetVillage || '-'}</TableCell>
-                            <TableCell className="text-xs hidden lg:table-cell">{dist.targetGroup || '-'}</TableCell>
+                            <TableCell className="text-xs hidden lg:table-cell">
+                              {(dist.targetVillage || dist.targetGroup) ? (
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <MapPin className="h-3 w-3 shrink-0" />
+                                  <span className="truncate max-w-[140px]">
+                                    {dist.targetVillage}{dist.targetVillage && dist.targetGroup ? ' · ' : ''}{dist.targetGroup}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground/50">-</span>
+                              )}
+                            </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE_STYLES[dist.status] || ''}`}>
-                                  {getStatusLabel(dist.status)}
-                                </Badge>
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE_STYLES[dist.status] || ''}`}>
+                                    {getStatusLabel(dist.status)}
+                                  </Badge>
+                                  <StatusFlowDots status={dist.status} />
+                                </div>
                                 <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
                                   <div className={`h-full rounded-full transition-all duration-500 ${progress.color}`} style={{ width: progress.width }} />
                                 </div>

@@ -118,14 +118,22 @@ function DailySalesChart({ dailySales }: { dailySales: MonthlyReportData['dailyS
   // Build an array of 31 entries (1-indexed day), fill missing with zeros
   const days = useMemo(() => {
     const map = new Map(dailySales.map((d) => [new Date(d.date).getDate(), d]))
+    // Determine month/year for weekend detection
+    const sampleDate = dailySales.length > 0 ? new Date(dailySales[0].date) : new Date()
+    const month = sampleDate.getMonth()
+    const year = sampleDate.getFullYear()
     return Array.from({ length: 31 }, (_, i) => {
       const day = i + 1
       const sale = map.get(day)
+      const dateObj = new Date(year, month, day)
+      const dayOfWeek = dateObj.getDay()
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
       return {
         day,
         orders: sale?.orders ?? 0,
         kg: sale?.kg ?? 0,
         revenue: sale?.revenue ?? 0,
+        isWeekend,
       }
     })
   }, [dailySales])
@@ -157,13 +165,18 @@ function DailySalesChart({ dailySales }: { dailySales: MonthlyReportData['dailyS
                   </div>
                 )}
                 <div
-                  className={`w-full rounded-t-sm transition-colors ${
+                  className={`w-full rounded-t-md transition-all duration-200 ${
                     d.revenue > 0
-                      ? 'bg-green-500/80 hover:bg-green-500'
+                      ? d.isWeekend
+                        ? 'bg-green-600/60 hover:bg-green-600 dark:bg-green-400/50 dark:hover:bg-green-400'
+                        : 'bg-green-500/80 hover:bg-green-500 dark:hover:bg-green-400'
                       : 'bg-muted-foreground/10'
                   }`}
                   style={{ height: `${height}%` }}
                 />
+                {d.day % 5 === 1 && (
+                  <span className="text-[8px] text-muted-foreground/60 mt-0.5">{d.day}</span>
+                )}
               </div>
             )
           })}
@@ -192,14 +205,14 @@ function SummaryCard({
   borderColor: string
 }) {
   return (
-    <Card className={`border-l-4 ${borderColor}`}>
+    <Card className={`card-highlight border-l-4 ${borderColor}`}>
       <CardContent className="p-3 flex items-start gap-2.5">
-        <div className="mt-0.5 text-muted-foreground">
+        <div className="mt-0.5 text-muted-foreground transition-transform duration-200 hover:scale-110">
           <Icon className="h-4 w-4" />
         </div>
         <div className="min-w-0">
           <p className="text-[11px] text-muted-foreground leading-tight">{label}</p>
-          <p className="text-sm font-semibold font-mono truncate">{value}</p>
+          <p className="text-sm font-semibold font-mono tabular-nums truncate">{value}</p>
         </div>
       </CardContent>
     </Card>
@@ -410,9 +423,8 @@ export function ReportsView() {
           </div>
           <div className="flex gap-2">
             <Button
-              variant="outline"
               size="sm"
-              className="h-9 gap-1.5"
+              className="h-9 gap-1.5 btn-gradient print:hidden"
               onClick={() => window.print()}
             >
               <Printer className="h-4 w-4" />
@@ -474,7 +486,7 @@ export function ReportsView() {
           </div>
 
           {/* Summary Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 stagger-children">
             <SummaryCard
               icon={ShoppingCart}
               label="Total Pesanan"

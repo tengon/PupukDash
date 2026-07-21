@@ -22,6 +22,8 @@ import {
   PlusCircle,
   RefreshCw,
   BarChart3,
+  ArrowRight,
+  CornerDownLeft,
 } from 'lucide-react'
 
 const QUICK_ACTIONS = [
@@ -121,7 +123,7 @@ export function CommandPalette() {
       />
       <CommandList>
         {/* Quick Actions - always shown */}
-        <CommandGroup heading="Aksi Cepat">
+        <CommandGroup heading="AKSI CEPAT">
           {QUICK_ACTIONS.map((action) => (
             <CommandItem
               key={action.id}
@@ -129,7 +131,8 @@ export function CommandPalette() {
               onSelect={() => handleSelect(action.tab, action.shortcut)}
             >
               <action.icon className="mr-2 h-4 w-4 text-emerald-500" />
-              <span>{action.label}</span>
+              <span className="flex-1">{action.label}</span>
+              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" />
             </CommandItem>
           ))}
         </CommandGroup>
@@ -137,7 +140,7 @@ export function CommandPalette() {
         <CommandSeparator />
 
         {isSearching && isLoading && (
-          <CommandGroup heading="Hasil Pencarian">
+          <CommandGroup heading="HASIL PENCARIAN">
             <div className="p-2 space-y-2">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex items-center gap-2 px-2 py-1.5">
@@ -164,7 +167,7 @@ export function CommandPalette() {
         {isSearching && !isLoading && hasAnyResults && (
           <>
             {results!.products.length > 0 && (
-              <CommandGroup heading="🌱 Produk">
+              <CommandGroup heading="PRODUK">
                 {results!.products.map((product) => (
                   <CommandItem
                     key={product.id}
@@ -184,7 +187,7 @@ export function CommandPalette() {
             )}
 
             {results!.farmers.length > 0 && (
-              <CommandGroup heading="👤 Petani">
+              <CommandGroup heading="PETANI">
                 {results!.farmers.map((farmer) => (
                   <CommandItem
                     key={farmer.id}
@@ -204,7 +207,7 @@ export function CommandPalette() {
             )}
 
             {results!.orders.length > 0 && (
-              <CommandGroup heading="📋 Pesanan">
+              <CommandGroup heading="PESANAN">
                 {results!.orders.map((order) => (
                   <CommandItem
                     key={order.id}
@@ -224,7 +227,7 @@ export function CommandPalette() {
             )}
 
             {results!.warehouses.length > 0 && (
-              <CommandGroup heading="🏭 Gudang">
+              <CommandGroup heading="GUDANG">
                 {results!.warehouses.map((warehouse) => (
                   <CommandItem
                     key={warehouse.id}
@@ -256,6 +259,10 @@ export function CommandPalette() {
           </CommandEmpty>
         )}
       </CommandList>
+      <div className="border-t px-4 py-2 flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
+        <CornerDownLeft className="h-3 w-3" />
+        <span>Enter untuk memilih</span>
+      </div>
     </CommandDialog>
   )
 }

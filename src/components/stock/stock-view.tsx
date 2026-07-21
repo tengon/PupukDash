@@ -50,10 +50,11 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Package, Warehouse as WarehouseIcon, Layers, PackagePlus } from 'lucide-react'
+import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Package, Warehouse as WarehouseIcon, Layers, PackagePlus, ArrowLeftRight } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Switch } from '@/components/ui/switch'
 import { QuickRestockDialog } from './quick-restock-dialog'
+import { StockTransferDialog } from './stock-transfer-dialog'
 
 const ITEMS_PER_PAGE = 10
 const MAX_CAPACITY = 20000 // reference max for fill indicator
@@ -115,7 +116,15 @@ function CapacityRing({ quantity, maxCapacity = 10000 }: { quantity: number; max
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={radius + stroke} cy={radius + stroke} r={radius} fill="none" className="stroke-muted" strokeWidth={stroke} />
-        <circle cx={radius + stroke} cy={radius + stroke} r={radius} fill="none" className={`${ringColor} transition-all duration-700`} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${filled} ${circumference}`} />
+        <circle
+          cx={radius + stroke} cy={radius + stroke} r={radius}
+          fill="none"
+          className={`${ringColor}`}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${circumference}`}
+          style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
+        />
       </svg>
       <span className="absolute text-[10px] font-bold tabular-nums">{Math.round(percent * 100)}%</span>
     </div>
@@ -149,8 +158,10 @@ function StockCard({ stock, onEdit, onDelete, onRestock }: {
     statusDotColor = 'bg-yellow-500'
   }
 
+  const topBorderClass = ratio > 1.5 ? 'border-t-2 border-t-green-500' : ratio >= 1.0 ? 'border-t-2 border-t-yellow-500' : 'border-t-2 border-t-red-500'
+
   return (
-    <Card className={`border-l-3 ${statusBg} hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out`} style={{ boxShadow: 'var(--shadow-sm)' }}>
+    <Card className={`card-highlight ${topBorderClass} border-l-3 ${statusBg} hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ease-out`} style={{ boxShadow: 'var(--shadow-sm)' }}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -158,11 +169,8 @@ function StockCard({ stock, onEdit, onDelete, onRestock }: {
               <Package className="h-4 w-4 text-primary" />
             </div>
             <div className="min-w-0">
+              <span className="text-[10px] text-muted-foreground/70 font-medium leading-none block mb-0.5">{stock.warehouse.name}</span>
               <p className="text-base font-semibold truncate">{stock.product.name}</p>
-              <div className="flex items-center gap-1.5">
-                <WarehouseIcon className="h-3 w-3 text-muted-foreground shrink-0" />
-                <p className="text-xs text-muted-foreground truncate">{stock.warehouse.name}</p>
-              </div>
             </div>
           </div>
           <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 font-semibold ${getTypeBadgeColor(stock.product.type)}`}>
@@ -235,6 +243,7 @@ export function StockView() {
   const [page, setPage] = useState(1)
   const [restockOpen, setRestockOpen] = useState(false)
   const [restockItem, setRestockItem] = useState<StockWithProductAndWarehouse | null>(null)
+  const [transferOpen, setTransferOpen] = useState(false)
 
   const { data: stocks, isLoading } = useQuery({
     queryKey: ['stock', refreshKey],
@@ -384,6 +393,10 @@ export function StockView() {
               <Button onClick={handleOpenAdd} size="sm" className="shrink-0 btn-gradient">
                 <Plus className="h-4 w-4 mr-1" />
                 Tambah Stok
+              </Button>
+              <Button onClick={() => setTransferOpen(true)} size="sm" variant="outline" className="shrink-0 border-primary/30 text-primary hover:bg-primary/10">
+                <ArrowLeftRight className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Transfer Stok</span>
               </Button>
             </div>
           </div>
@@ -614,6 +627,12 @@ export function StockView() {
           stock={restockItem}
         />
       )}
+
+      {/* Stock Transfer Dialog */}
+      <StockTransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+      />
     </motion.div>
   )
 }

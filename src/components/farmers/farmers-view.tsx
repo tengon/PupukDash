@@ -3,8 +3,8 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
-import { fetchFarmers, createFarmer, updateFarmer, deleteFarmer, fetchOrders, fetchFarmerOrders, type Farmer, type FarmerOrdersResponse } from '@/lib/api'
-import { formatNumber, formatDate, formatRupiah, getStatusColor, getStatusLabel } from '@/lib/format'
+import { fetchFarmers, createFarmer, updateFarmer, deleteFarmer, fetchOrders, fetchFarmerOrders, fetchFarmerQuota, type Farmer, type FarmerOrdersResponse, type FarmerQuota } from '@/lib/api'
+import { formatNumber, formatDate, formatRupiah, getStatusColor, getStatusLabel, getTypeBadgeColor } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,10 +27,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, Pencil, Trash2, Users, Eye, Download, UserCheck, Wheat, RotateCcw, MapPin, ShoppingCart, Banknote, Package, Phone, MapPinned, Upload, FileSpreadsheet, CheckCircle2, X, AlertCircle } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Users, Eye, Download, UserCheck, Wheat, RotateCcw, MapPin, ShoppingCart, Banknote, Package, Phone, MapPinned, Upload, FileSpreadsheet, CheckCircle2, X, AlertCircle, Calculator } from 'lucide-react'
 import { exportToCSV } from '@/lib/export'
 import { useToast } from '@/hooks/use-toast'
 import { parseFarmerCSV } from '@/lib/import'
+import { Progress } from '@/components/ui/progress'
 
 const ITEMS_PER_PAGE = 10
 
@@ -83,6 +84,12 @@ export function FarmersView() {
   const { data: purchaseData, isLoading: purchaseLoading } = useQuery<FarmerOrdersResponse>({
     queryKey: ['farmer-orders', purchaseFarmerId],
     queryFn: () => fetchFarmerOrders(purchaseFarmerId!),
+    enabled: purchaseOpen && !!purchaseFarmerId,
+  })
+
+  const { data: quotaData, isLoading: quotaLoading } = useQuery<FarmerQuota>({
+    queryKey: ['farmer-quota', purchaseFarmerId],
+    queryFn: () => fetchFarmerQuota(purchaseFarmerId!),
     enabled: purchaseOpen && !!purchaseFarmerId,
   })
 
@@ -615,6 +622,92 @@ export function FarmersView() {
                   <p className="text-[10px] text-green-600 dark:text-green-400">Total Subsidi</p>
                 </div>
               </div>
+
+              {/* Fertilizer Quota Section */}
+              <Card className="border-primary/20 dark:border-primary/30">
+                <CardHeader className="pb-3 pt-4 px-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                        <Calculator className="h-4 w-4 text-primary" />
+                      </div>
+                      <CardTitle className="text-sm">Kuota Pupuk Tahun 2026</CardTitle>
+                    </div>
+                    {quotaData && quotaData.farmer.landAreaHa && (
+                      <Badge variant="outline" className="text-[10px]">
+                        Berdasarkan luas lahan {quotaData.farmer.landAreaHa} ha
+                      </Badge>
+                    )}
+                  </div>
+                  {quotaData && !quotaData.farmer.landAreaHa && (
+                    <p className="text-xs text-muted-foreground mt-1">Luas lahan tidak tersedia — kuota default digunakan</p>
+                  )}
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  {quotaLoading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="space-y-1.5">
+                          <div className="flex justify-between">
+                            <Skeleton className="h-3.5 w-20" />
+                            <Skeleton className="h-3.5 w-28" />
+                          </div>
+                          <Skeleton className="h-2 w-full rounded-full" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : quotaData ? (
+                    <div className="space-y-3 stagger-children">
+                      {quotaData.quotas.filter((q) => q.maxQuantityKg > 0).map((quota) => {
+                        const percent = Math.min(quota.utilizationPercent, 100)
+                        let progressColor = 'from-emerald-400 to-emerald-600'
+                        let textColor = 'text-emerald-600 dark:text-emerald-400'
+                        if (quota.utilizationPercent > 100) {
+                          progressColor = 'from-red-400 to-red-600'
+                          textColor = 'text-red-600 dark:text-red-400'
+                        } else if (quota.utilizationPercent >= 80) {
+                          progressColor = 'from-amber-400 to-amber-600'
+                          textColor = 'text-amber-600 dark:text-amber-400'
+                        }
+
+                        return (
+                          <motion.div
+                            key={quota.productType}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${getTypeBadgeColor(quota.productType)}`}>
+                                  {quota.productType}
+                                </Badge>
+                              </div>
+                              <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
+                                {formatNumber(quota.usedQuantityKg)} / {formatNumber(quota.maxQuantityKg)} kg ({quota.utilizationPercent.toFixed(1)}%)
+                              </span>
+                            </div>
+                            <div className="relative">
+                              <div className="bg-muted h-2 w-full rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full bg-gradient-to-r ${progressColor} transition-all duration-500`}
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          </motion.div>
+                        )
+                      })}
+                      {quotaData.quotas.filter((q) => q.maxQuantityKg > 0).length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-4">
+                          Data luas lahan diperlukan untuk menghitung kuota
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
 
               {/* Purchase history table */}
               <div>

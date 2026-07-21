@@ -376,72 +376,12 @@ export function OrdersView() {
       hour: '2-digit', minute: '2-digit', second: '2-digit',
     }).format(now)
 
-    const html = `<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Bukti Pesanan - ${order.orderNumber}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 32px; color: #1a1a1a; font-size: 13px; }
-    .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #16a34a; padding-bottom: 16px; }
-    .header h1 { font-size: 18px; color: #16a34a; margin-bottom: 4px; }
-    .header .subtitle { font-size: 12px; color: #666; }
-    .header .date { font-size: 11px; color: #888; margin-top: 4px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-    .info-item { font-size: 12px; }
-    .info-item .label { color: #666; }
-    .info-item .value { font-weight: 600; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 12px; }
-    th { background-color: #f0fdf4; font-weight: 600; color: #166534; }
-    td.num { text-align: right; font-family: 'Courier New', monospace; }
-    .totals { margin-left: auto; width: 260px; border: 1px solid #ddd; }
-    .totals .row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 12px; }
-    .totals .row + .row { border-top: 1px solid #eee; }
-    .totals .row.total { font-weight: 700; background: #f0fdf4; color: #166534; }
-    .totals .row.subsidy { font-weight: 700; color: #16a34a; }
-    .totals .row.diff { font-weight: 700; color: #065f46; }
-    .footer { margin-top: 32px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; }
-    @media print { body { padding: 16px; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>SI PUPUK - Bukti Pesanan</h1>
-    <div class="subtitle">Sistem Informasi Penjualan Pupuk Bersubsidi</div>
-    <div class="date">Tanggal Pesanan: ${formatDate(order.createdAt)}</div>
-  </div>
-  <div class="info-grid">
-    <div class="info-item"><span class="label">No. Pesanan:</span> <span class="value">${order.orderNumber}</span></div>
-    <div class="info-item"><span class="label">Status:</span> <span class="value">${getStatusLabel(order.status)}</span></div>
-    <div class="info-item"><span class="label">Petani:</span> <span class="value">${order.farmer.name}</span></div>
-    <div class="info-item"><span class="label">NIK:</span> <span class="value">${order.farmer.nik}</span></div>
-    <div class="info-item" style="grid-column: span 2"><span class="label">Gudang:</span> <span class="value">${order.warehouse.name} (${order.warehouse.code}</span></div>
-  </div>
-  <table>
-    <thead>
-      <tr><th>Produk</th><th style="text-align:right">Qty (kg)</th><th style="text-align:right">Harga/kg</th><th style="text-align:right">Subtotal</th></tr>
-    </thead>
-    <tbody>
-      ${order.items.map((item) => `
-      <tr>
-        <td>${item.productName}</td>
-        <td class="num">${formatNumber(item.quantity)}</td>
-        <td class="num">${formatRupiah(item.pricePerKg)}</td>
-        <td class="num">${formatRupiah(item.subtotal)}</td>
-      </tr>`).join('')}
-    </tbody>
-  </table>
-  <div class="totals">
-    <div class="row"><span>Total Harga Normal</span><span>${formatRupiah(order.totalAmount)}</span></div>
-    <div class="row subsidy"><span>Total Harga Subsidi</span><span>${formatRupiah(order.totalSubsidy)}</span></div>
-    <div class="row diff"><span>Selisih Subsidi</span><span>${formatRupiah(order.totalAmount - order.totalSubsidy)}</span></div>
-  </div>
-  ${order.notes ? `<div style="margin-top:12px;font-size:12px"><strong>Catatan:</strong> ${order.notes}</div>` : ''}
-  <div class="footer">Dicetak pada: ${printedAt}</div>
-</body>
-</html>`
+    // Build item rows for receipt
+    const itemsRows = order.items.map((item, idx) => {
+      return '<tr><td style="text-align:center">' + (idx + 1) + '</td><td>' + item.productName + '</td><td class="num">' + formatNumber(item.quantity) + '</td><td class="num">' + formatRupiah(item.pricePerKg) + '</td><td class="num">' + formatRupiah(item.subtotal) + '</td></tr>'
+    }).join('')
+
+    const html = '<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="UTF-8">\n  <title>Struk Pesanan - ' + order.orderNumber + '</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body { font-family: "Courier New", Courier, monospace; max-width: 300px; margin: 0 auto; padding: 24px 16px; color: #1a1a1a; font-size: 12px; line-height: 1.5; }\n    .receipt { width: 100%; }\n    .brand { text-align: center; margin-bottom: 4px; }\n    .brand h1 { font-size: 22px; font-weight: 900; color: #16a34a; letter-spacing: 3px; margin-bottom: 2px; }\n    .brand .subtitle { font-size: 9px; color: #555; letter-spacing: 0.5px; }\n    .separator { border: none; border-top: 2px dashed #16a34a; margin: 10px 0; }\n    .separator-solid { border: none; border-top: 1px solid #ccc; margin: 8px 0; }\n    .section-title { text-align: center; font-size: 13px; font-weight: 700; color: #166534; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; }\n    .info-section { margin-bottom: 12px; }\n    .info-row { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }\n    .info-row .label { color: #666; }\n    .info-row .value { font-weight: 700; }\n    .farmer-section { background: #f0fdf4; padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; }\n    .farmer-section .info-row .value { color: #166534; }\n    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }\n    th { background-color: #166534; color: #fff; font-size: 10px; font-weight: 700; padding: 6px 4px; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; }\n    th:not(:first-child) { text-align: right; }\n    td { border-bottom: 1px solid #eee; padding: 5px 4px; font-size: 11px; }\n    td.num { text-align: right; font-family: "Courier New", Courier, monospace; }\n    .summary { border: 1px solid #166534; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }\n    .summary .row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 11px; }\n    .summary .row + .row { border-top: 1px solid #eee; }\n    .summary .row.total { font-weight: 700; background: #f0fdf4; color: #166534; }\n    .summary .row.subsidy { font-weight: 700; color: #16a34a; background: #f7fefb; }\n    .summary .row.diff { font-weight: 700; color: #065f46; background: #ecfdf5; border-top: 2px solid #166534; }\n    .legal { text-align: center; margin: 12px 0; }\n    .legal p { font-size: 9px; color: #666; line-height: 1.6; }\n    .footer { text-align: center; font-size: 9px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }\n    @media print { body { padding: 8px; } @page { margin: 10mm; size: 80mm auto; } }\n  </style>\n</head>\n<body>\n  <div class="receipt">\n    <div class="brand">\n      <h1>SI PUPUK</h1>\n      <div class="subtitle">Sistem Informasi Penjualan Pupuk Bersubsidi</div>\n    </div>\n    <hr class="separator">\n    <div class="section-title">STRUK PESANAN</div>\n    <hr class="separator-solid">\n    <div class="info-section">\n      <div class="info-row"><span class="label">No. Pesanan:</span><span class="value">' + order.orderNumber + '</span></div>\n      <div class="info-row"><span class="label">Tanggal:</span><span class="value">' + formatDate(order.createdAt) + '</span></div>\n      <div class="info-row"><span class="label">Status:</span><span class="value">' + getStatusLabel(order.status) + '</span></div>\n      <div class="info-row"><span class="label">Gudang:</span><span class="value">' + order.warehouse.name + ' (' + order.warehouse.code + ')</span></div>\n    </div>\n    <hr class="separator-solid">\n    <div class="farmer-section">\n      <div class="info-row"><span class="label">Nama:</span><span class="value">' + order.farmer.name + '</span></div>\n      <div class="info-row"><span class="label">NIK:</span><span class="value">' + order.farmer.nik + '</span></div>\n    </div>\n    <table>\n      <thead>\n        <tr><th>No</th><th>Produk</th><th>Qty(kg)</th><th>Harga/kg</th><th>Subtotal</th></tr>\n      </thead>\n      <tbody>' + itemsRows + '</tbody>\n    </table>\n    <div class="summary">\n      <div class="row total"><span>Total Harga Normal</span><span>' + formatRupiah(order.totalAmount) + '</span></div>\n      <div class="row subsidy"><span>Total Harga Subsidi</span><span>' + formatRupiah(order.totalSubsidy) + '</span></div>\n      <div class="row diff"><span>Selisih Subsidi</span><span>' + formatRupiah(order.totalAmount - order.totalSubsidy) + '</span></div>\n    </div>\n    <hr class="separator">\n    <div class="legal">\n      <p>Terima kasih atas kunjungan Anda</p>\n      <p>Dokumen ini sah sebagai bukti pembelian pupuk bersubsidi</p>\n    </div>\n    <div class="footer">\n      <p>Dicetak pada: ' + printedAt + '</p>\n      <p style="margin-top:4px;font-weight:700;color:#16a34a;letter-spacing:1px;">PPST</p>\n    </div>\n  </div>\n</body>\n</html>'
 
     const printWindow = window.open('', '_blank')
     if (printWindow) {
