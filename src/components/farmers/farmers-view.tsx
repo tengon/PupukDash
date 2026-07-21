@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import { fetchFarmers, createFarmer, updateFarmer, deleteFarmer, fetchOrders, fetchFarmerOrders, type Farmer, type FarmerOrdersResponse } from '@/lib/api'
@@ -27,9 +27,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, Pencil, Trash2, Users, Eye, Download, UserCheck, Wheat, RotateCcw, MapPin, ShoppingCart, Banknote, Package, Phone, MapPinned } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Users, Eye, Download, UserCheck, Wheat, RotateCcw, MapPin, ShoppingCart, Banknote, Package, Phone, MapPinned, Upload, FileSpreadsheet, CheckCircle2, X, AlertCircle } from 'lucide-react'
 import { exportToCSV } from '@/lib/export'
 import { useToast } from '@/hooks/use-toast'
+import { parseFarmerCSV } from '@/lib/import'
 
 const ITEMS_PER_PAGE = 10
 
@@ -143,6 +144,62 @@ export function FarmersView() {
     else { createMutation.mutate(form as Parameters<typeof createFarmer>[0]) }
   }
 
+  // Import CSV state
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importStep, setImportStep] = useState<'upload' | 'preview' | 'result'>('upload')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewData, setPreviewData] = useState<Array<{
+    row: number; nik: string; name: string; valid: boolean; error?: string
+  }>>([])
+  const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null)
+
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file)
+    setPreviewData([])
+    setImportResult(null)
+    // Parse CSV for preview
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const rows = await parseFarmerCSV(e.target?.result as string)
+        setPreviewData(rows)
+      } catch (err) {
+        setPreviewData([{ row: 0, nik: '', name: '', valid: false, error: err instanceof Error ? err.message : 'Gagal memparse file CSV' }])
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const handlePreview = () => {
+    if (!selectedFile) return
+    setImportStep('preview')
+  }
+
+  const importMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedFile) throw new Error('Tidak ada file')
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      const res = await fetch('/api/farmers/import', { method: 'POST', body: formData })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Gagal mengimpor' }))
+        throw new Error(data.error || 'Gagal mengimpor data')
+      }
+      return res.json()
+    },
+    onSuccess: (data: { imported: number; skipped: number; errors: string[] }) => {
+      setImportResult(data)
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Gagal Import', description: err.message, variant: 'destructive' })
+    },
+  })
+
+  const handleImport = () => {
+    importMutation.mutate()
+  }
+
   const handleDelete = () => { if (deletingId) deleteMutation.mutate(deletingId) }
 
   const filtered = (farmers || []).filter(
@@ -170,19 +227,27 @@ export function FarmersView() {
   const activeFarmers = (farmers || []).filter((f) => f.isActive).length
   const allFarmers = farmers || []
   const avgLandArea = allFarmers.length > 0 ? allFarmers.reduce((sum, f) => sum + (f.landAreaHa || 0), 0) / allFarmers.length : 0
+  const uniqueGroups = new Set(allFarmers.map((f) => f.farmerGroup).filter(Boolean)).size
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
       {!isLoading && farmers && farmers.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="border-l-2 border-l-emerald-500"><CardContent className="p-4 flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40"><UserCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /></div>
-            <div><p className="text-2xl font-bold text-foreground">{formatNumber(activeFarmers)}</p><p className="text-xs text-muted-foreground">Total Petani Aktif</p></div>
-          </CardContent></Card>
-          <Card className="border-l-2 border-l-teal-500"><CardContent className="p-4 flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/40"><Wheat className="h-5 w-5 text-teal-600 dark:text-teal-400" /></div>
-            <div><p className="text-2xl font-bold text-foreground">{avgLandArea.toFixed(2)}</p><p className="text-xs text-muted-foreground">Rata-rata Luas Lahan (Ha)</p></div>
-          </CardContent></Card>
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Statistik Petani</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Card className="border-l-3 border-l-emerald-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"><CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 shrink-0"><UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /></div>
+              <div><p className="text-xl font-bold text-foreground">{formatNumber(allFarmers.length)}</p><p className="text-[10px] text-muted-foreground">Total Petani Terdaftar</p></div>
+            </CardContent></Card>
+            <Card className="border-l-3 border-l-teal-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"><CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/40 shrink-0"><Wheat className="h-4 w-4 text-teal-600 dark:text-teal-400" /></div>
+              <div><p className="text-xl font-bold text-foreground">{avgLandArea.toFixed(2)}</p><p className="text-[10px] text-muted-foreground">Rata-rata Luas Lahan (Ha)</p></div>
+            </CardContent></Card>
+            <Card className="border-l-3 border-l-amber-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"><CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40 shrink-0"><Users className="h-4 w-4 text-amber-600 dark:text-amber-400" /></div>
+              <div><p className="text-xl font-bold text-foreground">{formatNumber(uniqueGroups)}</p><p className="text-[10px] text-muted-foreground">Kelompok Tani Aktif</p></div>
+            </CardContent></Card>
+          </div>
         </div>
       )}
 
@@ -196,6 +261,9 @@ export function FarmersView() {
                 onClick={() => { exportToCSV('data-petani', ['NIK', 'Nama', 'Telepon', 'Alamat', 'Desa', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Luas Lahan (Ha)', 'Kelompok Tani', 'Status'],
                   (farmers || []).map((f) => [f.nik, f.name, f.phone || '', f.address || '', f.village || '', f.district || '', f.regency || '', f.province || '', f.landAreaHa || '', f.farmerGroup || '', f.isActive ? 'Aktif' : 'Tidak Aktif']),) }}>
                 <Download className="h-4 w-4" /><span className="hidden sm:inline">Export CSV</span>
+              </Button>
+              <Button variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => { setImportOpen(true); setImportStep('upload'); setImportResult(null); setPreviewData([]); setSelectedFile(null) }}>
+                <Upload className="h-4 w-4" /><span className="hidden sm:inline">Import CSV</span>
               </Button>
               <Button onClick={handleOpenAdd} size="sm" className="shrink-0"><Plus className="h-4 w-4 mr-1" /> Tambah Petani</Button>
             </div>
@@ -212,7 +280,7 @@ export function FarmersView() {
               </TableRow></TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (<TableRow><TableCell colSpan={8} className="text-center py-12"><div className="flex flex-col items-center gap-2 text-muted-foreground"><Users className="h-10 w-10 opacity-30" /><p className="text-sm font-medium">{search ? 'Tidak ada petani yang cocok' : 'Belum ada data petani'}</p></div></TableCell></TableRow>) : paged.map((farmer) => (
-                  <TableRow key={farmer.id} className="cursor-pointer" onClick={() => handleRowClick(farmer)}>
+                  <TableRow key={farmer.id} className={`cursor-pointer border-l-[3px] ${!farmer.landAreaHa || farmer.landAreaHa < 0.5 ? 'border-l-gray-300 dark:border-l-gray-600' : farmer.landAreaHa >= 1 ? 'border-l-green-500' : 'border-l-amber-400'}`} onClick={() => handleRowClick(farmer)}>
                     <TableCell className="text-xs font-mono">{farmer.nik}</TableCell>
                     <TableCell className="text-sm font-medium">{farmer.name}</TableCell>
                     <TableCell className="text-xs hidden md:table-cell">{farmer.phone || '-'}</TableCell>
@@ -301,6 +369,150 @@ export function FarmersView() {
           </Tabs>
         </div>)}
       </DialogContent></Dialog>
+
+      {/* Import CSV Dialog */}
+      <Dialog open={importOpen} onOpenChange={(open) => { if (!open) { setImportStep('upload'); setImportResult(null); setPreviewData([]); setSelectedFile(null) } }}>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Data Petani dari CSV</DialogTitle>
+            <DialogDescription>Unggah file CSV berisi data petani untuk diimpor ke sistem</DialogDescription>
+          </DialogHeader>
+
+          {importStep === 'upload' && (
+            <div className="py-4">
+              <div
+                className="border-2 border-dashed rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
+                onDragLeave={(e) => e.preventDefault()}
+                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const file = e.dataTransfer.files[0]; if (file) handleFileSelect(file) }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => { const file = e.target.files[0]; if (file) handleFileSelect(file) }}
+                />
+                <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm font-medium">Seret & letakkan file CSV di sini</p>
+                <p className="text-xs text-muted-foreground mt-1">atau klik untuk memilih file (.csv maks. 5MB)</p>
+              </div>
+              {selectedFile && (
+                <div className="flex items-center gap-2 mt-3 p-3 bg-muted/50 rounded-lg">
+                  <FileSpreadsheet className="h-4 w-4 text-primary shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelectedFile(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">Format CSV yang dibutuhkan:</p>
+                <p className="text-[11px] text-amber-600 dark:text-amber-500 font-mono">NIK, Nama, Telepon, Alamat, Desa, Kecamatan, Kabupaten, Provinsi, Luas Lahan (ha), Kelompok Tani</p>
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button onClick={handlePreview} disabled={!selectedFile} className="btn-gradient">
+                  Lihat Preview
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {importStep === 'preview' && (
+            <div className="py-2">
+              <div className="mb-3">
+                <p className="text-sm font-medium">Preview Data ({previewData.length} baris)</p>
+                <p className="text-xs text-muted-foreground">Periksa data sebelum mengimpor</p>
+              </div>
+              {previewData.some((r) => !r.valid) && (
+                <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                    <p className="text-sm font-medium text-red-700 dark:text-red-400">Ada data yang tidak valid</p>
+                  </div>
+                  <ul className="text-xs text-red-600 dark:text-red-400 list-disc list-inside space-y-0.5 ml-6">
+                    {previewData.filter((r) => !r.valid).slice(0, 5).map((r, i) => (
+                      <li key={i}><span className="font-medium">Baris {r.row}</span>: {r.error}</li>
+                    ))}
+                    {previewData.filter((r) => !r.valid).length > 5 && (
+                      <li>...dan {previewData.filter((r) => !r.valid).length - 5} baris lainnya</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              <ScrollArea className="max-h-64">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-[10px]">#</TableHead>
+                      <TableHead className="text-[10px]">NIK</TableHead>
+                      <TableHead className="text-[10px]">Nama</TableHead>
+                  </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {previewData.slice(0, 100).map((row) => (
+                      <TableRow key={row.row} className={!row.valid ? 'bg-red-50/50 dark:bg-red-900/10' : ''}>
+                        <TableCell className="text-[10px] font-mono">{row.row}</TableCell>
+                        <TableCell className={`text-[10px] font-mono ${!row.valid ? 'text-red-500' : ''}`}>{row.nik}</TableCell>
+                        <TableCell className="text-[10px]">{row.name}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+              <div className="flex justify-between mt-4">
+                <Button variant="outline" onClick={() => setImportStep('upload')}>Kembali</Button>
+                <Button
+                  onClick={handleImport}
+                  disabled={importMutation.isPending || previewData.every((r) => !r.valid)}
+                  className="btn-gradient"
+                >
+                  {importMutation.isPending ? 'Mengimpor...' : `Import ${previewData.filter((r) => r.valid).length} Petani`}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {importStep === 'result' && importResult && (
+            <div className="py-4 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 p-4 text-center">
+                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-600 dark:text-emerald-400" />
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{importResult.imported}</p>
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Berhasil Diimpor</p>
+                </div>
+                <div className="rounded-lg border bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 p-4 text-center">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2 text-amber-600 dark:text-amber-400" />
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{importResult.skipped}</p>
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400">Dilewati (NIK sudah ada)</p>
+                </div>
+              </div>
+              {importResult.errors.length > 0 && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">Error ({importResult.errors.length})</p>
+                  <ScrollArea className="max-h-32">
+                    <ul className="text-[11px] text-red-600 dark:text-red-400 list-disc list-inside space-y-0.5">
+                      {importResult.errors.slice(0, 10).map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                      {importResult.errors.length > 10 && <li>...dan {importResult.errors.length - 10} error lainnya</li>}
+                    </ul>
+                  </ScrollArea>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={() => { setImportOpen(false); triggerRefresh(); queryClient.invalidateQueries({ queryKey: ['farmers'] }) }} className="btn-gradient">
+                  Selesai
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Dialog */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Hapus Data Petani?</AlertDialogTitle><AlertDialogDescription>Tindakan ini tidak dapat dibatalkan. Data petani akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Batal</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Hapus</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>

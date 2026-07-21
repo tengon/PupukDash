@@ -253,7 +253,12 @@ export function ProductsView() {
                   ) : (
                     filtered.map((product) => (
                       <TableRow key={product.id} className="hover:border-l-2 hover:border-l-primary/30">
-                        <TableCell className="text-sm font-medium">{product.name}</TableCell>
+                        <TableCell className="text-sm font-medium">
+                          <div className="flex flex-col">
+                            <span className="text-xs leading-tight">{TYPE_ICONS[product.type] || ''}</span>
+                            <span className="font-semibold">{product.name}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-semibold ${TYPE_PILL_COLORS[product.type] || getTypeBadgeColor(product.type)}`}>
                             {TYPE_ICONS[product.type] || ''} {product.type}
@@ -263,7 +268,10 @@ export function ProductsView() {
                         <TableCell className="text-sm text-right text-primary font-medium">{formatRupiah(product.subsidyPrice)}/kg</TableCell>
                         <TableCell className="text-sm text-right">
                           <div className="flex flex-col items-end gap-1">
-                            <span className="font-mono">{formatNumber(product.totalStock ?? 0)} kg</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${(product.totalStock ?? 0) > 2000 ? 'bg-green-500' : (product.totalStock ?? 0) >= 500 ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                              <span className="font-mono">{formatNumber(product.totalStock ?? 0)} kg</span>
+                            </div>
                             <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${(product.totalStock ?? 0) > 1000 ? 'bg-green-500' : (product.totalStock ?? 0) >= 500 ? 'bg-yellow-500' : 'bg-red-500'}`}
@@ -309,7 +317,7 @@ export function ProductsView() {
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="name">Nama Produk *</Label>
-              <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Pupuk Urea 50kg" />
+              <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Pupuk Urea 50kg" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="type">Tipe Pupuk</Label>
@@ -325,16 +333,16 @@ export function ProductsView() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="price">Harga Normal (Rp/kg)</Label>
-                <Input id="price" type="number" value={form.pricePerKg || ''} onChange={(e) => setForm({ ...form, pricePerKg: parseFloat(e.target.value) || 0 })} />
+                <Input id="price" type="number" value={form.pricePerKg || ''} onChange={(e) => setForm({ ...form, pricePerKg: parseFloat(e.target.value) || 0 })} placeholder="Harga jual normal per kilogram" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="subsidy">Harga Subsidi (Rp/kg)</Label>
-                <Input id="subsidy" type="number" value={form.subsidyPrice || ''} onChange={(e) => setForm({ ...form, subsidyPrice: parseFloat(e.target.value) || 0 })} />
+                <Input id="subsidy" type="number" value={form.subsidyPrice || ''} onChange={(e) => setForm({ ...form, subsidyPrice: parseFloat(e.target.value) || 0 })} placeholder="Harga setelah subsidi per kilogram" />
               </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="desc">Deskripsi</Label>
-              <Textarea id="desc" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Deskripsi produk..." rows={3} />
+              <Textarea id="desc" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Deskripsi singkat produk pupuk ini, misalnya kegunaan dan komposisi" rows={3} />
             </div>
           </div>
           <DialogFooter>

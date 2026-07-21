@@ -99,6 +99,29 @@ function FillIndicatorBar({ quantity }: { quantity: number }) {
   )
 }
 
+function CapacityRing({ quantity, maxCapacity = 10000 }: { quantity: number; maxCapacity?: number }) {
+  const radius = 28
+  const stroke = 4
+  const size = (radius + stroke) * 2
+  const circumference = 2 * Math.PI * radius
+  const percent = Math.min(quantity / maxCapacity, 1)
+  const filled = percent * circumference
+
+  let ringColor = 'text-green-500'
+  if (percent < 0.2) ringColor = 'text-red-500'
+  else if (percent < 0.4) ringColor = 'text-yellow-500'
+
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={radius + stroke} cy={radius + stroke} r={radius} fill="none" className="stroke-muted" strokeWidth={stroke} />
+        <circle cx={radius + stroke} cy={radius + stroke} r={radius} fill="none" className={`${ringColor} transition-all duration-700`} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${filled} ${circumference}`} />
+      </svg>
+      <span className="absolute text-[10px] font-bold tabular-nums">{Math.round(percent * 100)}%</span>
+    </div>
+  )
+}
+
 function StockCard({ stock, onEdit, onDelete, onRestock }: {
   stock: StockWithProductAndWarehouse
   onEdit: (s: StockWithProductAndWarehouse) => void
@@ -135,7 +158,7 @@ function StockCard({ stock, onEdit, onDelete, onRestock }: {
               <Package className="h-4 w-4 text-primary" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold truncate">{stock.product.name}</p>
+              <p className="text-base font-semibold truncate">{stock.product.name}</p>
               <div className="flex items-center gap-1.5">
                 <WarehouseIcon className="h-3 w-3 text-muted-foreground shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">{stock.warehouse.name}</p>
@@ -147,9 +170,12 @@ function StockCard({ stock, onEdit, onDelete, onRestock }: {
           </Badge>
         </div>
 
-        <div className="mb-1">
-          <p className={`text-3xl font-bold tabular-nums ${statusColor}`}>{formatNumber(stock.quantity)}</p>
-          <p className="text-xs text-muted-foreground">kilogram</p>
+        <div className="flex items-center gap-3 mb-2">
+          <CapacityRing quantity={stock.quantity} />
+          <div>
+            <p className={`text-2xl font-bold tabular-nums ${statusColor}`}>{formatNumber(stock.quantity)}</p>
+            <p className="text-xs text-muted-foreground">kilogram</p>
+          </div>
         </div>
 
         <StockLevelBar quantity={stock.quantity} minStock={stock.minStock} />
@@ -168,7 +194,11 @@ function StockCard({ stock, onEdit, onDelete, onRestock }: {
             </Badge>
           </div>
           <div className="flex items-center gap-0.5">
-            <Button variant="outline" size="icon" className="h-7 w-7 text-primary border-primary/30 hover:bg-primary/10" onClick={() => onRestock(stock)} title="Restok Cepat">
+            <Button variant="outline" size="sm" className="h-7 gap-1 text-[10px] text-primary border-primary/30 hover:bg-primary/10 hidden sm:inline-flex" onClick={() => onRestock(stock)}>
+              <PackagePlus className="h-3 w-3" />
+              Restok
+            </Button>
+            <Button variant="outline" size="icon" className="h-7 w-7 text-primary border-primary/30 hover:bg-primary/10 sm:hidden" onClick={() => onRestock(stock)} title="Restok Cepat">
               <PackagePlus className="h-3 w-3" />
             </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(stock)}>

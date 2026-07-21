@@ -14,7 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { motion } from 'framer-motion'
-import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles, PackagePlus, ArrowUp, ArrowDown, Crown, Eye } from 'lucide-react'
+import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles, PackagePlus, ArrowUp, ArrowDown, Crown, Eye, RefreshCw } from 'lucide-react'
 import { QuickRestockDialog } from '@/components/stock/quick-restock-dialog'
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -71,15 +71,24 @@ function StatsCards({ data }: { data: DashboardData }) {
   ]
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat) => (
-        <motion.div key={stat.title} variants={itemVariants}>
-          <Card className={`border-l-4 ${stat.borderColor} bg-gradient-to-br ${stat.gradient} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`} style={{ boxShadow: 'var(--shadow-sm)' }}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+      {stats.map((stat, idx) => (
+        <motion.div
+          key={stat.title}
+          variants={itemVariants}
+          initial="hidden"
+          animate="show"
+          custom={idx}
+          whileHover={{ scale: 1.02, y: -2 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+        >
+          <Card className={`border-l-4 ${stat.borderColor} bg-gradient-to-br ${stat.gradient} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 relative overflow-hidden`} style={{ boxShadow: 'var(--shadow-sm), inset 0 1px 2px 0 oklch(0.42 0.14 152 / 0.04)' }}>
+            <CardContent className="p-5">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" style={{ animationDelay: `${idx * 150}ms` }} />
+              <div className="flex items-center justify-between relative z-10">
                 <div className="flex-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{stat.title}</p>
-                  <p className="text-xl font-bold mt-1.5">{stat.value}</p>
-                  <div className="flex items-center gap-1 mt-2">
+                  <p className="text-2xl font-bold mt-2">{stat.value}</p>
+                  <div className="flex items-center gap-1 mt-2.5">
                     <TrendingUp className="h-3 w-3 text-green-600 dark:text-green-400" />
                     <span className="text-xs text-green-600 dark:text-green-400 font-semibold">{stat.trend}</span>
                     <span className="text-xs text-muted-foreground">dari bulan lalu</span>
@@ -125,7 +134,7 @@ function MonthlySales({ data }: { data: DashboardData }) {
                   <span className="text-muted-foreground">{m.month}</span>
                   <span className="font-medium">{formatRupiah(m.total)}</span>
                 </div>
-                <Progress value={(m.total / maxTotal) * 100} className="h-2" />
+                <Progress value={(m.total / maxTotal) * 100} className="h-3 rounded-full" />
               </div>
             ))}
           </div>
@@ -163,6 +172,11 @@ function MonthlySales({ data }: { data: DashboardData }) {
               </div>
             </div>
           )}
+
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground mt-4">
+            <RefreshCw className="h-3 w-3 animate-spin" style={{ animationDuration: '3s' }} />
+            <span>Data diperbarui secara real-time</span>
+          </div>
 
           {/* Top Farmer This Month */}
           {data.topFarmerThisMonth && (
@@ -563,7 +577,7 @@ export function DashboardView() {
         <div className="grid grid-cols-3 gap-3">
           <button
             onClick={() => useAppStore.getState().setActiveTab('orders')}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
               <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -572,7 +586,7 @@ export function DashboardView() {
           </button>
           <button
             onClick={() => useAppStore.getState().setActiveTab('stock')}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
               <PackagePlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -581,7 +595,7 @@ export function DashboardView() {
           </button>
           <button
             onClick={() => useAppStore.getState().setActiveTab('distributions')}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.03] hover:border-primary/50"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50 transition-colors">
               <Truck className="h-5 w-5 text-amber-600 dark:text-amber-400" />

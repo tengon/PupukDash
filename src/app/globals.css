@@ -442,3 +442,51 @@ tbody tr:nth-child(even):hover {
   background-size: 200% 100%;
   animation: welcome-border-flow 8s ease-in-out infinite;
 }
+
+/* ===== Shimmer Animation for Stat Cards ===== */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ===== Page Transition Animation ===== */
+@keyframes page-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.3s ease-out both;
+}
+
+/* ===== Active Sidebar Menu Item Glow ===== */
+[data-slot="sidebar-menu-button"][data-state="open"],
+[data-slot="sidebar-menu-button"][data-active="true"],
+.sidebar-active-glow {
+  box-shadow: 0 0 12px 2px oklch(0.55 0.14 152 / 0.25),
+              inset 0 0 0 1px oklch(0.55 0.14 152 / 0.15);
+}
+
+.dark [data-slot="sidebar-menu-button"][data-state="open"],
+.dark [data-slot="sidebar-menu-button"][data-active="true"],
+.dark .sidebar-active-glow {
+  box-shadow: 0 0 14px 2px oklch(0.60 0.15 152 / 0.20),
+              inset 0 0 0 1px oklch(0.60 0.15 152 / 0.10);
+}
+
+/* ===== Universal Card Hover Lift ===== */
+.card, [data-slot="card"] {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover, [data-slot="card"]:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md, 0 4px 6px -1px oklch(0 0 0 / 0.1));
+}

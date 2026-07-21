@@ -1,0 +1,977 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo, useEffect, useRef } from 'react'
+     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+     5→import { useAppStore } from '@/lib/store'
+     6→import {
+     7→  fetchOrders, fetchFarmers, fetchWarehouses, fetchProducts,
+     8→  createOrder, updateOrder,
+     9→  type OrderWithDetails, type Farmer, type Warehouse, type Product,
+    10→} from '@/lib/api'
+    11→import { formatRupiah, formatNumber, formatDate, getStatusColor, getStatusLabel, getTypeBadgeColor } from '@/lib/format'
+    12→import { exportToCSV } from '@/lib/export'
+    13→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    14→import { Button } from '@/components/ui/button'
+    15→import { Input } from '@/components/ui/input'
+    16→import { Label } from '@/components/ui/label'
+    17→import { Badge } from '@/components/ui/badge'
+    18→import { Textarea } from '@/components/ui/textarea'
+    19→import { Skeleton } from '@/components/ui/skeleton'
+    20→import {
+    21→  Dialog,
+    22→  DialogContent,
+    23→  DialogDescription,
+    24→  DialogFooter,
+    25→  DialogHeader,
+    26→  DialogTitle,
+    27→} from '@/components/ui/dialog'
+    28→import {
+    29→  Select,
+    30→  SelectContent,
+    31→  SelectItem,
+    32→  SelectTrigger,
+    33→  SelectValue,
+    34→} from '@/components/ui/select'
+    35→import {
+    36→  Table,
+    37→  TableBody,
+    38→  TableCell,
+    39→  TableHead,
+    40→  TableHeader,
+    41→  TableRow,
+    42→} from '@/components/ui/table'
+    43→import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    44→import {
+    45→  Pagination,
+    46→  PaginationContent,
+    47→  PaginationItem,
+    48→  PaginationLink,
+    49→  PaginationNext,
+    50→  PaginationPrevious,
+    51→  PaginationEllipsis,
+    52→} from '@/components/ui/pagination'
+    53→import { ScrollArea } from '@/components/ui/scroll-area'
+    54→import { Separator } from '@/components/ui/separator'
+    55→import { motion } from 'framer-motion'
+    56→import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer, Check, Clock, PackageCheck, CalendarDays, X } from 'lucide-react'
+    57→import { useToast } from '@/hooks/use-toast'
+    58→
+    59→const ITEMS_PER_PAGE = 10
+    60→
+    61→const ORDER_STATUS_TABS = [
+    62→  { value: 'all', label: 'Semua' },
+    63→  { value: 'PENDING', label: 'Menunggu' },
+    64→  { value: 'CONFIRMED', label: 'Dikonfirmasi' },
+    65→  { value: 'PICKED_UP', label: 'Diambil' },
+    66→  { value: 'CANCELLED', label: 'Dibatalkan' },
+    67→]
+    68→
+    69→const ORDER_STATUS_FLOW: Record<string, string[]> = {
+    70→  PENDING: ['CONFIRMED', 'CANCELLED'],
+    71→  CONFIRMED: ['PICKED_UP', 'CANCELLED'],
+    72→  PICKED_UP: [],
+    73→  CANCELLED: [],
+    74→}
+    75→
+    76→const STATUS_STEPS = ['PENDING', 'CONFIRMED', 'PICKED_UP'] as const
+    77→const STEP_LABELS: Record<string, string> = {
+    78→  PENDING: 'Menunggu',
+    79→  CONFIRMED: 'Dikonfirmasi',
+    80→  PICKED_UP: 'Diambil',
+    81→}
+    82→const STEP_ICONS: Record<string, typeof Check> = {
+    83→  PENDING: Clock,
+    84→  CONFIRMED: Check,
+    85→  PICKED_UP: PackageCheck,
+    86→}
+    87→
+    88→function OrderStatusTimeline({ status }: { status: string }) {
+    89→  if (status === 'CANCELLED') {
+    90→    return (
+    91→      <div className="flex items-center justify-center py-4">
+    92→        <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 px-3 py-1">
+    93→          Pesanan Dibatalkan
+    94→        </Badge>
+    95→      </div>
+    96→    )
+    97→  }
+    98→
+    99→  const currentIdx = STATUS_STEPS.indexOf(status as typeof STATUS_STEPS[number])
+   100→
+   101→  return (
+   102→    <div className="flex items-center justify-center py-4 px-2">
+   103→      <div className="flex items-center gap-0 w-full max-w-xs">
+   104→        {STATUS_STEPS.map((step, idx) => {
+   105→          const StepIcon = STEP_ICONS[step]
+   106→          const isCompleted = idx < currentIdx
+   107→          const isCurrent = idx === currentIdx
+   108→          const isFuture = idx > currentIdx
+   109→
+   110→          return (
+   111→            <div key={step} className="flex items-center flex-1 last:flex-none">
+   112→              <div className="flex flex-col items-center">
+   113→                <div
+   114→                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
+   115→                    isCompleted
+   116→                      ? 'bg-green-500 border-green-500 text-white'
+   117→                      : isCurrent
+   118→                        ? 'bg-green-100 border-green-500 text-green-700 dark:bg-green-900/40 dark:text-green-400 shadow-[0_0_8px_rgba(34,197,94,0.4)]'
+   119→                        : 'bg-muted border-muted-foreground/30 text-muted-foreground/50'
+   120→                  }`}
+   121→                >
+   122→                  <StepIcon className="h-4 w-4" />
+   123→                </div>
+   124→                <span className={`text-[10px] mt-1 font-medium ${
+   125→                  isCompleted || isCurrent ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'
+   126→                }`}>
+   127→                  {STEP_LABELS[step]}
+   128→                </span>
+   129→              </div>
+   130→              {idx < STATUS_STEPS.length - 1 && (
+   131→                <div className={`flex-1 h-0.5 mx-2 mb-4 rounded-full transition-all ${
+   132→                  idx < currentIdx
+   133→                    ? 'bg-green-500'
+   134→                    : 'bg-muted-foreground/20'
+   135→                }`} />
+   136→              )}
+   137→            </div>
+   138→          )
+   139→        })}
+   140→      </div>
+   141→    </div>
+   142→  )
+   143→}
+   144→
+   145→interface OrderItemForm {
+   146→  productId: string
+   147→  productName: string
+   148→  quantity: number
+   149→  pricePerKg: number
+   150→  subsidyPrice: number
+   151→  subtotal: number
+   152→  subsidySubtotal: number
+   153→}
+   154→
+   155→export function OrdersView() {
+   156→  const { refreshKey, triggerRefresh, shortcutAction, clearShortcut, prefillFarmerId, setPrefillFarmerId } = useAppStore()
+   157→  const { toast } = useToast()
+   158→  const queryClient = useQueryClient()
+   159→  const [statusFilter, setStatusFilter] = useState('all')
+   160→  const [search, setSearch] = useState('')
+   161→  const [fromDate, setFromDate] = useState('')
+   162→  const [toDate, setToDate] = useState('')
+   163→  const [showDateFilter, setShowDateFilter] = useState(false)
+   164→  const [createOpen, setCreateOpen] = useState(false)
+   165→  const [detailOpen, setDetailOpen] = useState(false)
+   166→  const [statusOpen, setStatusOpen] = useState(false)
+   167→  const [detailOrder, setDetailOrder] = useState<OrderWithDetails | null>(null)
+   168→  const [editingOrder, setEditingOrder] = useState<OrderWithDetails | null>(null)
+   169→  const [page, setPage] = useState(1)
+   170→  const [prefillFarmer, setPrefillFarmer] = useState<string | undefined>(undefined)
+   171→
+   172→  const [formFarmer, setFormFarmer] = useState('')
+   173→  const [formWarehouse, setFormWarehouse] = useState('')
+   174→  const [formItems, setFormItems] = useState<OrderItemForm[]>([])
+   175→  const [formNotes, setFormNotes] = useState('')
+   176→  const [farmerSearch, setFarmerSearch] = useState('')
+   177→
+   178→  const { data: ordersData, isLoading } = useQuery({
+   179→    queryKey: ['orders', refreshKey, statusFilter, fromDate, toDate],
+   180→    queryFn: () => fetchOrders({
+   181→      status: statusFilter !== 'all' ? statusFilter : undefined,
+   182→      fromDate: fromDate || undefined,
+   183→      toDate: toDate || undefined,
+   184→    }),
+   185→  })
+   186→
+   187→  const orders = ordersData?.orders ?? []
+   188→  const orderSummary = ordersData?.summary
+   189→
+   190→  const { data: farmers } = useQuery({
+   191→    queryKey: ['farmers', refreshKey],
+   192→    queryFn: fetchFarmers,
+   193→  })
+   194→
+   195→  const { data: warehouses } = useQuery({
+   196→    queryKey: ['warehouses', refreshKey],
+   197→    queryFn: fetchWarehouses,
+   198→  })
+   199→
+   200→  const { data: products } = useQuery({
+   201→    queryKey: ['products', refreshKey],
+   202→    queryFn: () => fetchProducts(),
+   203→  })
+   204→
+   205→  const createMutation = useMutation({
+   206→    mutationFn: createOrder,
+   207→    onSuccess: () => {
+   208→      queryClient.invalidateQueries({ queryKey: ['orders'] })
+   209→      triggerRefresh()
+   210→      setCreateOpen(false)
+   211→      resetCreateForm()
+   212→      toast({ title: 'Berhasil', description: 'Pesanan berhasil dibuat' })
+   213→    },
+   214→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   215→  })
+   216→
+   217→  const updateMutation = useMutation({
+   218→    mutationFn: ({ id, data }: { id: string; data: { status?: string; notes?: string } }) => updateOrder(id, data),
+   219→    onSuccess: () => {
+   220→      queryClient.invalidateQueries({ queryKey: ['orders'] })
+   221→      triggerRefresh()
+   222→      setStatusOpen(false)
+   223→      setEditingOrder(null)
+   224→      toast({ title: 'Berhasil', description: 'Status pesanan diperbarui' })
+   225→    },
+   226→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   227→  })
+   228→
+   229→  const resetCreateForm = () => {
+   230→    setFormFarmer(prefillFarmer || '')
+   231→    setFormWarehouse('')
+   232→    setFormItems([])
+   233→    setFormNotes('')
+   234→    setFarmerSearch('')
+   235→    setPrefillFarmer(undefined)
+   236→  }
+   237→
+   238→  const addItem = () => {
+   239→    setFormItems([...formItems, {
+   240→      productId: '',
+   241→      productName: '',
+   242→      quantity: 0,
+   243→      pricePerKg: 0,
+   244→      subsidyPrice: 0,
+   245→      subtotal: 0,
+   246→      subsidySubtotal: 0,
+   247→    }])
+   248→  }
+   249→
+   250→  const removeItem = (index: number) => {
+   251→    setFormItems(formItems.filter((_, i) => i !== index))
+   252→  }
+   253→
+   254→  const updateItem = (index: number, field: keyof OrderItemForm, value: string | number) => {
+   255→    const updated = [...formItems]
+   256→    ;(updated[index] as unknown as Record<string, string | number>)[field] = value
+   257→
+   258→    if (field === 'productId' && typeof value === 'string') {
+   259→      const product = (products || []).find((p) => p.id === value)
+   260→      if (product) {
+   261→        updated[index].productName = product.name
+   262→        updated[index].pricePerKg = product.pricePerKg
+   263→        updated[index].subsidyPrice = product.subsidyPrice
+   264→      }
+   265→    }
+   266→
+   267→    updated[index].subtotal = updated[index].quantity * updated[index].pricePerKg
+   268→    updated[index].subsidySubtotal = updated[index].quantity * updated[index].subsidyPrice
+   269→
+   270→    setFormItems(updated)
+   271→  }
+   272→
+   273→  const totals = useMemo(() => {
+   274→    const totalAmount = formItems.reduce((sum, item) => sum + item.subtotal, 0)
+   275→    const totalSubsidy = formItems.reduce((sum, item) => sum + item.subsidySubtotal, 0)
+   276→    return { totalAmount, totalSubsidy }
+   277→  }, [formItems])
+   278→
+   279→  const handleCreate = () => {
+   280→    if (!formFarmer || !formWarehouse || formItems.length === 0) {
+   281→      toast({ title: 'Validasi', description: 'Lengkapi petani, gudang, dan minimal 1 item', variant: 'destructive' })
+   282→      return
+   283→    }
+   284→    const validItems = formItems.filter((i) => i.productId && i.quantity > 0)
+   285→    if (validItems.length === 0) {
+   286→      toast({ title: 'Validasi', description: 'Tambahkan minimal 1 item produk', variant: 'destructive' })
+   287→      return
+   288→    }
+   289→    createMutation.mutate({
+   290→      farmerId: formFarmer,
+   291→      warehouseId: formWarehouse,
+   292→      items: validItems.map((i) => ({
+   293→        productId: i.productId,
+   294→        productName: i.productName,
+   295→        quantity: i.quantity,
+   296→        pricePerKg: i.pricePerKg,
+   297→        subtotal: i.subtotal,
+   298→      })),
+   299→      totalAmount: totals.totalAmount,
+   300→      totalSubsidy: totals.totalSubsidy,
+   301→      notes: formNotes || undefined,
+   302→    })
+   303→  }
+   304→
+   305→  const handleStatusUpdate = (newStatus: string) => {
+   306→    if (editingOrder) {
+   307→      updateMutation.mutate({ id: editingOrder.id, data: { status: newStatus } })
+   308→    }
+   309→  }
+   310→
+   311→  const filteredFarmers = useMemo(() => {
+   312→    if (!farmers) return []
+   313→    if (!farmerSearch) return farmers
+   314→    return farmers.filter(
+   315→      (f) => f.name.toLowerCase().includes(farmerSearch.toLowerCase()) || f.nik.includes(farmerSearch)
+   316→    )
+   317→  }, [farmers, farmerSearch])
+   318→
+   319→  // Handle keyboard shortcut from page.tsx
+   320→  const prevShortcutRef = useRef<string | null>(null)
+   321→  useEffect(() => {
+   322→    if (shortcutAction && shortcutAction !== prevShortcutRef.current) {
+   323→      prevShortcutRef.current = shortcutAction
+   324→      if (shortcutAction === 'create-order') {
+   325→        resetCreateForm()
+   326→        const id = setTimeout(() => setCreateOpen(true), 0)
+   327→        clearShortcut()
+   328→        return () => clearTimeout(id)
+   329→      }
+   330→      if (shortcutAction === 'focus-search') {
+   331→        const input = document.querySelector<HTMLInputElement>('input[placeholder="Cari pesanan..."]')
+   332→        if (input) input.focus()
+   333→        clearShortcut()
+   334→      }
+   335→    }
+   336→  }, [shortcutAction, clearShortcut])
+   337→
+   338→  const handlePrintOrder = (order: OrderWithDetails) => {
+   339→    const now = new Date()
+   340→    const printedAt = new Intl.DateTimeFormat('id-ID', {
+   341→      day: 'numeric', month: 'long', year: 'numeric',
+   342→      hour: '2-digit', minute: '2-digit', second: '2-digit',
+   343→    }).format(now)
+   344→
+   345→    const html = `<!DOCTYPE html>
+   346→<html lang="id">
+   347→<head>
+   348→  <meta charset="UTF-8">
+   349→  <title>Bukti Pesanan - ${order.orderNumber}</title>
+   350→  <style>
+   351→    * { margin: 0; padding: 0; box-sizing: border-box; }
+   352→    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 32px; color: #1a1a1a; font-size: 13px; }
+   353→    .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #16a34a; padding-bottom: 16px; }
+   354→    .header h1 { font-size: 18px; color: #16a34a; margin-bottom: 4px; }
+   355→    .header .subtitle { font-size: 12px; color: #666; }
+   356→    .header .date { font-size: 11px; color: #888; margin-top: 4px; }
+   357→    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+   358→    .info-item { font-size: 12px; }
+   359→    .info-item .label { color: #666; }
+   360→    .info-item .value { font-weight: 600; }
+   361→    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+   362→    th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 12px; }
+   363→    th { background-color: #f0fdf4; font-weight: 600; color: #166534; }
+   364→    td.num { text-align: right; font-family: 'Courier New', monospace; }
+   365→    .totals { margin-left: auto; width: 260px; border: 1px solid #ddd; }
+   366→    .totals .row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 12px; }
+   367→    .totals .row + .row { border-top: 1px solid #eee; }
+   368→    .totals .row.total { font-weight: 700; background: #f0fdf4; color: #166534; }
+   369→    .totals .row.subsidy { font-weight: 700; color: #16a34a; }
+   370→    .totals .row.diff { font-weight: 700; color: #065f46; }
+   371→    .footer { margin-top: 32px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; }
+   372→    @media print { body { padding: 16px; } }
+   373→  </style>
+   374→</head>
+   375→<body>
+   376→  <div class="header">
+   377→    <h1>SI PUPUK - Bukti Pesanan</h1>
+   378→    <div class="subtitle">Sistem Informasi Penjualan Pupuk Bersubsidi</div>
+   379→    <div class="date">Tanggal Pesanan: ${formatDate(order.createdAt)}</div>
+   380→  </div>
+   381→  <div class="info-grid">
+   382→    <div class="info-item"><span class="label">No. Pesanan:</span> <span class="value">${order.orderNumber}</span></div>
+   383→    <div class="info-item"><span class="label">Status:</span> <span class="value">${getStatusLabel(order.status)}</span></div>
+   384→    <div class="info-item"><span class="label">Petani:</span> <span class="value">${order.farmer.name}</span></div>
+   385→    <div class="info-item"><span class="label">NIK:</span> <span class="value">${order.farmer.nik}</span></div>
+   386→    <div class="info-item" style="grid-column: span 2"><span class="label">Gudang:</span> <span class="value">${order.warehouse.name} (${order.warehouse.code}</span></div>
+   387→  </div>
+   388→  <table>
+   389→    <thead>
+   390→      <tr><th>Produk</th><th style="text-align:right">Qty (kg)</th><th style="text-align:right">Harga/kg</th><th style="text-align:right">Subtotal</th></tr>
+   391→    </thead>
+   392→    <tbody>
+   393→      ${order.items.map((item) => `
+   394→      <tr>
+   395→        <td>${item.productName}</td>
+   396→        <td class="num">${formatNumber(item.quantity)}</td>
+   397→        <td class="num">${formatRupiah(item.pricePerKg)}</td>
+   398→        <td class="num">${formatRupiah(item.subtotal)}</td>
+   399→      </tr>`).join('')}
+   400→    </tbody>
+   401→  </table>
+   402→  <div class="totals">
+   403→    <div class="row"><span>Total Harga Normal</span><span>${formatRupiah(order.totalAmount)}</span></div>
+   404→    <div class="row subsidy"><span>Total Harga Subsidi</span><span>${formatRupiah(order.totalSubsidy)}</span></div>
+   405→    <div class="row diff"><span>Selisih Subsidi</span><span>${formatRupiah(order.totalAmount - order.totalSubsidy)}</span></div>
+   406→  </div>
+   407→  ${order.notes ? `<div style="margin-top:12px;font-size:12px"><strong>Catatan:</strong> ${order.notes}</div>` : ''}
+   408→  <div class="footer">Dicetak pada: ${printedAt}</div>
+   409→</body>
+   410→</html>`
+   411→
+   412→    const printWindow = window.open('', '_blank')
+   413→    if (printWindow) {
+   414→      printWindow.document.write(html)
+   415→      printWindow.document.close()
+   416→      printWindow.onload = () => {
+   417→        printWindow.print()
+   418→      }
+   419→    }
+   420→  }
+   421→
+   422→  // Client-side search filter (API handles status + date)
+   423→  const filtered = orders.filter((o) => {
+   424→    const matchSearch = !search ||
+   425→      o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
+   426→      o.farmer.name.toLowerCase().includes(search.toLowerCase())
+   427→    return matchSearch
+   428→  })
+   429→
+   430→  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+   431→  const safePage = Math.min(page, totalPages)
+   432→  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+   433→  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+   434→  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+   435→
+   436→  const clearDateFilter = () => {
+   437→    setFromDate('')
+   438→    setToDate('')
+   439→  }
+   440→
+   441→  const hasDateFilter = fromDate || toDate
+   442→
+   443→  // Expose repeat order function for farmer detail
+   444→  useEffect(() => {
+   445→    if (prefillFarmer) {
+   446→      const id = setTimeout(() => {
+   447→        setFormFarmer(prefillFarmer)
+   448→        setCreateOpen(true)
+   449→      }, 0)
+   450→      return () => clearTimeout(id)
+   451→    }
+   452→  }, [prefillFarmer])
+   453→
+   454→  return (
+   455→    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
+   456→      <Card className="border-l-2 border-l-green-500">
+   457→        <CardHeader className="pb-3">
+   458→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   459→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   460→              <ShoppingCart className="h-5 w-5" />
+   461→              Penjualan / Pesanan
+   462→            </CardTitle>
+   463→            <div className="flex items-center gap-2">
+   464→              <Button
+   465→                variant="outline"
+   466→                size="sm"
+   467→                className="shrink-0 gap-1.5"
+   468→                disabled={!orders || orders.length === 0}
+   469→                onClick={() => {
+   470→                  exportToCSV(
+   471→                    'pesanan-pupuk',
+   472→                    ['No Pesanan', 'Petani', 'NIK', 'Gudang', 'Total', 'Subsidi', 'Status', 'Tanggal'],
+   473→                    orders.map((o) => [
+   474→                      o.orderNumber,
+   475→                      o.farmer.name,
+   476→                      o.farmer.nik,
+   477→                      o.warehouse.name,
+   478→                      o.totalAmount,
+   479→                      o.totalSubsidy,
+   480→                      getStatusLabel(o.status),
+   481→                      formatDate(o.createdAt),
+   482→                    ]),
+   483→                  )
+   484→                }}
+   485→              >
+   486→                <Download className="h-4 w-4" />
+   487→                <span className="hidden sm:inline">Export CSV</span>
+   488→              </Button>
+   489→              <Button onClick={() => { resetCreateForm(); setCreateOpen(true) }} size="sm" className="shrink-0">
+   490→                <Plus className="h-4 w-4 mr-1" />
+   491→                Buat Pesanan
+   492→              </Button>
+   493→            </div>
+   494→          </div>
+   495→          <div className="flex flex-col gap-3 pt-2">
+   496→            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+   497→              <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
+   498→                <TabsList className="h-8">
+   499→                  {ORDER_STATUS_TABS.map((tab) => (
+   500→                    <TabsTrigger key={tab.value} value={tab.value} className="text-xs px-3">
+   501→                      {tab.label}
+   502→                      {orderSummary?.byStatus[tab.value] !== undefined && (
+   503→                        <span className="ml-1 text-[10px] text-muted-foreground">({orderSummary.byStatus[tab.value]})</span>
+   504→                      )}
+   505→                    </TabsTrigger>
+   506→                  ))}
+   507→                </TabsList>
+   508→              </Tabs>
+   509→              <div className="flex items-center gap-2 sm:ml-auto">
+   510→                <Button
+   511→                  variant={showDateFilter ? 'default' : 'outline'}
+   512→                  size="sm"
+   513→                  className="h-8 gap-1.5 text-xs"
+   514→                  onClick={() => setShowDateFilter(!showDateFilter)}
+   515→                >
+   516→                  <CalendarDays className="h-3.5 w-3.5" />
+   517→                  Filter Tanggal
+   518→                </Button>
+   519→                <div className="relative flex-1 sm:max-w-[200px]">
+   520→                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+   521→                  <Input
+   522→                    placeholder="Cari pesanan..."
+   523→                    value={search}
+   524→                    onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+   525→                    className="pl-9 h-8 text-sm"
+   526→                  />
+   527→                </div>
+   528→              </div>
+   529→            </div>
+   530→            {showDateFilter && (
+   531→              <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-lg border">
+   532→                <Label className="text-xs text-muted-foreground shrink-0">Dari:</Label>
+   533→                <Input
+   534→                  type="date"
+   535→                  value={fromDate}
+   536→                  onChange={(e) => { setFromDate(e.target.value); setPage(1) }}
+   537→                  className="h-8 text-xs w-auto sm:w-36"
+   538→                />
+   539→                <Label className="text-xs text-muted-foreground shrink-0">Sampai:</Label>
+   540→                <Input
+   541→                  type="date"
+   542→                  value={toDate}
+   543→                  onChange={(e) => { setToDate(e.target.value); setPage(1) }}
+   544→                  className="h-8 text-xs w-auto sm:w-36"
+   545→                />
+   546→                {hasDateFilter && (
+   547→                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={clearDateFilter}>
+   548→                    <X className="h-3.5 w-3.5" />
+   549→                  </Button>
+   550→                )}
+   551→              </div>
+   552→            )}
+   553→          </div>
+   554→        </CardHeader>
+   555→        <CardContent className="p-0">
+   556→          {isLoading ? (
+   557→            <div className="p-4 space-y-3">
+   558→              {Array.from({ length: 5 }).map((_, i) => (
+   559→                <Skeleton key={i} className="h-12 w-full" />
+   560→              ))}
+   561→            </div>
+   562→          ) : (
+   563→            <>
+   564→              <div className="px-4 py-2 border-b bg-muted/30">
+   565→                <p className="text-xs text-muted-foreground">
+   566→                  Menampilkan {filtered.length > 0 ? `${startIndex}-${endIndex}` : '0'} dari {orderSummary?.total ?? filtered.length} pesanan
+   567→                  {hasDateFilter && <span className="ml-1 text-primary">(filter aktif)</span>}
+   568→                </p>
+   569→              </div>
+   570→              <div className="overflow-x-auto">
+   571→                <Table>
+   572→                  <TableHeader>
+   573→                    <TableRow>
+   574→                      <TableHead className="text-xs">No. Pesanan</TableHead>
+   575→                      <TableHead className="text-xs">Petani</TableHead>
+   576→                      <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
+   577→                      <TableHead className="text-xs text-right">Total (Rp)</TableHead>
+   578→                      <TableHead className="text-xs text-right hidden sm:table-cell">Subsidi (Rp)</TableHead>
+   579→                      <TableHead className="text-xs">Status</TableHead>
+   580→                      <TableHead className="text-xs hidden md:table-cell">Tanggal</TableHead>
+   581→                      <TableHead className="text-xs text-right">Aksi</TableHead>
+   582→                    </TableRow>
+   583→                  </TableHeader>
+   584→                  <TableBody>
+   585→                    {filtered.length === 0 ? (
+   586→                      <TableRow>
+   587→                        <TableCell colSpan={8} className="text-center py-12">
+   588→                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+   589→                            <ShoppingCart className="h-10 w-10 opacity-30" />
+   590→                            <p className="text-sm font-medium">Tidak ada data pesanan</p>
+   591→                            {(hasDateFilter || search) && (
+   592→                              <p className="text-xs">Coba ubah filter atau kata kunci pencarian</p>
+   593→                            )}
+   594→                          </div>
+   595→                        </TableCell>
+   596→                      </TableRow>
+   597→                    ) : (
+   598→                      paged.map((order) => (
+   599→                        <TableRow key={order.id}>
+   600→                          <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
+   601→                          <TableCell className="text-sm font-medium">{order.farmer.name}</TableCell>
+   602→                          <TableCell className="text-xs hidden md:table-cell">{order.warehouse.name}</TableCell>
+   603→                          <TableCell className="text-sm text-right font-medium">{formatRupiah(order.totalAmount)}</TableCell>
+   604→                          <TableCell className="text-xs text-right hidden sm:table-cell text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
+   605→                          <TableCell>
+   606→                            <div className="flex items-center gap-1.5">
+   607→                              {order.status === 'PENDING' && (
+   608→                                <span className="inline-block h-2 w-2 rounded-full bg-green-500 pulse-dot shrink-0" />
+   609→                              )}
+   610→                              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>
+   611→                                {getStatusLabel(order.status)}
+   612→                              </Badge>
+   613→                            </div>
+   614→                          </TableCell>
+   615→                          <TableCell className="text-xs hidden md:table-cell">{formatDate(order.createdAt)}</TableCell>
+   616→                          <TableCell className="text-right">
+   617→                            <div className="flex items-center justify-end gap-1">
+   618→                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setDetailOrder(order); setDetailOpen(true) }}>
+   619→                                <Eye className="h-3.5 w-3.5" />
+   620→                              </Button>
+   621→                              {ORDER_STATUS_FLOW[order.status]?.length > 0 && (
+   622→                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingOrder(order); setStatusOpen(true) }}>
+   623→                                  <ArrowRight className="h-3.5 w-3.5" />
+   624→                                </Button>
+   625→                              )}
+   626→                            </div>
+   627→                          </TableCell>
+   628→                        </TableRow>
+   629→                      ))
+   630→                    )}
+   631→                  </TableBody>
+   632→                </Table>
+   633→              </div>
+   634→              {filtered.length > ITEMS_PER_PAGE && (
+   635→                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
+   636→                  <p className="text-xs text-muted-foreground">
+   637→                    Menampilkan {startIndex}-{endIndex} dari {filtered.length} data
+   638→                  </p>
+   639→                  <Pagination>
+   640→                    <PaginationContent>
+   641→                      <PaginationItem>
+   642→                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+   643→                      </PaginationItem>
+   644→                      {safePage > 3 && (
+   645→                        <>
+   646→                          <PaginationItem>
+   647→                            <PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink>
+   648→                          </PaginationItem>
+   649→                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+   650→                        </>
+   651→                      )}
+   652→                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+   653→                        .filter((p) => p >= safePage - 1 && p <= safePage + 1)
+   654→                        .map((p) => (
+   655→                          <PaginationItem key={p}>
+   656→                            <PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+   657→                          </PaginationItem>
+   658→                        ))
+   659→                      }
+   660→                      {safePage < totalPages - 2 && (
+   661→                        <>
+   662→                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+   663→                          <PaginationItem>
+   664→                            <PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink>
+   665→                          </PaginationItem>
+   666→                        </>
+   667→                      )}
+   668→                      <PaginationItem>
+   669→                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+   670→                      </PaginationItem>
+   671→                    </PaginationContent>
+   672→                  </Pagination>
+   673→                </div>
+   674→              )}
+   675→            </>
+   676→          )}
+   677→        </CardContent>
+   678→      </Card>
+   679→
+   680→      {/* Create Order Dialog */}
+   681→      <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) setPrefillFarmer(undefined) }}>
+   682→        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+   683→          <DialogHeader>
+   684→            <DialogTitle>Buat Pesanan Baru</DialogTitle>
+   685→            <DialogDescription>Isi data pesanan pembelian pupuk bersubsidi</DialogDescription>
+   686→          </DialogHeader>
+   687→          <div className="grid gap-4 py-2">
+   688→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   689→              <div className="grid gap-2">
+   690→                <Label>Petani *</Label>
+   691→                <Select value={formFarmer} onValueChange={setFormFarmer}>
+   692→                  <SelectTrigger><SelectValue placeholder="Pilih petani" /></SelectTrigger>
+   693→                  <SelectContent>
+   694→                    <div className="p-2">
+   695→                      <Input
+   696→                        placeholder="Cari nama atau NIK..."
+   697→                        value={farmerSearch}
+   698→                        onChange={(e) => setFarmerSearch(e.target.value)}
+   699→                        className="h-8 text-xs mb-1"
+   700→                        onClick={(e) => e.stopPropagation()}
+   701→                      />
+   702→                    </div>
+   703→                    {filteredFarmers.map((f) => (
+   704→                      <SelectItem key={f.id} value={f.id}>{f.name} — {f.nik}</SelectItem>
+   705→                    ))}
+   706→                  </SelectContent>
+   707→                </Select>
+   708→              </div>
+   709→              <div className="grid gap-2">
+   710→                <Label>Gudang *</Label>
+   711→                <Select value={formWarehouse} onValueChange={setFormWarehouse}>
+   712→                  <SelectTrigger><SelectValue placeholder="Pilih gudang" /></SelectTrigger>
+   713→                  <SelectContent>
+   714→                    {(warehouses || []).map((w) => (
+   715→                      <SelectItem key={w.id} value={w.id}>{w.name} ({w.code})</SelectItem>
+   716→                    ))}
+   717→                  </SelectContent>
+   718→                </Select>
+   719→              </div>
+   720→            </div>
+   721→
+   722→            <Separator />
+   723→
+   724→            <div>
+   725→              <div className="flex items-center justify-between mb-3">
+   726→                <Label className="text-sm font-semibold">Item Pesanan</Label>
+   727→                <Button type="button" variant="outline" size="sm" onClick={addItem}>
+   728→                  <Plus className="h-3 w-3 mr-1" />
+   729→                  Tambah Item
+   730→                </Button>
+   731→              </div>
+   732→
+   733→              {formItems.length === 0 ? (
+   734→                <div className="text-center py-6 text-sm text-muted-foreground border border-dashed rounded-lg">
+   735→                  Belum ada item. Klik &quot;Tambah Item&quot; untuk menambahkan produk.
+   736→                </div>
+   737→              ) : (
+   738→                <ScrollArea className="max-h-60">
+   739→                  <div className="space-y-3 pr-3">
+   740→                    {formItems.map((item, idx) => (
+   741→                      <div key={idx} className="grid grid-cols-12 gap-2 items-end p-3 bg-muted/50 rounded-lg">
+   742→                        <div className="col-span-12 sm:col-span-5">
+   743→                          <Label className="text-[10px] text-muted-foreground">Produk</Label>
+   744→                          <Select value={item.productId} onValueChange={(v) => updateItem(idx, 'productId', v)}>
+   745→                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pilih" /></SelectTrigger>
+   746→                            <SelectContent>
+   747→                              {(products || []).filter(p => p.isActive !== false).map((p) => (
+   748→                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+   749→                              ))}
+   750→                            </SelectContent>
+   751→                          </Select>
+   752→                        </div>
+   753→                        <div className="col-span-4 sm:col-span-2">
+   754→                          <Label className="text-[10px] text-muted-foreground">Qty (kg)</Label>
+   755→                          <Input
+   756→                            type="number"
+   757→                            className="h-8 text-xs"
+   758→                            value={item.quantity || ''}
+   759→                            onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
+   760→                          />
+   761→                        </div>
+   762→                        <div className="col-span-3 sm:col-span-2">
+   763→                          <Label className="text-[10px] text-muted-foreground">Harga/kg</Label>
+   764→                          <div className="h-8 flex items-center text-xs font-mono">
+   765→                            {item.pricePerKg ? formatRupiah(item.pricePerKg) : '-'}
+   766→                          </div>
+   767→                        </div>
+   768→                        <div className="col-span-3 sm:col-span-2">
+   769→                          <Label className="text-[10px] text-muted-foreground">Subtotal</Label>
+   770→                          <div className="h-8 flex items-center text-xs font-mono font-medium">
+   771→                            {item.subtotal ? formatRupiah(item.subtotal) : 'Rp 0'}
+   772→                          </div>
+   773→                        </div>
+   774→                        <div className="col-span-2 sm:col-span-1 flex justify-end">
+   775→                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
+   776→                            <Minus className="h-3.5 w-3.5" />
+   777→                          </Button>
+   778→                        </div>
+   779→                      </div>
+   780→                    ))}
+   781→                  </div>
+   782→                </ScrollArea>
+   783→              )}
+   784→            </div>
+   785→
+   786→            {formItems.length > 0 && (
+   787→              <div className="rounded-lg p-4 space-y-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/60 dark:border-green-700/40">
+   788→                <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-2">Ringkasan Pesanan</p>
+   789→                <div className="flex justify-between text-sm">
+   790→                  <span className="text-muted-foreground">Total Harga Normal</span>
+   791→                  <span className="font-medium transition-all duration-300"><span className="text-xs text-muted-foreground">Rp </span>{formatRupiah(totals.totalAmount).replace(/^Rp\s*/, '')}</span>
+   792→                </div>
+   793→                <div className="flex justify-between text-sm">
+   794→                  <span className="text-muted-foreground">Total Harga Subsidi</span>
+   795→                  <span className="font-bold text-primary transition-all duration-300"><span className="text-xs text-primary/60">Rp </span>{formatRupiah(totals.totalSubsidy).replace(/^Rp\s*/, '')}</span>
+   796→                </div>
+   797→                <div className="flex justify-between text-sm pt-1 border-t border-green-200/60 dark:border-green-700/40">
+   798→                  <span className="text-muted-foreground">Selisih Subsidi</span>
+   799→                  <span className="font-bold text-green-700 dark:text-green-400 transition-all duration-300"><span className="text-xs text-green-600/60 dark:text-green-500/60">Rp </span>{formatRupiah(totals.totalAmount - totals.totalSubsidy).replace(/^Rp\s*/, '')}</span>
+   800→                </div>
+   801→              </div>
+   802→            )}
+   803→
+   804→            <div className="grid gap-2">
+   805→              <Label>Catatan</Label>
+   806→              <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Catatan tambahan..." rows={2} />
+   807→            </div>
+   808→          </div>
+   809→          <DialogFooter>
+   810→            <Button variant="outline" onClick={() => setCreateOpen(false)}>Batal</Button>
+   811→            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+   812→              {createMutation.isPending ? 'Menyimpan...' : 'Buat Pesanan'}
+   813→            </Button>
+   814→          </DialogFooter>
+   815→        </DialogContent>
+   816→      </Dialog>
+   817→
+   818→      {/* Order Detail Dialog */}
+   819→      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+   820→        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+   821→          <DialogHeader>
+   822→            <div className="flex items-center justify-between pr-2">
+   823→              <div>
+   824→                <DialogTitle>Detail Pesanan</DialogTitle>
+   825→                <DialogDescription>
+   826→                  {detailOrder && <span className="font-mono">{detailOrder.orderNumber}</span>}
+   827→                </DialogDescription>
+   828→              </div>
+   829→              {detailOrder && (
+   830→                <Button
+   831→                  variant="outline"
+   832→                  size="sm"
+   833→                  className="gap-1.5"
+   834→                  onClick={() => handlePrintOrder(detailOrder)}
+   835→                >
+   836→                  <Printer className="h-3.5 w-3.5" />
+   837→                  Cetak
+   838→                </Button>
+   839→              )}
+   840→            </div>
+   841→          </DialogHeader>
+   842→          {detailOrder && (
+   843→            <div className="space-y-4">
+   844→              <div className="rounded-lg border bg-muted/30 p-2">
+   845→                <OrderStatusTimeline status={detailOrder.status} />
+   846→              </div>
+   847→
+   848→              <div className="grid grid-cols-2 gap-3 text-sm">
+   849→                <div><span className="text-muted-foreground">Petani:</span> <span className="font-medium">{detailOrder.farmer.name}</span></div>
+   850→                <div><span className="text-muted-foreground">Gudang:</span> <span className="font-medium">{detailOrder.warehouse.name}</span></div>
+   851→                <div><span className="text-muted-foreground">Tanggal:</span> {formatDate(detailOrder.createdAt)}</div>
+   852→                <div>
+   853→                  <span className="text-muted-foreground">Status:</span>{' '}
+   854→                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(detailOrder.status)}`}>
+   855→                    {getStatusLabel(detailOrder.status)}
+   856→                  </Badge>
+   857→                </div>
+   858→              </div>
+   859→              <Separator />
+   860→              <div>
+   861→                <h4 className="text-sm font-semibold mb-2">Item Pesanan</h4>
+   862→                <Table>
+   863→                  <TableHeader>
+   864→                    <TableRow>
+   865→                      <TableHead className="text-xs">Produk</TableHead>
+   866→                      <TableHead className="text-xs text-right">Qty (kg)</TableHead>
+   867→                      <TableHead className="text-xs text-right">Harga/kg</TableHead>
+   868→                      <TableHead className="text-xs text-right">Subtotal</TableHead>
+   869→                    </TableRow>
+   870→                  </TableHeader>
+   871→                  <TableBody>
+   872→                    {detailOrder.items.map((item) => (
+   873→                      <TableRow key={item.id}>
+   874→                        <TableCell className="text-sm py-2">
+   875→                          <div className="flex items-center gap-2">
+   876→                            {item.productName}
+   877→                            <Badge variant="outline" className={`text-[9px] px-1 py-0 ${getTypeBadgeColor(item.product?.type || '')}`}>
+   878→                              {item.product?.type}
+   879→                            </Badge>
+   880→                          </div>
+   881→                        </TableCell>
+   882→                        <TableCell className="text-sm text-right font-mono">{formatNumber(item.quantity)}</TableCell>
+   883→                        <TableCell className="text-sm text-right font-mono">{formatRupiah(item.pricePerKg)}</TableCell>
+   884→                        <TableCell className="text-sm text-right font-mono font-medium">{formatRupiah(item.subtotal)}</TableCell>
+   885→                      </TableRow>
+   886→                    ))}
+   887→                  </TableBody>
+   888→                </Table>
+   889→              </div>
+   890→              <Separator />
+   891→              <div className="bg-muted/50 rounded-lg p-3 space-y-3">
+   892→                {/* Stacked Bar: Base Price vs Subsidy */}
+   893→                <div>
+   894→                  <p className="text-xs font-medium text-muted-foreground mb-2">Perbandingan Harga Normal vs Subsidi</p>
+   895→                  <div className="flex h-4 rounded-full overflow-hidden bg-muted">
+   896→                    <div
+   897→                      className="h-full bg-primary/70 transition-all duration-500"
+   898→                      style={{ width: `${detailOrder.totalAmount > 0 ? (detailOrder.totalSubsidy / detailOrder.totalAmount) * 100 : 0}%` }}
+   899→                      title={`Harga Subsidi: ${formatRupiah(detailOrder.totalSubsidy)}`}
+   900→                    />
+   901→                    <div
+   902→                      className="h-full bg-orange-400/70 transition-all duration-500"
+   903→                      style={{ width: `${detailOrder.totalAmount > 0 ? ((detailOrder.totalAmount - detailOrder.totalSubsidy) / detailOrder.totalAmount) * 100 : 0}%` }}
+   904→                      title={`Selisih Subsidi: ${formatRupiah(detailOrder.totalAmount - detailOrder.totalSubsidy)}`}
+   905→                    />
+   906→                  </div>
+   907→                  <div className="flex items-center justify-center gap-4 mt-1.5">
+   908→                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+   909→                      <span className="inline-block h-2 w-2 rounded-sm bg-primary/70" />
+   910→                      Harga Subsidi
+   911→                    </div>
+   912→                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+   913→                      <span className="inline-block h-2 w-2 rounded-sm bg-orange-400/70" />
+   914→                      Selisih Subsidi
+   915→                    </div>
+   916→                  </div>
+   917→                </div>
+   918→                <div className="flex justify-between text-sm">
+   919→                  <span className="text-muted-foreground">Total Harga Normal</span>
+   920→                  <span className="font-medium">{formatRupiah(detailOrder.totalAmount)}</span>
+   921→                </div>
+   922→                <div className="flex justify-between text-sm">
+   923→                  <span className="text-muted-foreground">Total Harga Subsidi</span>
+   924→                  <span className="font-bold text-primary">{formatRupiah(detailOrder.totalSubsidy)}</span>
+   925→                </div>
+   926→                <div className="flex justify-between text-sm">
+   927→                  <span className="text-muted-foreground">Selisih Subsidi</span>
+   928→                  <span className="font-bold text-green-600">{formatRupiah(detailOrder.totalAmount - detailOrder.totalSubsidy)}</span>
+   929→                </div>
+   930→              </div>
+   931→              {detailOrder.notes && (
+   932→                <div className="text-sm">
+   933→                  <span className="text-muted-foreground">Catatan:</span> {detailOrder.notes}
+   934→                </div>
+   935→              )}
+   936→            </div>
+   937→          )}
+   938→        </DialogContent>
+   939→      </Dialog>
+   940→
+   941→      {/* Status Update Dialog */}
+   942→      <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
+   943→        <DialogContent className="sm:max-w-sm">
+   944→          <DialogHeader>
+   945→            <DialogTitle>Update Status Pesanan</DialogTitle>
+   946→            <DialogDescription>
+   947→              {editingOrder && (
+   948→                <span>Pesanan <span className="font-mono font-medium">{editingOrder.orderNumber}</span> — Status: <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(editingOrder.status)}`}>{getStatusLabel(editingOrder.status)}</Badge></span>
+   949→              )}
+   950→            </DialogDescription>
+   951→          </DialogHeader>
+   952→          <div className="grid gap-2 py-2">
+   953→            {editingOrder && ORDER_STATUS_FLOW[editingOrder.status]?.map((nextStatus) => (
+   954→              <Button
+   955→                key={nextStatus}
+   956→                variant="outline"
+   957→                className="justify-start h-12"
+   958→                onClick={() => handleStatusUpdate(nextStatus)}
+   959→                disabled={updateMutation.isPending}
+   960→              >
+   961→                <ArrowRight className="h-4 w-4 mr-2 shrink-0" />
+   962→                <div className="text-left">
+   963→                  <div className="text-sm font-medium">{getStatusLabel(nextStatus)}</div>
+   964→                  <div className="text-[10px] text-muted-foreground">
+   965→                    {nextStatus === 'CONFIRMED' && 'Konfirmasi pesanan oleh gudang'}
+   966→                    {nextStatus === 'PICKED_UP' && 'Pupuk sudah diambil oleh petani'}
+   967→                    {nextStatus === 'CANCELLED' && 'Batalkan pesanan ini'}
+   968→                  </div>
+   969→                </div>
+   970→              </Button>
+   971→            ))}
+   972→          </div>
+   973→        </DialogContent>
+   974→      </Dialog>
+   975→    </motion.div>
+   976→  )
+   977→}

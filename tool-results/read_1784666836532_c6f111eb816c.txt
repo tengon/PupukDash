@@ -1,0 +1,606 @@
+     1→'use client'
+     2→
+     3→import { useState } from 'react'
+     4→import { useQuery } from '@tanstack/react-query'
+     5→import { useAppStore } from '@/lib/store'
+     6→import { fetchDashboard, fetchStock, fetchProducts, fetchDistributions, type DashboardData } from '@/lib/api'
+     7→import { formatRupiah, formatNumber, getStatusColor, getStatusLabel, getStockStatusColor, getStockStatusLabel } from '@/lib/format'
+     8→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+     9→import { Badge } from '@/components/ui/badge'
+    10→import { Button } from '@/components/ui/button'
+    11→import { Skeleton } from '@/components/ui/skeleton'
+    12→import { Progress } from '@/components/ui/progress'
+    13→import {
+    14→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    15→} from '@/components/ui/table'
+    16→import { motion } from 'framer-motion'
+    17→import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles, PackagePlus, ArrowUp, ArrowDown, Crown, Eye } from 'lucide-react'
+    18→import { QuickRestockDialog } from '@/components/stock/quick-restock-dialog'
+    19→
+    20→const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
+    21→const itemVariants = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } }
+    22→
+    23→function getGreeting(): { greeting: string; icon: typeof Sun } {
+    24→  const hour = new Date().getHours()
+    25→  if (hour < 11) return { greeting: 'Selamat Pagi', icon: Sun }
+    26→  if (hour < 15) return { greeting: 'Selamat Siang', icon: CloudSun }
+    27→  if (hour < 18) return { greeting: 'Selamat Sore', icon: CloudSun }
+    28→  return { greeting: 'Selamat Malam', icon: Moon }
+    29→}
+    30→
+    31→function getIndonesianDate(): string {
+    32→  return new Date().toLocaleDateString('id-ID', {
+    33→    weekday: 'long',
+    34→    day: 'numeric',
+    35→    month: 'long',
+    36→    year: 'numeric',
+    37→  })
+    38→}
+    39→
+    40→function WelcomeSection() {
+    41→  const { greeting, icon: GreetingIcon } = getGreeting()
+    42→  return (
+    43→    <motion.div variants={itemVariants}>
+    44→      <div className="glass rounded-xl p-4 sm:p-5 border border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 welcome-gradient-border" style={{ boxShadow: 'var(--shadow-sm)' }}>
+    45→        <div className="flex items-center gap-3">
+    46→          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+    47→            <GreetingIcon className="h-6 w-6 text-primary" />
+    48→          </div>
+    49→          <div className="flex-1 min-w-0">
+    50→            <h2 className="text-lg sm:text-xl font-bold leading-tight">
+    51→              {greeting} <span className="inline-block animate-pulse-gentle">👋</span>
+    52→            </h2>
+    53→            <p className="text-sm text-muted-foreground mt-0.5">{getIndonesianDate()}</p>
+    54→          </div>
+    55→          <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
+    56→            <Sparkles className="h-3.5 w-3.5 text-primary" />
+    57→            <span>Ringkasan hari ini</span>
+    58→          </div>
+    59→        </div>
+    60→      </div>
+    61→    </motion.div>
+    62→  )
+    63→}
+    64→
+    65→function StatsCards({ data }: { data: DashboardData }) {
+    66→  const stats = [
+    67→    { title: 'Total Petani', value: formatNumber(data.totalFarmers), icon: Users, trend: '+12%', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-900/20', borderColor: 'border-l-green-500', gradient: 'from-green-50/40 to-white dark:from-green-900/10 dark:to-card' },
+    68→    { title: 'Total Produk', value: formatNumber(data.totalProducts), icon: Package, trend: '+5%', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-50 dark:bg-emerald-900/20', borderColor: 'border-l-emerald-500', gradient: 'from-emerald-50/40 to-white dark:from-emerald-900/10 dark:to-card' },
+    69→    { title: 'Total Penjualan', value: formatNumber(data.totalOrders), icon: ShoppingCart, trend: '+18%', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-50 dark:bg-amber-900/20', borderColor: 'border-l-amber-500', gradient: 'from-amber-50/40 to-white dark:from-amber-900/10 dark:to-card' },
+    70→    { title: 'Total Subsidi', value: formatRupiah(data.totalSubsidy), icon: Banknote, trend: '+8%', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-900/20', borderColor: 'border-l-red-500', gradient: 'from-red-50/40 to-white dark:from-red-900/10 dark:to-card' },
+    71→  ]
+    72→  return (
+    73→    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    74→      {stats.map((stat) => (
+    75→        <motion.div key={stat.title} variants={itemVariants}>
+    76→          <Card className={`border-l-4 ${stat.borderColor} bg-gradient-to-br ${stat.gradient} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`} style={{ boxShadow: 'var(--shadow-sm)' }}>
+    77→            <CardContent className="p-4">
+    78→              <div className="flex items-center justify-between">
+    79→                <div className="flex-1">
+    80→                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{stat.title}</p>
+    81→                  <p className="text-xl font-bold mt-1.5">{stat.value}</p>
+    82→                  <div className="flex items-center gap-1 mt-2">
+    83→                    <TrendingUp className="h-3 w-3 text-green-600 dark:text-green-400" />
+    84→                    <span className="text-xs text-green-600 dark:text-green-400 font-semibold">{stat.trend}</span>
+    85→                    <span className="text-xs text-muted-foreground">dari bulan lalu</span>
+    86→                  </div>
+    87→                </div>
+    88→                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bgColor} shadow-sm ring-1 ring-black/5 dark:ring-white/5`}>
+    89→                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+    90→                </div>
+    91→              </div>
+    92→            </CardContent>
+    93→          </Card>
+    94→        </motion.div>
+    95→      ))}
+    96→    </div>
+    97→  )
+    98→}
+    99→
+   100→function MonthlySales({ data }: { data: DashboardData }) {
+   101→  const maxTotal = Math.max(...data.monthlySales.map((m) => m.total), 1)
+   102→
+   103→  // Comparison: this month vs last month
+   104→  const thisMonth = data.monthlySales[data.monthlySales.length - 1]
+   105→  const lastMonth = data.monthlySales[data.monthlySales.length - 2]
+   106→  let percentageChange: number | null = null
+   107→  let isIncrease = false
+   108→  if (thisMonth && lastMonth && lastMonth.total > 0) {
+   109→    percentageChange = Math.round(((thisMonth.total - lastMonth.total) / lastMonth.total) * 100)
+   110→    isIncrease = thisMonth.total >= lastMonth.total
+   111→  }
+   112→
+   113→  return (
+   114→    <motion.div variants={itemVariants}>
+   115→      <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
+   116→        <CardHeader className="pb-2">
+   117→          <CardTitle className="text-sm font-semibold">Penjualan Bulanan</CardTitle>
+   118→          <CardDescription>6 bulan terakhir</CardDescription>
+   119→        </CardHeader>
+   120→        <CardContent>
+   121→          <div className="space-y-3">
+   122→            {data.monthlySales.map((m) => (
+   123→              <div key={m.month} className="space-y-1">
+   124→                <div className="flex justify-between text-xs">
+   125→                  <span className="text-muted-foreground">{m.month}</span>
+   126→                  <span className="font-medium">{formatRupiah(m.total)}</span>
+   127→                </div>
+   128→                <Progress value={(m.total / maxTotal) * 100} className="h-2" />
+   129→              </div>
+   130→            ))}
+   131→          </div>
+   132→
+   133→          {/* Comparison Section */}
+   134→          {percentageChange !== null && (
+   135→            <div className="mt-4 pt-4 border-t">
+   136→              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Perbandingan Bulanan</p>
+   137→              <div className="flex items-center gap-3">
+   138→                <div className="flex items-center gap-2">
+   139→                  {isIncrease ? (
+   140→                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+   141→                      <ArrowUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+   142→                    </div>
+   143→                  ) : (
+   144→                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+   145→                      <ArrowDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+   146→                    </div>
+   147→                  )}
+   148→                  <div>
+   149→                    <p className={`text-sm font-bold ${isIncrease ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+   150→                      {isIncrease ? '\u2191' : '\u2193'} {Math.abs(percentageChange)}%
+   151→                    </p>
+   152→                    <p className="text-[10px] text-muted-foreground">Bulan ini vs bulan lalu</p>
+   153→                  </div>
+   154→                </div>
+   155→                <div className="flex-1 border-l pl-3">
+   156→                  <p className="text-[10px] text-muted-foreground">Bulan lalu</p>
+   157→                  <p className="text-xs font-mono">{formatRupiah(lastMonth.total)}</p>
+   158→                </div>
+   159→                <div className="flex-1 border-l pl-3">
+   160→                  <p className="text-[10px] text-muted-foreground">Bulan ini</p>
+   161→                  <p className="text-xs font-mono font-semibold">{formatRupiah(thisMonth.total)}</p>
+   162→                </div>
+   163→              </div>
+   164→            </div>
+   165→          )}
+   166→
+   167→          {/* Top Farmer This Month */}
+   168→          {data.topFarmerThisMonth && (
+   169→            <div className="mt-3 pt-3 border-t">
+   170→              <div className="flex items-center gap-2">
+   171→                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-900/20 shrink-0">
+   172→                  <Crown className="h-4 w-4 text-amber-500" />
+   173→                </div>
+   174→                <div className="min-w-0">
+   175→                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pesanan Terbanyak Bulan Ini</p>
+   176→                  <p className="text-xs font-semibold truncate">{data.topFarmerThisMonth.name}</p>
+   177→                </div>
+   178→                <div className="ml-auto text-right shrink-0">
+   179→                  <p className="text-xs font-bold text-primary">{data.topFarmerThisMonth.totalOrders} pesanan</p>
+   180→                  <p className="text-[10px] text-muted-foreground">{formatRupiah(data.topFarmerThisMonth.totalAmount)}</p>
+   181→                </div>
+   182→              </div>
+   183→            </div>
+   184→          )}
+   185→        </CardContent>
+   186→      </Card>
+   187→    </motion.div>
+   188→  )
+   189→}
+   190→
+   191→function ProductDistribution({ data }: { data: DashboardData }) {
+   192→  const maxVal = Math.max(...data.productDistribution.map((p) => p.value), 1)
+   193→  return (
+   194→    <motion.div variants={itemVariants}>
+   195→      <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
+   196→        <CardHeader className="pb-2">
+   197→          <CardTitle className="text-sm font-semibold">Distribusi per Jenis Pupuk</CardTitle>
+   198→          <CardDescription>Proporsi stok tersedia</CardDescription>
+   199→        </CardHeader>
+   200→        <CardContent>
+   201→          <div className="space-y-3">
+   202→            {data.productDistribution.map((p) => (
+   203→              <div key={p.name} className="space-y-1">
+   204→                <div className="flex justify-between text-xs">
+   205→                  <span className="font-medium">{p.name}</span>
+   206→                  <span className="text-muted-foreground">{formatNumber(p.value)} kg</span>
+   207→                </div>
+   208→                <Progress value={(p.value / maxVal) * 100} className="h-2.5" />
+   209→              </div>
+   210→            ))}
+   211→          </div>
+   212→        </CardContent>
+   213→      </Card>
+   214→    </motion.div>
+   215→  )
+   216→}
+   217→
+   218→function RecentOrders({ data }: { data: DashboardData }) {
+   219→  return (
+   220→    <motion.div variants={itemVariants}>
+   221→      <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
+   222→        <CardHeader className="pb-2">
+   223→          <div className="flex items-center justify-between">
+   224→            <div>
+   225→              <CardTitle className="text-sm font-semibold">Penjualan Terbaru</CardTitle>
+   226→              <CardDescription>5 pesanan terakhir</CardDescription>
+   227→            </div>
+   228→            <button
+   229→              onClick={() => useAppStore.getState().setActiveTab('orders')}
+   230→              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+   231→            >
+   232→              Lihat Semua
+   233→              <ChevronRight className="h-3.5 w-3.5" />
+   234→            </button>
+   235→          </div>
+   236→        </CardHeader>
+   237→        <CardContent className="p-0">
+   238→          <Table>
+   239→            <TableHeader>
+   240→              <TableRow><TableHead className="text-xs">No. Pesanan</TableHead><TableHead className="text-xs">Petani</TableHead><TableHead className="text-xs text-right">Total</TableHead><TableHead className="text-xs">Status</TableHead></TableRow>
+   241→            </TableHeader>
+   242→            <TableBody>
+   243→              {data.recentOrders.length === 0 ? (
+   244→                <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">Belum ada pesanan</TableCell></TableRow>
+   245→              ) : data.recentOrders.map((order) => {
+   246→                const isToday = new Date(order.createdAt).toDateString() === new Date().toDateString()
+   247→                return (
+   248→                <TableRow key={order.id} className="hover:border-l-2 hover:border-l-primary/30">
+   249→                  <TableCell className="text-xs font-mono">
+   250→                    <div className="flex items-center gap-1.5">
+   251→                      {order.orderNumber}
+   252→                      {isToday && (
+   253→                        <Badge className="text-[8px] px-1 py-0 h-4 bg-green-500 text-white border-0 font-bold">BARU</Badge>
+   254→                      )}
+   255→                    </div>
+   256→                  </TableCell>
+   257→                  <TableCell className="text-xs">{order.farmer.name}</TableCell>
+   258→                  <TableCell className="text-xs text-right">{formatRupiah(order.totalAmount)}</TableCell>
+   259→                  <TableCell>
+   260→                    <div className="flex items-center gap-1.5">
+   261→                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>{getStatusLabel(order.status)}</Badge>
+   262→                      <button
+   263→                        onClick={() => useAppStore.getState().setActiveTab('orders')}
+   264→                        className="inline-flex items-center gap-0.5 text-[10px] text-primary hover:text-primary/80 font-medium transition-colors shrink-0"
+   265→                      >
+   266→                        <Eye className="h-3 w-3" />
+   267→                        Lihat Detail
+   268→                      </button>
+   269→                    </div>
+   270→                  </TableCell>
+   271→                </TableRow>
+   272→                )
+   273→              })}
+   274→            </TableBody>
+   275→          </Table>
+   276→        </CardContent>
+   277→      </Card>
+   278→    </motion.div>
+   279→  )
+   280→}
+   281→
+   282→function StockAlerts({ data }: { data: DashboardData }) {
+   283→  const [restockOpen, setRestockOpen] = useState(false)
+   284→  const [restockItem, setRestockItem] = useState<typeof data.stockAlerts[0] | null>(null)
+   285→
+   286→  const handleRestock = (item: typeof data.stockAlerts[0]) => {
+   287→    setRestockItem(item)
+   288→    setRestockOpen(true)
+   289→  }
+   290→
+   291→  return (
+   292→    <motion.div variants={itemVariants}>
+   293→      <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
+   294→        <CardHeader className="pb-2">
+   295→          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+   296→            <AlertTriangle className="h-4 w-4 text-yellow-500 animate-pulse-gentle" />
+   297→            <span>Peringatan Stok</span>
+   298→            {data.stockAlerts.length > 0 && (
+   299→              <span className="ml-auto text-[10px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 px-1.5 py-0.5 rounded-full">
+   300→                {data.stockAlerts.length} item
+   301→              </span>
+   302→            )}
+   303→          </CardTitle>
+   304→        </CardHeader>
+   305→        <CardContent className="p-0">
+   306→          <div className="max-h-64 overflow-y-auto">
+   307→            {data.stockAlerts.length === 0 ? (
+   308→              <div className="p-6 text-center">
+   309→                <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 mb-2">
+   310→                  <AlertTriangle className="h-5 w-5 text-emerald-500" />
+   311→                </div>
+   312→                <p className="text-sm text-muted-foreground">Semua stok dalam kondisi aman</p>
+   313→              </div>
+   314→            ) : (
+   315→              <Table>
+   316→                <TableHeader><TableRow><TableHead className="text-xs">Gudang</TableHead><TableHead className="text-xs">Produk</TableHead><TableHead className="text-xs text-right">Stok</TableHead><TableHead className="text-xs">Status</TableHead><TableHead className="text-xs text-right">Aksi</TableHead></TableRow></TableHeader>
+   317→                <TableBody>
+   318→                  {data.stockAlerts.map((s) => {
+   319→                    const ratio = s.quantity / s.minStock
+   320→                    const borderClass = ratio <= 0.5
+   321→                      ? 'border-l-4 border-l-red-400'
+   322→                      : 'border-l-4 border-l-yellow-400'
+   323→                    return (
+   324→                      <TableRow key={s.id} className={borderClass}>
+   325→                        <TableCell className="text-xs">
+   326→                          <div className="flex items-center gap-1.5">
+   327→                            <span className={`inline-block h-2 w-2 rounded-full pulse-dot ${ratio <= 0.5 ? 'bg-red-500' : 'bg-yellow-500'}`} />
+   328→                            {s.warehouse.name}
+   329→                          </div>
+   330→                        </TableCell>
+   331→                        <TableCell className="text-xs">{s.product.name}</TableCell>
+   332→                        <TableCell className="text-xs text-right font-mono">{formatNumber(s.quantity)} kg</TableCell>
+   333→                        <TableCell><Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStockStatusColor(s.quantity, s.minStock)}`}>{getStockStatusLabel(s.quantity, s.minStock)}</Badge></TableCell>
+   334→                        <TableCell className="text-right">
+   335→                          <Button
+   336→                            variant="outline"
+   337→                            size="sm"
+   338→                            className="h-7 gap-1 text-[10px] text-primary border-primary/30 hover:bg-primary/10"
+   339→                            onClick={() => handleRestock(s)}
+   340→                          >
+   341→                            <PackagePlus className="h-3 w-3" />
+   342→                            Restok
+   343→                          </Button>
+   344→                        </TableCell>
+   345→                      </TableRow>
+   346→                    )
+   347→                  })}
+   348→                </TableBody>
+   349→              </Table>
+   350→            )}
+   351→          </div>
+   352→        </CardContent>
+   353→      </Card>
+   354→      {restockItem && (
+   355→        <QuickRestockDialog
+   356→          open={restockOpen}
+   357→          onOpenChange={setRestockOpen}
+   358→          stock={restockItem}
+   359→        />
+   360→      )}
+   361→    </motion.div>
+   362→  )
+   363→}
+   364→
+   365→function TopFarmers({ data }: { data: DashboardData }) {
+   366→  const medalColors = [
+   367→    'bg-amber-400 text-white shadow-amber-200 shadow-sm dark:shadow-amber-900/40', // Gold
+   368→    'bg-gray-300 text-gray-800 shadow-gray-200 shadow-sm dark:shadow-gray-800/40', // Silver
+   369→    'bg-orange-400 text-white shadow-orange-200 shadow-sm dark:shadow-orange-900/40', // Bronze
+   370→  ]
+   371→
+   372→  const medalTextColors = [
+   373→    'text-amber-500 dark:text-amber-400',
+   374→    'text-gray-400 dark:text-gray-500',
+   375→    'text-orange-500 dark:text-orange-400',
+   376→  ]
+   377→
+   378→  const maxAmount = Math.max(...data.topFarmers.map((f) => f.totalAmount), 1)
+   379→
+   380→  return (
+   381→    <motion.div variants={itemVariants}>
+   382→      <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
+   383→        <CardHeader className="pb-3">
+   384→          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+   385→            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-900/20">
+   386→              <Award className="h-4 w-4 text-amber-500" />
+   387→            </div>
+   388→            <span>Petani Terbaik</span>
+   389→            <span className="ml-auto text-[10px] font-medium text-muted-foreground">Berdasarkan total pembelian</span>
+   390→          </CardTitle>
+   391→        </CardHeader>
+   392→        <CardContent className="p-0">
+   393→          <Table>
+   394→            <TableHeader><TableRow><TableHead className="text-xs w-10">#</TableHead><TableHead className="text-xs">Nama</TableHead><TableHead className="text-xs text-right">Total</TableHead><TableHead className="text-xs w-24">Pembelian</TableHead></TableRow></TableHeader>
+   395→            <TableBody>
+   396→              {data.topFarmers.length === 0 ? (
+   397→                <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">Belum ada data</TableCell></TableRow>
+   398→              ) : data.topFarmers.map((f, i) => {
+   399→                const barPercent = (f.totalAmount / maxAmount) * 100
+   400→                return (
+   401→                <TableRow key={f.id} className="hover:border-l-2 hover:border-l-amber-300">
+   402→                  <TableCell className="text-xs">
+   403→                    {i < 3 ? (
+   404→                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${medalColors[i]}`}>
+   405→                        {i + 1}
+   406→                      </span>
+   407→                    ) : (
+   408→                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold bg-muted text-muted-foreground ${medalTextColors[i] || ''}`}>
+   409→                        {i + 1}
+   410→                      </span>
+   411→                    )}
+   412→                  </TableCell>
+   413→                  <TableCell className="text-xs font-medium">
+   414→                    <div className="flex items-center gap-2">
+   415→                      {i < 3 && (
+   416→                        <span className="text-sm">
+   417→                          {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
+   418→                        </span>
+   419→                      )}
+   420→                      {f.name}
+   421→                    </div>
+   422→                  </TableCell>
+   423→                  <TableCell className={`text-xs text-right font-semibold ${i < 3 ? medalTextColors[i] : ''}`}>{formatRupiah(f.totalAmount)}</TableCell>
+   424→                  <TableCell className="text-xs w-24 px-2">
+   425→                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+   426→                      <div className={`h-full rounded-full transition-all duration-700 ${i === 0 ? 'bg-amber-400' : i === 1 ? 'bg-gray-400' : i === 2 ? 'bg-orange-400' : 'bg-primary/60'}`} style={{ width: `${barPercent}%` }} />
+   427→                    </div>
+   428→                  </TableCell>
+   429→                </TableRow>
+   430→                )
+   431→              })}
+   432→            </TableBody>
+   433→          </Table>
+   434→        </CardContent>
+   435→      </Card>
+   436→    </motion.div>
+   437→  )
+   438→}
+   439→
+   440→function QuickInfoCards() {
+   441→  const { refreshKey } = useAppStore()
+   442→
+   443→  const { data: stockData } = useQuery({
+   444→    queryKey: ['stock', refreshKey],
+   445→    queryFn: fetchStock,
+   446→  })
+   447→
+   448→  const { data: productsData } = useQuery({
+   449→    queryKey: ['products', refreshKey],
+   450→    queryFn: fetchProducts,
+   451→  })
+   452→
+   453→  const { data: distributionsData } = useQuery({
+   454→    queryKey: ['distributions', refreshKey],
+   455→    queryFn: fetchDistributions,
+   456→  })
+   457→
+   458→  const totalStock = (stockData || []).reduce((sum, s) => sum + s.quantity, 0)
+   459→
+   460→  const activeProducts = (productsData || []).filter(p => p.isActive)
+   461→  const avgSubsidyPrice = activeProducts.length > 0
+   462→    ? activeProducts.reduce((sum, p) => sum + p.subsidyPrice, 0) / activeProducts.length
+   463→    : 0
+   464→
+   465→  const now = new Date()
+   466→  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+   467→  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+   468→  const distThisMonth = (distributionsData || []).filter(d => {
+   469→    const dDate = new Date(d.createdAt)
+   470→    return dDate >= startOfMonth && dDate <= endOfMonth
+   471→  }).length
+   472→
+   473→  const cards = [
+   474→    {
+   475→      title: 'Total Stok Tersedia',
+   476→      value: `${formatNumber(totalStock)} kg`,
+   477→      icon: Package,
+   478→      color: 'text-teal-600 dark:text-teal-400',
+   479→      bgColor: 'bg-teal-50 dark:bg-teal-900/20',
+   480→      borderColor: 'border-teal-200 dark:border-teal-800',
+   481→    },
+   482→    {
+   483→      title: 'Rata-rata Harga Subsidi/kg',
+   484→      value: formatRupiah(Math.round(avgSubsidyPrice)),
+   485→      icon: TrendingDown,
+   486→      color: 'text-green-600 dark:text-green-400',
+   487→      bgColor: 'bg-green-50 dark:bg-green-900/20',
+   488→      borderColor: 'border-green-200 dark:border-green-800',
+   489→    },
+   490→    {
+   491→      title: 'Distribusi Bulan Ini',
+   492→      value: `${formatNumber(distThisMonth)} pengiriman`,
+   493→      icon: Truck,
+   494→      color: 'text-emerald-600 dark:text-emerald-400',
+   495→      bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+   496→      borderColor: 'border-emerald-200 dark:border-emerald-800',
+   497→    },
+   498→  ]
+   499→
+   500→  return (
+   501→    <motion.div variants={itemVariants}>
+   502→      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+   503→        {cards.map((card) => (
+   504→          <Card key={card.title} className={`border ${card.borderColor} hover:shadow-md transition-all duration-300 hover:-translate-y-0.5`}>
+   505→            <CardContent className="p-3 flex items-center gap-3">
+   506→              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${card.bgColor} ring-1 ring-black/5 dark:ring-white/5`}>
+   507→                <card.icon className={`h-5 w-5 ${card.color}`} />
+   508→              </div>
+   509→              <div className="min-w-0 flex-1">
+   510→                <p className="text-[10px] text-muted-foreground leading-tight truncate uppercase tracking-wide">{card.title}</p>
+   511→                <p className="text-sm font-bold mt-0.5 truncate">{card.value}</p>
+   512→              </div>
+   513→            </CardContent>
+   514→          </Card>
+   515→        ))}
+   516→      </div>
+   517→    </motion.div>
+   518→  )
+   519→}
+   520→
+   521→function DashboardSkeleton() {
+   522→  return (
+   523→    <div className="space-y-6">
+   524→      <div className="h-20 rounded-xl"><Skeleton className="h-full w-full rounded-xl" /></div>
+   525→      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   526→        {Array.from({ length: 4 }).map((_, i) => (
+   527→          <Card key={i}><CardContent className="p-4"><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-20 mt-2" /></CardContent></Card>
+   528→        ))}
+   529→      </div>
+   530→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   531→        <Card><CardContent className="p-6"><Skeleton className="h-4 w-40 mb-4" /><div className="space-y-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}</div></CardContent></Card>
+   532→        <Card><CardContent className="p-6"><Skeleton className="h-4 w-40 mb-4" /><div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}</div></CardContent></Card>
+   533→      </div>
+   534→    </div>
+   535→  )
+   536→}
+   537→
+   538→export function DashboardView() {
+   539→  const { refreshKey } = useAppStore()
+   540→  const { data, isLoading, isError } = useQuery({
+   541→    queryKey: ['dashboard', refreshKey],
+   542→    queryFn: fetchDashboard,
+   543→    retry: 1,
+   544→  })
+   545→
+   546→  if (isLoading) return <DashboardSkeleton />
+   547→
+   548→  if (isError || !data) {
+   549→    return (
+   550→      <Card className="p-8 text-center">
+   551→        <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+   552→        <p className="text-muted-foreground mb-2">Gagal memuat data dashboard</p>
+   553→        <p className="text-xs text-muted-foreground">Pastikan data sample sudah dimuat dengan tombol &quot;Muat Data Sample&quot; di atas.</p>
+   554→      </Card>
+   555→    )
+   556→  }
+   557→
+   558→  return (
+   559→    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
+   560→      <WelcomeSection />
+   561→      {/* Quick Actions */}
+   562→      <motion.div variants={itemVariants}>
+   563→        <div className="grid grid-cols-3 gap-3">
+   564→          <button
+   565→            onClick={() => useAppStore.getState().setActiveTab('orders')}
+   566→            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+   567→          >
+   568→            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+   569→              <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
+   570→            </div>
+   571→            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Buat Pesanan</span>
+   572→          </button>
+   573→          <button
+   574→            onClick={() => useAppStore.getState().setActiveTab('stock')}
+   575→            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+   576→          >
+   577→            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+   578→              <PackagePlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+   579→            </div>
+   580→            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Restok Stok</span>
+   581→          </button>
+   582→          <button
+   583→            onClick={() => useAppStore.getState().setActiveTab('distributions')}
+   584→            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+   585→          >
+   586→            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50 transition-colors">
+   587→              <Truck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+   588→            </div>
+   589→            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Lihat Distribusi</span>
+   590→          </button>
+   591→        </div>
+   592→      </motion.div>
+   593→      <StatsCards data={data} />
+   594→      <QuickInfoCards />
+   595→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   596→        <MonthlySales data={data} />
+   597→        <ProductDistribution data={data} />
+   598→      </div>
+   599→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   600→        <RecentOrders data={data} />
+   601→        <StockAlerts data={data} />
+   602→      </div>
+   603→      <TopFarmers data={data} />
+   604→    </motion.div>
+   605→  )
+   606→}

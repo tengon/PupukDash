@@ -80,7 +80,7 @@ export function AppSidebar() {
                       tooltip={item.label}
                       onClick={() => handleNavClick(item.id)}
                       className={`relative transition-all duration-200 ${isActive
-                        ? 'bg-sidebar-accent/80 font-medium border-l-[3px] border-l-emerald-400 rounded-l-none pl-[calc(0.5rem-3px)]'
+                        ? 'bg-sidebar-accent/80 font-medium border-l-[3px] border-l-emerald-400 rounded-l-none pl-[calc(0.5rem-3px)] sidebar-active-glow'
                         : 'hover:bg-sidebar-accent/50 hover:border-l-[3px] hover:border-l-emerald-400/40 hover:rounded-l-none hover:pl-[calc(0.5rem-3px)]'
                       } ${index === 3 ? 'mt-1' : ''}`}
                     >

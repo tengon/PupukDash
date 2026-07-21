@@ -53,8 +53,9 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer, Check, Clock, PackageCheck, CalendarDays, X } from 'lucide-react'
+import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer, Check, Clock, PackageCheck, CalendarDays, X, Package, Calculator, Banknote, Weight } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { validateHET, getAllocationWarning, getHETPrice, normalizeProductType } from '@/lib/het'
 
 const ITEMS_PER_PAGE = 10
 
@@ -145,11 +146,13 @@ function OrderStatusTimeline({ status }: { status: string }) {
 interface OrderItemForm {
   productId: string
   productName: string
+  productType: string
   quantity: number
   pricePerKg: number
   subsidyPrice: number
   subtotal: number
   subsidySubtotal: number
+  hetWarning: string
 }
 
 export function OrdersView() {
@@ -239,17 +242,23 @@ export function OrdersView() {
     setFormItems([...formItems, {
       productId: '',
       productName: '',
+      productType: '',
       quantity: 0,
       pricePerKg: 0,
       subsidyPrice: 0,
       subtotal: 0,
       subsidySubtotal: 0,
+      hetWarning: '',
     }])
   }
 
   const removeItem = (index: number) => {
     setFormItems(formItems.filter((_, i) => i !== index))
   }
+
+  // Dapatkan data petani yang dipilih untuk validasi alokasi
+  const selectedFarmer = formFarmer ? (farmers || []).find((f) => f.id === formFarmer) : null
+  const farmerLandArea = selectedFarmer?.landAreaHa ?? null
 
   const updateItem = (index: number, field: keyof OrderItemForm, value: string | number) => {
     const updated = [...formItems]
@@ -259,6 +268,7 @@ export function OrdersView() {
       const product = (products || []).find((p) => p.id === value)
       if (product) {
         updated[index].productName = product.name
+        updated[index].productType = product.type
         updated[index].pricePerKg = product.pricePerKg
         updated[index].subsidyPrice = product.subsidyPrice
       }
@@ -266,6 +276,17 @@ export function OrdersView() {
 
     updated[index].subtotal = updated[index].quantity * updated[index].pricePerKg
     updated[index].subsidySubtotal = updated[index].quantity * updated[index].subsidyPrice
+
+    // Hitung peringatan HET untuk item ini
+    if (updated[index].productId && updated[index].quantity > 0) {
+      updated[index].hetWarning = getAllocationWarning(
+        updated[index].productType || updated[index].productName,
+        updated[index].quantity,
+        farmerLandArea,
+      )
+    } else {
+      updated[index].hetWarning = ''
+    }
 
     setFormItems(updated)
   }
@@ -286,6 +307,19 @@ export function OrdersView() {
       toast({ title: 'Validasi', description: 'Tambahkan minimal 1 item produk', variant: 'destructive' })
       return
     }
+
+    // Validasi HET sebelum mengirim
+    const selectedFarmerForHET = formFarmer ? (farmers || []).find((f) => f.id === formFarmer) : null
+    const hetResult = validateHET(validItems, selectedFarmerForHET?.landAreaHa ?? null)
+    if (!hetResult.valid) {
+      toast({
+        title: 'Validasi HET Gagal',
+        description: hetResult.errors.join('\n'),
+        variant: 'destructive',
+      })
+      return
+    }
+
     createMutation.mutate({
       farmerId: formFarmer,
       warehouseId: formWarehouse,
@@ -737,8 +771,10 @@ export function OrdersView() {
               ) : (
                 <ScrollArea className="max-h-60">
                   <div className="space-y-3 pr-3">
-                    {formItems.map((item, idx) => (
-                      <div key={idx} className="grid grid-cols-12 gap-2 items-end p-3 bg-muted/50 rounded-lg">
+                    {formItems.map((item, idx) => {
+                      const hetPrice = item.productType ? getHETPrice(item.productType) : null
+                      return (
+                      <div key={idx} className="grid grid-cols-12 gap-2 items-start p-3 bg-muted/50 rounded-lg">
                         <div className="col-span-12 sm:col-span-5">
                           <Label className="text-[10px] text-muted-foreground">Produk</Label>
                           <Select value={item.productId} onValueChange={(v) => updateItem(idx, 'productId', v)}>
@@ -749,6 +785,26 @@ export function OrdersView() {
                               ))}
                             </SelectContent>
                           </Select>
+                          {item.productId && (
+                            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                              {hetPrice !== null && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-medium">
+                                  <Weight className="h-2.5 w-2.5" />
+                                  HET: {formatRupiah(hetPrice)}/kg
+                                </span>
+                              )}
+                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded font-medium">
+                                <Banknote className="h-2.5 w-2.5" />
+                                Subsidi: {item.subsidyPrice ? formatRupiah(item.subsidyPrice) : '-'}
+                              </span>
+                              {item.pricePerKg > item.subsidyPrice && item.subsidyPrice > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded font-medium">
+                                  <Calculator className="h-2.5 w-2.5" />
+                                  Hemat: {formatRupiah(item.pricePerKg - item.subsidyPrice)}/kg
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="col-span-4 sm:col-span-2">
                           <Label className="text-[10px] text-muted-foreground">Qty (kg)</Label>
@@ -758,6 +814,9 @@ export function OrdersView() {
                             value={item.quantity || ''}
                             onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
                           />
+                          {item.hetWarning && (
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 leading-tight">{item.hetWarning}</p>
+                          )}
                         </div>
                         <div className="col-span-3 sm:col-span-2">
                           <Label className="text-[10px] text-muted-foreground">Harga/kg</Label>
@@ -771,13 +830,14 @@ export function OrdersView() {
                             {item.subtotal ? formatRupiah(item.subtotal) : 'Rp 0'}
                           </div>
                         </div>
-                        <div className="col-span-2 sm:col-span-1 flex justify-end">
+                        <div className="col-span-2 sm:col-span-1 flex justify-end mt-4 sm:mt-5">
                           <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
                             <Minus className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </ScrollArea>
               )}
@@ -805,6 +865,47 @@ export function OrdersView() {
               <Label>Catatan</Label>
               <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Catatan tambahan..." rows={2} />
             </div>
+
+            {formItems.length > 0 && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30 shrink-0">
+                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">Total Item</p>
+                    <p className="text-sm font-bold">{formItems.filter(i => i.productId && i.quantity > 0).length}</p>
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/30 shrink-0">
+                    <Weight className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">Total Berat</p>
+                    <p className="text-sm font-bold">{formatNumber(formItems.reduce((s, i) => s + i.quantity, 0))} kg</p>
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30 shrink-0">
+                    <Calculator className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">Total Harga Normal</p>
+                    <p className="text-sm font-bold">{formatRupiah(totals.totalAmount)}</p>
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30 shrink-0">
+                    <Banknote className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">Total Subsidi</p>
+                    <p className="text-sm font-bold text-primary">{formatRupiah(totals.totalSubsidy)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Batal</Button>
