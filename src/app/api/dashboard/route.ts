@@ -61,6 +61,30 @@ export async function GET() {
       .slice(0, 5)
       .map((o) => ({ id: o.farmerId, name: o.farmer.name, totalOrders: 1, totalAmount: o.totalAmount }))
 
+    // Top farmer this month by order count
+    const nowDash = new Date()
+    const startOfThisMonth = new Date(nowDash.getFullYear(), nowDash.getMonth(), 1)
+    const endOfThisMonth = new Date(nowDash.getFullYear(), nowDash.getMonth() + 1, 0, 23, 59, 59)
+    const ordersThisMonth = await db.order.findMany({
+      where: {
+        createdAt: { gte: startOfThisMonth, lte: endOfThisMonth },
+        status: { not: 'CANCELLED' },
+      },
+      include: { farmer: { select: { name: true, nik: true } } },
+    })
+    const farmerOrderCount = new Map<string, { id: string; name: string; totalOrders: number; totalAmount: number }>()
+    for (const o of ordersThisMonth) {
+      const existing = farmerOrderCount.get(o.farmerId)
+      if (existing) {
+        existing.totalOrders++
+        existing.totalAmount += o.totalAmount
+      } else {
+        farmerOrderCount.set(o.farmerId, { id: o.farmerId, name: o.farmer.name, totalOrders: 1, totalAmount: o.totalAmount })
+      }
+    }
+    const topFarmerThisMonth = Array.from(farmerOrderCount.values())
+      .sort((a, b) => b.totalOrders - a.totalOrders || b.totalAmount - a.totalAmount)[0] || null
+
     return NextResponse.json({
       totalFarmers, totalProducts, totalWarehouses, totalOrders,
       totalSalesAmount: salesAggregate._sum.totalAmount ?? 0,
@@ -72,7 +96,7 @@ export async function GET() {
         warehouse: { id: o.warehouseId, name: o.warehouse.name, code: o.warehouse.code },
         createdAt: o.createdAt,
       })),
-      stockAlerts, monthlySales, productDistribution, topFarmers,
+      stockAlerts, monthlySales, productDistribution, topFarmers, topFarmerThisMonth,
     })
   } catch (error) {
     console.error('Dashboard error:', error)

@@ -14,7 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { motion } from 'framer-motion'
-import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles, PackagePlus } from 'lucide-react'
+import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles, PackagePlus, ArrowUp, ArrowDown, Crown, Eye } from 'lucide-react'
 import { QuickRestockDialog } from '@/components/stock/quick-restock-dialog'
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -41,7 +41,7 @@ function WelcomeSection() {
   const { greeting, icon: GreetingIcon } = getGreeting()
   return (
     <motion.div variants={itemVariants}>
-      <div className="glass rounded-xl p-4 sm:p-5 border border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" style={{ boxShadow: 'var(--shadow-sm)' }}>
+      <div className="glass rounded-xl p-4 sm:p-5 border border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 welcome-gradient-border" style={{ boxShadow: 'var(--shadow-sm)' }}>
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0">
             <GreetingIcon className="h-6 w-6 text-primary" />
@@ -99,6 +99,17 @@ function StatsCards({ data }: { data: DashboardData }) {
 
 function MonthlySales({ data }: { data: DashboardData }) {
   const maxTotal = Math.max(...data.monthlySales.map((m) => m.total), 1)
+
+  // Comparison: this month vs last month
+  const thisMonth = data.monthlySales[data.monthlySales.length - 1]
+  const lastMonth = data.monthlySales[data.monthlySales.length - 2]
+  let percentageChange: number | null = null
+  let isIncrease = false
+  if (thisMonth && lastMonth && lastMonth.total > 0) {
+    percentageChange = Math.round(((thisMonth.total - lastMonth.total) / lastMonth.total) * 100)
+    isIncrease = thisMonth.total >= lastMonth.total
+  }
+
   return (
     <motion.div variants={itemVariants}>
       <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
@@ -118,6 +129,59 @@ function MonthlySales({ data }: { data: DashboardData }) {
               </div>
             ))}
           </div>
+
+          {/* Comparison Section */}
+          {percentageChange !== null && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Perbandingan Bulanan</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {isIncrease ? (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                      <ArrowUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                      <ArrowDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className={`text-sm font-bold ${isIncrease ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {isIncrease ? '\u2191' : '\u2193'} {Math.abs(percentageChange)}%
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Bulan ini vs bulan lalu</p>
+                  </div>
+                </div>
+                <div className="flex-1 border-l pl-3">
+                  <p className="text-[10px] text-muted-foreground">Bulan lalu</p>
+                  <p className="text-xs font-mono">{formatRupiah(lastMonth.total)}</p>
+                </div>
+                <div className="flex-1 border-l pl-3">
+                  <p className="text-[10px] text-muted-foreground">Bulan ini</p>
+                  <p className="text-xs font-mono font-semibold">{formatRupiah(thisMonth.total)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Top Farmer This Month */}
+          {data.topFarmerThisMonth && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-900/20 shrink-0">
+                  <Crown className="h-4 w-4 text-amber-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pesanan Terbanyak Bulan Ini</p>
+                  <p className="text-xs font-semibold truncate">{data.topFarmerThisMonth.name}</p>
+                </div>
+                <div className="ml-auto text-right shrink-0">
+                  <p className="text-xs font-bold text-primary">{data.topFarmerThisMonth.totalOrders} pesanan</p>
+                  <p className="text-[10px] text-muted-foreground">{formatRupiah(data.topFarmerThisMonth.totalAmount)}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
@@ -192,7 +256,18 @@ function RecentOrders({ data }: { data: DashboardData }) {
                   </TableCell>
                   <TableCell className="text-xs">{order.farmer.name}</TableCell>
                   <TableCell className="text-xs text-right">{formatRupiah(order.totalAmount)}</TableCell>
-                  <TableCell><Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>{getStatusLabel(order.status)}</Badge></TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>{getStatusLabel(order.status)}</Badge>
+                      <button
+                        onClick={() => useAppStore.getState().setActiveTab('orders')}
+                        className="inline-flex items-center gap-0.5 text-[10px] text-primary hover:text-primary/80 font-medium transition-colors shrink-0"
+                      >
+                        <Eye className="h-3 w-3" />
+                        Lihat Detail
+                      </button>
+                    </div>
+                  </TableCell>
                 </TableRow>
                 )
               })}
@@ -243,8 +318,8 @@ function StockAlerts({ data }: { data: DashboardData }) {
                   {data.stockAlerts.map((s) => {
                     const ratio = s.quantity / s.minStock
                     const borderClass = ratio <= 0.5
-                      ? 'border-l-2 border-l-red-400'
-                      : 'border-l-2 border-l-yellow-400'
+                      ? 'border-l-4 border-l-red-400'
+                      : 'border-l-4 border-l-yellow-400'
                     return (
                       <TableRow key={s.id} className={borderClass}>
                         <TableCell className="text-xs">
@@ -483,6 +558,38 @@ export function DashboardView() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
       <WelcomeSection />
+      {/* Quick Actions */}
+      <motion.div variants={itemVariants}>
+        <div className="grid grid-cols-3 gap-3">
+          <button
+            onClick={() => useAppStore.getState().setActiveTab('orders')}
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+              <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Buat Pesanan</span>
+          </button>
+          <button
+            onClick={() => useAppStore.getState().setActiveTab('stock')}
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+              <PackagePlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Restok Stok</span>
+          </button>
+          <button
+            onClick={() => useAppStore.getState().setActiveTab('distributions')}
+            className="group flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/40"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50 transition-colors">
+              <Truck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Lihat Distribusi</span>
+          </button>
+        </div>
+      </motion.div>
       <StatsCards data={data} />
       <QuickInfoCards />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -28,6 +28,7 @@ export async function GET() {
       province: w.province,
       managerName: w.managerName,
       managerPhone: w.managerPhone,
+      isActive: w.isActive,
       totalStock: w.stock.reduce((sum, s) => sum + s.quantity, 0),
       stockEntries: w.stock.length,
       orderCount: w._count.orders,

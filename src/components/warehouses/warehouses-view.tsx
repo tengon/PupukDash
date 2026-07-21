@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
-import { fetchWarehouses, createWarehouse, updateWarehouse, deleteWarehouse, type Warehouse } from '@/lib/api'
-import { formatNumber } from '@/lib/format'
+import { fetchWarehouses, createWarehouse, updateWarehouse, deleteWarehouse, fetchWarehouseStock, type Warehouse, type WarehouseStockDetail } from '@/lib/api'
+import { formatNumber, getStockStatusColor, getStockStatusLabel, getTypeBadgeColor } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,7 +47,7 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
-import { Plus, Search, Pencil, Trash2, Warehouse as WarehouseIcon } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Warehouse as WarehouseIcon, Package, AlertTriangle, Phone, MapPin, Map } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 const ITEMS_PER_PAGE = 10
@@ -71,6 +71,8 @@ export function WarehousesView() {
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [stockDetailOpen, setStockDetailOpen] = useState(false)
+  const [stockDetailId, setStockDetailId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
@@ -79,6 +81,12 @@ export function WarehousesView() {
   const { data: warehouses, isLoading } = useQuery({
     queryKey: ['warehouses', refreshKey],
     queryFn: fetchWarehouses,
+  })
+
+  const { data: stockDetail, isLoading: stockDetailLoading } = useQuery({
+    queryKey: ['warehouse-stock', stockDetailId],
+    queryFn: () => fetchWarehouseStock(stockDetailId!),
+    enabled: !!stockDetailId,
   })
 
   const createMutation = useMutation({
@@ -157,6 +165,11 @@ export function WarehousesView() {
     if (deletingId) deleteMutation.mutate(deletingId)
   }
 
+  const handleOpenStockDetail = (wh: Warehouse) => {
+    setStockDetailId(wh.id)
+    setStockDetailOpen(true)
+  }
+
   const filtered = (warehouses || []).filter(
     (w) =>
       w.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -172,7 +185,39 @@ export function WarehousesView() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card className="border-l-2 border-l-amber-500">
+      {/* Summary Stats Cards */}
+      {!isLoading && warehouses && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 bg-gradient-to-r from-emerald-50/60 to-white dark:from-emerald-900/10 dark:to-card p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+              <WarehouseIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Gudang Aktif</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{warehouses.filter(w => w.isActive).length}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/60 to-white dark:from-blue-900/10 dark:to-card p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+              <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Stok</p>
+              <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{formatNumber(warehouses.reduce((s, w) => s + (w.totalStock ?? 0), 0))} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-amber-200/60 dark:border-amber-800/40 bg-gradient-to-r from-amber-50/60 to-white dark:from-amber-900/10 dark:to-card p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+              <Map className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Kabupaten</p>
+              <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{new Set(warehouses.map(w => w.regency).filter(Boolean)).size}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      <Card className="border-l-4 border-emerald-500">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -237,11 +282,23 @@ export function WarehousesView() {
                       </TableRow>
                     ) : (
                       paged.map((wh) => (
-                        <TableRow key={wh.id}>
+                        <TableRow key={wh.id} className="cursor-pointer hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20" onClick={() => handleOpenStockDetail(wh)}>
                           <TableCell className="text-xs font-mono font-medium">{wh.code}</TableCell>
-                          <TableCell className="text-sm font-medium">{wh.name}</TableCell>
+                          <TableCell className="text-sm font-medium">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span>{wh.name}</span>
+                              {(wh.orderCount ?? 0) > 0 && (
+                                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 font-semibold">{wh.orderCount} pesanan</Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-xs hidden md:table-cell max-w-[200px] truncate">{wh.address}</TableCell>
-                          <TableCell className="text-xs hidden lg:table-cell">{wh.regency || '-'}</TableCell>
+                          <TableCell className="text-xs hidden lg:table-cell">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {wh.regency || '-'}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-xs hidden lg:table-cell">{wh.province}</TableCell>
                           <TableCell className="text-xs hidden md:table-cell">{wh.managerName || '-'}</TableCell>
                           <TableCell className="text-xs text-right font-mono">{formatNumber(wh.totalStock ?? 0)} kg</TableCell>
@@ -252,10 +309,10 @@ export function WarehousesView() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(wh)}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleOpenEdit(wh) }}>
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(wh.id); setDeleteOpen(true) }}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeletingId(wh.id); setDeleteOpen(true) }}>
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
@@ -367,6 +424,112 @@ export function WarehousesView() {
               {createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stock Detail Dialog */}
+      <Dialog open={stockDetailOpen} onOpenChange={(open) => { setStockDetailOpen(open); if (!open) setStockDetailId(null) }}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          {stockDetailLoading ? (
+            <div className="py-8 space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : stockDetail ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <WarehouseIcon className="h-5 w-5 text-amber-500" />
+                  Detail Stok Gudang
+                </DialogTitle>
+                <DialogDescription>Informasi stok untuk gudang tertentu</DialogDescription>
+              </DialogHeader>
+              {/* Warehouse Info Header */}
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-1.5 py-0.5 rounded">{stockDetail.warehouse.code}</span>
+                  <span className="font-semibold text-sm">{stockDetail.warehouse.name}</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                  <span>{stockDetail.warehouse.address}{stockDetail.warehouse.regency ? `, ${stockDetail.warehouse.regency}` : ''}{stockDetail.warehouse.province ? ` — ${stockDetail.warehouse.province}` : ''}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  {stockDetail.warehouse.managerName && (
+                    <div className="flex items-center gap-1.5">
+                      <Package className="h-3.5 w-3.5" />
+                      <span>{stockDetail.warehouse.managerName}</span>
+                    </div>
+                  )}
+                  {stockDetail.warehouse.managerPhone && (
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5" />
+                      <span>{stockDetail.warehouse.managerPhone}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Stok</p>
+                  <p className="text-base font-bold mt-0.5">{formatNumber(stockDetail.summary.totalStock)} kg</p>
+                </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Jumlah Produk</p>
+                  <p className="text-base font-bold mt-0.5">{stockDetail.summary.totalProducts}</p>
+                </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center justify-center gap-1">
+                    <AlertTriangle className={`h-3 w-3 ${stockDetail.summary.lowStockCount > 0 ? 'text-yellow-500' : 'text-green-500'}`} />
+                    Stok Rendah
+                  </p>
+                  <p className={`text-base font-bold mt-0.5 ${stockDetail.summary.lowStockCount > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}`}>{stockDetail.summary.lowStockCount}</p>
+                </div>
+              </div>
+              {/* Stock Entries Table */}
+              {stockDetail.stockEntries.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p>Belum ada data stok untuk gudang ini</p>
+                </div>
+              ) : (
+                <div className="max-h-64 overflow-y-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Produk</TableHead>
+                        <TableHead className="text-xs">Jenis</TableHead>
+                        <TableHead className="text-xs text-right">Jumlah (kg)</TableHead>
+                        <TableHead className="text-xs text-right">Min. Stok</TableHead>
+                        <TableHead className="text-xs">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stockDetail.stockEntries.map((entry) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="text-xs font-medium">{entry.productName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getTypeBadgeColor(entry.productType)}`}>
+                              {entry.productType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-right font-mono">{formatNumber(entry.quantity)}</TableCell>
+                          <TableCell className="text-xs text-right font-mono text-muted-foreground">{formatNumber(entry.minStock)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStockStatusColor(entry.quantity, entry.minStock)}`}>
+                              {getStockStatusLabel(entry.quantity, entry.minStock)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </>
+          ) : null}
         </DialogContent>
       </Dialog>
 

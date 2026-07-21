@@ -603,9 +603,14 @@ export function OrdersView() {
                           <TableCell className="text-sm text-right font-medium">{formatRupiah(order.totalAmount)}</TableCell>
                           <TableCell className="text-xs text-right hidden sm:table-cell text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>
-                              {getStatusLabel(order.status)}
-                            </Badge>
+                            <div className="flex items-center gap-1.5">
+                              {order.status === 'PENDING' && (
+                                <span className="inline-block h-2 w-2 rounded-full bg-green-500 pulse-dot shrink-0" />
+                              )}
+                              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>
+                                {getStatusLabel(order.status)}
+                              </Badge>
+                            </div>
                           </TableCell>
                           <TableCell className="text-xs hidden md:table-cell">{formatDate(order.createdAt)}</TableCell>
                           <TableCell className="text-right">
@@ -883,7 +888,33 @@ export function OrdersView() {
                 </Table>
               </div>
               <Separator />
-              <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+              <div className="bg-muted/50 rounded-lg p-3 space-y-3">
+                {/* Stacked Bar: Base Price vs Subsidy */}
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Perbandingan Harga Normal vs Subsidi</p>
+                  <div className="flex h-4 rounded-full overflow-hidden bg-muted">
+                    <div
+                      className="h-full bg-primary/70 transition-all duration-500"
+                      style={{ width: `${detailOrder.totalAmount > 0 ? (detailOrder.totalSubsidy / detailOrder.totalAmount) * 100 : 0}%` }}
+                      title={`Harga Subsidi: ${formatRupiah(detailOrder.totalSubsidy)}`}
+                    />
+                    <div
+                      className="h-full bg-orange-400/70 transition-all duration-500"
+                      style={{ width: `${detailOrder.totalAmount > 0 ? ((detailOrder.totalAmount - detailOrder.totalSubsidy) / detailOrder.totalAmount) * 100 : 0}%` }}
+                      title={`Selisih Subsidi: ${formatRupiah(detailOrder.totalAmount - detailOrder.totalSubsidy)}`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-center gap-4 mt-1.5">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <span className="inline-block h-2 w-2 rounded-sm bg-primary/70" />
+                      Harga Subsidi
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <span className="inline-block h-2 w-2 rounded-sm bg-orange-400/70" />
+                      Selisih Subsidi
+                    </div>
+                  </div>
+                </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total Harga Normal</span>
                   <span className="font-medium">{formatRupiah(detailOrder.totalAmount)}</span>

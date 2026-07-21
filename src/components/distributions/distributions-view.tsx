@@ -60,7 +60,7 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
-import { Plus, Truck, Pencil, Trash2, ArrowRight, FileText, CheckCircle, XCircle, Search } from 'lucide-react'
+import { Plus, Truck, Pencil, Trash2, ArrowRight, FileText, CheckCircle, XCircle, Search, Package, MapPin, UserCircle, ClipboardList, BarChart3, Navigation } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 const ITEMS_PER_PAGE = 10
@@ -110,6 +110,7 @@ export function DistributionsView() {
   const [formVillage, setFormVillage] = useState('')
   const [formGroup, setFormGroup] = useState('')
   const [formNotes, setFormNotes] = useState('')
+  const [statusNotes, setStatusNotes] = useState('')
   const [page, setPage] = useState(1)
 
   const { data: distributions, isLoading } = useQuery({
@@ -191,7 +192,7 @@ export function DistributionsView() {
 
   const handleStatusUpdate = (newStatus: string) => {
     if (editingDist) {
-      updateMutation.mutate({ id: editingDist.id, data: { status: newStatus } })
+      updateMutation.mutate({ id: editingDist.id, data: { status: newStatus, notes: statusNotes || undefined } })
     }
   }
 
@@ -211,7 +212,39 @@ export function DistributionsView() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card className="border-l-2 border-l-blue-500">
+      {/* Summary Stats Cards */}
+      {!isLoading && distributions && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="flex items-center gap-3 rounded-xl border border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/60 to-white dark:from-blue-900/10 dark:to-card p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+              <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Distribusi</p>
+              <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{distributions.length}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-amber-200/60 dark:border-amber-800/40 bg-gradient-to-r from-amber-50/60 to-white dark:from-amber-900/10 dark:to-card p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+              <Navigation className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Dalam Pengiriman</p>
+              <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{distributions.filter(d => d.status === 'IN_TRANSIT').length}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-green-200/60 dark:border-green-800/40 bg-gradient-to-r from-green-50/60 to-white dark:from-green-900/10 dark:to-card p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Diterima</p>
+              <p className="text-lg font-bold text-green-700 dark:text-green-300">{distributions.filter(d => d.status === 'DELIVERED').length}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      <Card className="border-l-4 border-blue-500">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -278,7 +311,12 @@ export function DistributionsView() {
                         const progress = STATUS_PROGRESS[dist.status] || STATUS_PROGRESS.DRAFT
                         return (
                           <TableRow key={dist.id}>
-                            <TableCell className="text-xs font-mono">{dist.distributionNo}</TableCell>
+                            <TableCell className="text-xs font-mono">
+                              <div className="flex items-center gap-1.5">
+                                <Truck className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                {dist.distributionNo}
+                              </div>
+                            </TableCell>
                             <TableCell className="text-xs hidden md:table-cell">{dist.warehouse.name}</TableCell>
                             <TableCell className="text-sm font-medium">{dist.productName}</TableCell>
                             <TableCell className="text-sm text-right font-mono">{formatNumber(dist.quantity)}</TableCell>
@@ -430,37 +468,163 @@ export function DistributionsView() {
       </Dialog>
 
       {/* Status Update Dialog */}
-      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
+      <Dialog open={statusDialogOpen} onOpenChange={(open) => { setStatusDialogOpen(open); if (!open) { setStatusNotes(''); setEditingDist(null) } }}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Update Status Distribusi</DialogTitle>
-            <DialogDescription>
-              {editingDist && (
-                <span>Distribusi <span className="font-mono font-medium">{editingDist.distributionNo}</span> — Status saat ini: <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE_STYLES[editingDist.status] || ''}`}>{getStatusLabel(editingDist.status)}</Badge></span>
-              )}
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-blue-500" />
+              Detail & Update Status
+            </DialogTitle>
+            <DialogDescription>Perbarui status distribusi</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2 py-2">
-            {editingDist && STATUS_FLOW[editingDist.status]?.map((nextStatus) => (
-              <Button
-                key={nextStatus}
-                variant="outline"
-                className="justify-start h-12"
-                onClick={() => handleStatusUpdate(nextStatus)}
-                disabled={updateMutation.isPending}
-              >
-                <ArrowRight className="h-4 w-4 mr-2 shrink-0" />
-                <div className="text-left">
-                  <div className="text-sm font-medium">{getStatusLabel(nextStatus)}</div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {nextStatus === 'IN_TRANSIT' && 'Distribusi sedang dalam perjalanan'}
-                    {nextStatus === 'DELIVERED' && 'Pupuk telah diterima di tujuan'}
-                    {nextStatus === 'CANCELLED' && 'Batalkan distribusi ini'}
+          {editingDist && (
+            <div className="space-y-4">
+              {/* Distribution Info */}
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 px-1.5 py-0.5 rounded">{editingDist.distributionNo}</span>
+                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE_STYLES[editingDist.status] || ''}`}>
+                    {getStatusLabel(editingDist.status)}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-start gap-1.5 text-muted-foreground">
+                    <Package className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">{editingDist.productName}</p>
+                      <p>{formatNumber(editingDist.quantity)} kg</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-1.5 text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">{editingDist.warehouse.name}</p>
+                      <p className="text-[10px]">{editingDist.warehouse.code}</p>
+                    </div>
                   </div>
                 </div>
-              </Button>
-            ))}
-          </div>
+                {(editingDist.targetVillage || editingDist.targetGroup) && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    {editingDist.targetVillage && (
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3 w-3" />
+                        <span>{editingDist.targetVillage}</span>
+                      </div>
+                    )}
+                    {editingDist.targetGroup && (
+                      <div className="flex items-center gap-1.5">
+                        <UserCircle className="h-3 w-3" />
+                        <span>{editingDist.targetGroup}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Visual Status Flow */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Alur Status</p>
+                <div className="flex items-center justify-between gap-1 px-1">
+                  {[
+                    { key: 'DRAFT', label: 'Draft', Icon: FileText },
+                    { key: 'IN_TRANSIT', label: 'Dalam Pengiriman', Icon: Truck },
+                    { key: 'DELIVERED', label: 'Diterima', Icon: CheckCircle },
+                  ].map((step, i) => {
+                    const statusOrder = ['DRAFT', 'IN_TRANSIT', 'DELIVERED']
+                    const currentIdx = statusOrder.indexOf(editingDist.status)
+                    const stepIdx = i
+                    const isCompleted = stepIdx < currentIdx
+                    const isCurrent = step.key === editingDist.status
+                    const isCancelled = editingDist.status === 'CANCELLED'
+
+                    return (
+                      <div key={step.key} className="flex-1 flex items-center">
+                        <div className={`flex-1 flex flex-col items-center gap-1.5`}>
+                          <div className={`flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all ${
+                            isCancelled
+                              ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                              : isCompleted
+                                ? 'border-green-500 bg-green-500 text-white'
+                                : isCurrent
+                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20 ring-2 ring-green-200 dark:ring-green-800'
+                                  : 'border-muted-foreground/30 bg-muted/30'
+                          }`}>
+                            {isCancelled && step.key === 'DRAFT' ? (
+                              <XCircle className="h-4 w-4 text-red-500" />
+                            ) : isCompleted ? (
+                              <CheckCircle className="h-4 w-4" />
+                            ) : (
+                              <step.Icon className={`h-4 w-4 ${isCurrent ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground/50'}`} />
+                            )}
+                          </div>
+                          <span className={`text-[10px] text-center leading-tight ${isCurrent ? 'font-semibold text-green-600 dark:text-green-400' : isCompleted ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                            {step.label}
+                          </span>
+                        </div>
+                        {i < 2 && (
+                          <div className={`h-0.5 w-4 -mx-0.5 shrink-0 ${isCompleted || (isCurrent && i < currentIdx) ? 'bg-green-500' : 'bg-muted-foreground/20'}`} />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                {editingDist.status === 'CANCELLED' && (
+                  <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
+                    <XCircle className="h-3.5 w-3.5" />
+                    <span className="font-medium">Distribusi dibatalkan</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Notes Field */}
+              {STATUS_FLOW[editingDist.status]?.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="status-notes" className="text-xs">Catatan (opsional)</Label>
+                  <Textarea
+                    id="status-notes"
+                    value={statusNotes}
+                    onChange={(e) => setStatusNotes(e.target.value)}
+                    placeholder="Tambahkan catatan untuk perubahan status ini..."
+                    rows={2}
+                    className="text-sm"
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Aksi</p>
+                {STATUS_FLOW[editingDist.status]?.map((nextStatus) => (
+                  <Button
+                    key={nextStatus}
+                    variant="outline"
+                    className={`justify-start h-12 w-full ${nextStatus === 'CANCELLED' ? 'border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20' : 'hover:bg-green-50 dark:hover:bg-green-900/20'}`}
+                    onClick={() => handleStatusUpdate(nextStatus)}
+                    disabled={updateMutation.isPending}
+                  >
+                    {nextStatus === 'CANCELLED' ? (
+                      <XCircle className="h-4 w-4 mr-2 shrink-0 text-red-500" />
+                    ) : (
+                      <ArrowRight className="h-4 w-4 mr-2 shrink-0 text-green-600 dark:text-green-400" />
+                    )}
+                    <div className="text-left">
+                      <div className="text-sm font-medium">{getStatusLabel(nextStatus)}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {nextStatus === 'IN_TRANSIT' && 'Distribusi sedang dalam perjalanan'}
+                        {nextStatus === 'DELIVERED' && 'Pupuk telah diterima di tujuan'}
+                        {nextStatus === 'CANCELLED' && 'Batalkan distribusi ini'}
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+                {STATUS_FLOW[editingDist.status]?.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-3">
+                    Status sudah final, tidak dapat diubah lagi.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -319,3 +319,65 @@ SiPUPUK is a fully functional, production-ready PPST distributor management app.
   3. Add monthly/quarterly reporting with print/PDF export
   4. Add SMS/WhatsApp notification for order status updates
   5. Add data validation: max order quantity per farmer based on land area (HET limits)
+---
+Task ID: 8
+Agent: Main Agent (with sub-agents)
+Task: Periodic review - QA, bug fixes, styling, new features
+
+Work Log:
+- **QA Testing**: Tested all 7 views via agent-browser (Dashboard, Products, Farmers, Warehouses, Stock, Distributions, Orders)
+- **BUG FIX**: Warehouses showed "Tidak Aktif" for all entries
+  - Root cause: `/api/warehouses` API response mapping (line 21-37) did not include `isActive` field
+  - Fix: Added `isActive: w.isActive` to the warehouse API response mapping
+  - The Warehouse TypeScript type already had `isActive: boolean` — only the API was missing it
+- **STYLING IMPROVEMENTS** (via frontend-styling-expert sub-agent):
+  - Warehouses View: 4px emerald left border, 3 summary stat cards (Total Gudang Aktif, Total Stok, Kabupaten count), MapPin icons, hover effects, order count badges in name cells
+  - Distributions View: 4px blue left border, 3 summary stat cards (Total, Dalam Pengiriman, Diterima), Truck icons next to distribution numbers, enhanced status badges
+  - Dashboard: Animated gradient border on welcome card, 3 quick action buttons (Buat Pesanan, Restok Stok, Lihat Distribusi) with navigation, 4px red/yellow borders on stock alert rows, "Lihat Detail" links on recent orders
+  - Orders: Stacked bar breakdown (Harga Subsidi vs Selisih Subsidi) in detail dialog, pulsing green dot on "Menunggu" status badges
+  - Global CSS: Enhanced noise texture opacity, improved green-tinted focus-visible ring, animated `welcome-gradient-border` class
+- **NEW FEATURES** (via full-stack-developer sub-agent):
+  1. Warehouse Stock Detail Dialog: Click warehouse row → dialog with info header, 3 summary cards (total stock, product count, low stock alerts), scrollable stock table
+     - New API: `GET /api/warehouses/[id]/stock`
+     - New types: `WarehouseStockDetail`, `WarehouseStockEntry`, `fetchWarehouseStock()`
+  2. Enhanced Distribution Status Dialog: Visual 3-step status flow (Draft → Dalam Pengiriman → Diterima), color-coded action buttons, notes field, "Status sudah final" message
+  3. Dashboard Monthly Sales Comparison: "Perbandingan Bulanan" section with ↑/↓ arrows, percentage change, color-coded (green=up, red=down), "Pesanan Terbanyak Bulan Ini" with crown icon
+
+Stage Summary:
+- 1 bug fixed (warehouse isActive field)
+- ESLint: 0 errors
+- All APIs return 200
+- Agent-browser QA passed all 7 views: 0 browser errors
+- 6 files modified, 1 new file created
+- All new features verified working via agent-browser
+
+---
+## Project Current Status
+
+### Assessment
+SiPUPUK is a mature, feature-rich PPST distributor management app. All 7 modules have complete CRUD, multiple interactive features (purchase history, quick restock, warehouse stock detail, distribution status flow, monthly comparison), and polished styling with green agricultural theme, dark mode, and responsive design.
+
+### Completed Modifications This Round
+- Fixed warehouse "Tidak Aktif" display bug (API missing isActive field)
+- Enhanced styling: left borders, summary stat cards, icons, hover effects, gradient animations across all views
+- Added warehouse stock detail dialog with stock level analysis
+- Enhanced distribution status dialog with visual step flow
+- Added dashboard monthly comparison with percentage change and top farmer
+
+### Verification Results
+- ESLint: 0 errors
+- All APIs return 200 (dashboard, products, farmers, warehouses, stock, distributions, orders, farmer-orders, warehouse-stock)
+- Agent-browser QA: Dashboard (quick actions ✅, comparison ✅), Warehouses (Aktif status ✅, stock detail dialog ✅), Distributions (status dialog ✅), all other views ✅
+- 0 browser console errors
+
+### Unresolved Issues / Risks
+- No authentication system (recommended: NextAuth.js with PPST user roles)
+- No RPKP (Rencana Kebutuhan Pupuk Pupuk) planning module
+- No HET (Harga Eceran Tertinggi) enforcement / max quantity validation per farmer
+- No print/PDF export for monthly reports
+- Priority recommendations for next phase:
+  1. Add RPKP allocation planning module (annual fertilizer allocation plan)
+  2. Add HET validation: max order quantity per farmer based on land area
+  3. Add print/PDF export for monthly reports to Dinas Pertanian
+  4. Add data import from Excel for farmer registration
+  5. Add notification system (stock below minimum, pending orders older than 7 days)

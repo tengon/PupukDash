@@ -9,6 +9,7 @@ export interface DashboardData {
   recentOrders: OrderWithDetails[]
   stockAlerts: StockWithProductAndWarehouse[]
   topFarmers: { id: string; name: string; totalOrders: number; totalAmount: number }[]
+  topFarmerThisMonth: { id: string; name: string; totalOrders: number; totalAmount: number } | null
 }
 
 export interface Product {
@@ -260,6 +261,40 @@ export interface ActivityLog {
 }
 
 export const fetchActivityLogs = () => apiFetch<ActivityLog[]>('/api/activity-log')
+
+// Warehouse Stock Detail
+export interface WarehouseStockEntry {
+  id: string
+  productName: string
+  productType: string
+  quantity: number
+  minStock: number
+  lastRestocked: string | null
+  subsidyPrice: number
+}
+
+export interface WarehouseStockDetail {
+  warehouse: {
+    id: string
+    code: string
+    name: string
+    address: string
+    district: string | null
+    regency: string | null
+    province: string
+    managerName: string | null
+    managerPhone: string | null
+  }
+  stockEntries: WarehouseStockEntry[]
+  summary: {
+    totalStock: number
+    totalProducts: number
+    lowStockCount: number
+  }
+}
+
+export const fetchWarehouseStock = (warehouseId: string) =>
+  apiFetch<WarehouseStockDetail>(`/api/warehouses/${warehouseId}/stock`)
 
 // Seed
 export const seedData = () => apiFetch<{ message: string }>('/api/seed', { method: 'POST' })
