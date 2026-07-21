@@ -190,7 +190,22 @@ export const deleteDistribution = (id: string) =>
   apiFetch<{ message: string }>(`/api/distributions/${id}`, { method: 'DELETE' })
 
 // Orders
-export const fetchOrders = () => apiFetch<OrderWithDetails[]>('/api/orders')
+export interface OrdersResponse {
+  orders: OrderWithDetails[]
+  summary: {
+    total: number
+    byStatus: Record<string, number>
+  }
+}
+
+export const fetchOrders = (params?: { status?: string; fromDate?: string; toDate?: string }) => {
+  const searchParams = new URLSearchParams()
+  if (params?.status) searchParams.set('status', params.status)
+  if (params?.fromDate) searchParams.set('fromDate', params.fromDate)
+  if (params?.toDate) searchParams.set('toDate', params.toDate)
+  const qs = searchParams.toString()
+  return apiFetch<OrdersResponse>(`/api/orders${qs ? `?${qs}` : ''}`)
+}
 export const createOrder = (data: {
   farmerId: string
   warehouseId: string
@@ -201,6 +216,21 @@ export const createOrder = (data: {
 }) => apiFetch<OrderWithDetails>('/api/orders', { method: 'POST', body: JSON.stringify(data) })
 export const updateOrder = (id: string, data: { status?: string; notes?: string }) =>
   apiFetch<OrderWithDetails>(`/api/orders/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+
+// Stock transfer
+export const transferStock = (data: { fromWarehouseId: string; toWarehouseId: string; productId: string; quantity: number }) =>
+  apiFetch<{ message: string }>('/api/stock/transfer', { method: 'POST', body: JSON.stringify(data) })
+
+// Activity Log
+export interface ActivityLog {
+  id: string
+  action: string
+  detail: string
+  userId: string | null
+  createdAt: string
+}
+
+export const fetchActivityLogs = () => apiFetch<ActivityLog[]>('/api/activity-log')
 
 // Seed
 export const seedData = () => apiFetch<{ message: string }>('/api/seed', { method: 'POST' })

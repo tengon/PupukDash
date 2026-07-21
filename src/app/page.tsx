@@ -5,6 +5,7 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
 import { ProductsView } from '@/components/products/products-view'
 import { FarmersView } from '@/components/farmers/farmers-view'
@@ -125,7 +126,7 @@ export default function HomePage() {
       <AppSidebar />
       <SidebarInset className="flex flex-col min-h-screen">
         {/* Header */}
-        <header className="flex h-14 shrink-0 items-center gap-2 px-4 bg-card/80 backdrop-blur-sm sticky top-0 z-10 border-b-0" style={{ borderBottom: '1px solid transparent', backgroundImage: 'linear-gradient(to bottom, var(--background), var(--background)), linear-gradient(to right, oklch(0.65 0.15 150 / 0.2), oklch(0.55 0.10 145 / 0.15), oklch(0.65 0.12 160 / 0.2))', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderBottomWidth: '1px', borderBottomStyle: 'solid' }}>
+        <header className="flex h-14 shrink-0 items-center gap-2 px-4 glass sticky top-0 z-10 header-gradient" style={{ borderBottom: '1px solid transparent', backgroundImage: 'linear-gradient(to bottom, var(--background), var(--background)), linear-gradient(to right, oklch(0.65 0.15 150 / 0.2), oklch(0.55 0.10 145 / 0.15), oklch(0.65 0.12 160 / 0.2))', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderBottomWidth: '1px', borderBottomStyle: 'solid' }}>
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex flex-1 items-center gap-2">
@@ -190,14 +191,19 @@ export default function HomePage() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t bg-card/50 px-4 py-3 mt-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-1 text-[11px] text-muted-foreground">
+        <footer className="border-t-2 footer-gradient-border bg-card/50 px-4 py-3 mt-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-1.5 text-[11px] text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Leaf className="h-3 w-3 text-primary" />
               <span className="font-medium text-foreground/80">SiPUPUK</span>
-              <span>— Sistem Informasi Penjualan Pupuk Bersubsidi</span>
+              <span className="hidden sm:inline">— Sistem Informasi Penjualan Pupuk Bersubsidi</span>
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1 font-mono">v1.0.0</Badge>
             </div>
-            <div>© {new Date().getFullYear()} Kementerian Pertanian Republik Indonesia</div>
+            <div className="flex items-center gap-2">
+              <span>Dibangun dengan <span className="font-medium text-foreground/70">Next.js</span></span>
+              <span className="text-border">|</span>
+              <span>© {new Date().getFullYear()} Kementerian Pertanian RI</span>
+            </div>
           </div>
         </footer>
       </SidebarInset>

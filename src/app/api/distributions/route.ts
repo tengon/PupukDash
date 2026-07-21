@@ -121,6 +121,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Log activity
+    await db.activityLog.create({
+      data: {
+        action: 'CREATE_DISTRIBUTION',
+        detail: `Distribusi baru ${distributionNo} untuk ${quantity} kg ${product.name} dari ${warehouse.name}`,
+      },
+    })
+
     return NextResponse.json(distribution, { status: 201 })
   } catch (error) {
     console.error('Create distribution error:', error)

@@ -90,3 +90,53 @@ export function getStockStatusLabel(quantity: number, minStock: number): string 
   if (ratio <= 1) return 'Rendah'
   return 'Aman'
 }
+
+export function formatRelativeTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+  const diffWeek = Math.floor(diffDay / 7)
+  const diffMonth = Math.floor(diffDay / 30)
+
+  if (diffSec < 60) return 'baru saja'
+  if (diffMin < 60) return `${diffMin} menit yang lalu`
+  if (diffHour < 24) return `${diffHour} jam yang lalu`
+  if (diffDay < 7) return `${diffDay} hari yang lalu`
+  if (diffWeek < 5) return `${diffWeek} minggu yang lalu`
+  if (diffMonth < 12) return `${diffMonth} bulan yang lalu`
+  return `${Math.floor(diffMonth / 12)} tahun yang lalu`
+}
+
+export function getActivityActionColor(action: string): string {
+  const colors: Record<string, string> = {
+    CREATE_ORDER: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-400 dark:border-green-800',
+    UPDATE_STATUS: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800',
+    CANCEL_ORDER: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800',
+    ADD_STOCK: 'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/40 dark:text-teal-400 dark:border-teal-800',
+    UPDATE_STOCK: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800',
+    TRANSFER_STOCK: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-400 dark:border-purple-800',
+    CREATE_DISTRIBUTION: 'bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-900/40 dark:text-lime-400 dark:border-lime-800',
+    UPDATE_DISTRIBUTION_STATUS: 'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/40 dark:text-cyan-400 dark:border-cyan-800',
+    CANCEL_DISTRIBUTION: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800',
+  }
+  return colors[action] || 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/40 dark:text-gray-400 dark:border-gray-800'
+}
+
+export function getActivityActionLabel(action: string): string {
+  const labels: Record<string, string> = {
+    CREATE_ORDER: 'Pesanan Baru',
+    UPDATE_STATUS: 'Status Diubah',
+    CANCEL_ORDER: 'Dibatalkan',
+    ADD_STOCK: 'Stok Ditambah',
+    UPDATE_STOCK: 'Stok Diperbarui',
+    TRANSFER_STOCK: 'Transfer Stok',
+    CREATE_DISTRIBUTION: 'Distribusi Baru',
+    UPDATE_DISTRIBUTION_STATUS: 'Status Distribusi',
+    CANCEL_DISTRIBUTION: 'Distribusi Dibatalkan',
+  }
+  return labels[action] || action
+}

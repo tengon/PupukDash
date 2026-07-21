@@ -46,10 +46,18 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { motion } from 'framer-motion'
-import { Plus, Search, Pencil, Trash2, Package } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Package, CircleDot } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 const PRODUCT_TYPES = ['UREA', 'NPK', 'SP-36', 'ZA', 'ORGANIK']
+
+const TYPE_PILL_COLORS: Record<string, string> = {
+  UREA: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700',
+  NPK: 'bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700',
+  'SP-36': 'bg-lime-100 text-lime-700 border-lime-200 dark:bg-lime-900/30 dark:text-lime-300 dark:border-lime-700',
+  ZA: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700',
+  ORGANIK: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700',
+}
 
 const emptyForm = {
   name: '',
@@ -65,6 +73,7 @@ export function ProductsView() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -155,20 +164,26 @@ export function ProductsView() {
     if (deletingId) deleteMutation.mutate(deletingId)
   }
 
-  const filtered = (products || []).filter(
+  const activeProducts = (products || []).filter(p => p.isActive)
+  const filtered = activeProducts.filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.type.toLowerCase().includes(search.toLowerCase())
+      (typeFilter === 'all' || p.type === typeFilter) &&
+      (p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.type.toLowerCase().includes(search.toLowerCase()))
   )
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card className="border-l-2 border-l-primary">
+      <Card className="border-l-2 border-l-primary" style={{ boxShadow: 'var(--shadow-sm)' }}>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Package className="h-5 w-5" />
               Daftar Produk Pupuk
+              <Badge variant="secondary" className="text-[10px] ml-1 font-normal">
+                <CircleDot className="h-3 w-3 mr-1" />
+                {activeProducts.length} produk aktif
+              </Badge>
             </CardTitle>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -180,11 +195,23 @@ export function ProductsView() {
                   className="pl-9 h-9 w-full sm:w-60"
                 />
               </div>
-              <Button onClick={handleOpenAdd} size="sm" className="shrink-0">
+              <Button onClick={handleOpenAdd} size="sm" className="shrink-0 btn-gradient">
                 <Plus className="h-4 w-4 mr-1" />
                 Tambah Produk
               </Button>
             </div>
+          </div>
+          {/* Filter pills row */}
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            {['all', ...PRODUCT_TYPES].map((type) => (
+              <button
+                key={type}
+                onClick={() => setTypeFilter(type)}
+                className={`filter-pill ${typeFilter === type ? 'active' : ''}`}
+              >
+                {type === 'all' ? 'Semua' : type}
+              </button>
+            ))}
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -212,15 +239,15 @@ export function ProductsView() {
                   {filtered.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
-                        {search ? 'Tidak ada produk yang cocok' : 'Belum ada data produk'}
+                        {search || typeFilter !== 'all' ? 'Tidak ada produk yang cocok' : 'Belum ada data produk'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map((product, idx) => (
-                      <TableRow key={product.id}>
+                    filtered.map((product) => (
+                      <TableRow key={product.id} className="hover:border-l-2 hover:border-l-primary/30">
                         <TableCell className="text-sm font-medium">{product.name}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getTypeBadgeColor(product.type)}`}>
+                          <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-semibold ${TYPE_PILL_COLORS[product.type] || getTypeBadgeColor(product.type)}`}>
                             {product.type}
                           </Badge>
                         </TableCell>
@@ -294,7 +321,7 @@ export function ProductsView() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
-            <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
+            <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending} className="btn-gradient">
               {createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>

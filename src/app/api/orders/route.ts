@@ -16,8 +16,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const search = searchParams.get('search') || ''
+    const fromDate = searchParams.get('fromDate')
+    const toDate = searchParams.get('toDate')
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '1000')))
 
     const where: Record<string, unknown> = {}
     if (status) {
@@ -30,8 +32,20 @@ export async function GET(request: NextRequest) {
         { farmer: { nik: { contains: search } } },
       ]
     }
+    if (fromDate || toDate) {
+      const createdAt: Record<string, unknown> = {}
+      if (fromDate) {
+        createdAt.gte = new Date(fromDate)
+      }
+      if (toDate) {
+        const to = new Date(toDate)
+        to.setHours(23, 59, 59, 999)
+        createdAt.lte = to
+      }
+      where.createdAt = createdAt
+    }
 
-    const [orders, total] = await Promise.all([
+    const [orders, total, statusCounts] = await Promise.all([
       db.order.findMany({
         where,
         include: {
@@ -48,9 +62,24 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
       db.order.count({ where }),
+      db.order.groupBy({
+        by: ['status'],
+        _count: { status: true },
+      }),
     ])
 
-    return NextResponse.json(orders)
+    const byStatus: Record<string, number> = {}
+    for (const sc of statusCounts) {
+      byStatus[sc.status] = sc._count.status
+    }
+
+    return NextResponse.json({
+      orders,
+      summary: {
+        total,
+        byStatus,
+      },
+    })
   } catch (error) {
     console.error('List orders error:', error)
     return NextResponse.json(
@@ -206,6 +235,14 @@ export async function POST(request: NextRequest) {
           },
         },
       })
+    })
+
+    // Log activity
+    await db.activityLog.create({
+      data: {
+        action: 'CREATE_ORDER',
+        detail: `Pesanan baru ${orderNumber} dari ${farmer.name} sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalAmount)}`,
+      },
     })
 
     return NextResponse.json(order, { status: 201 })

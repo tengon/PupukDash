@@ -50,11 +50,12 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Package, Warehouse as WarehouseIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Package, Warehouse as WarehouseIcon, Layers } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Switch } from '@/components/ui/switch'
 
 const ITEMS_PER_PAGE = 10
+const MAX_CAPACITY = 20000 // reference max for fill indicator
 
 function StockLevelBar({ quantity, minStock }: { quantity: number; minStock: number }) {
   const ratio = quantity / minStock
@@ -80,6 +81,23 @@ function StockLevelBar({ quantity, minStock }: { quantity: number; minStock: num
   )
 }
 
+function FillIndicatorBar({ quantity }: { quantity: number }) {
+  const fillPercent = Math.min((quantity / MAX_CAPACITY) * 100, 100)
+
+  let fillColor = 'bg-green-500'
+  if (fillPercent < 20) fillColor = 'bg-red-500'
+  else if (fillPercent < 40) fillColor = 'bg-yellow-500'
+
+  return (
+    <div className="stock-fill-bar mt-3">
+      <div
+        className={`absolute bottom-0 left-0 h-full rounded-full transition-all duration-700 ${fillColor}`}
+        style={{ width: `${fillPercent}%` }}
+      />
+    </div>
+  )
+}
+
 function StockCard({ stock, onEdit, onDelete }: {
   stock: StockWithProductAndWarehouse
   onEdit: (s: StockWithProductAndWarehouse) => void
@@ -90,22 +108,28 @@ function StockCard({ stock, onEdit, onDelete }: {
   let statusColor = 'text-green-700 dark:text-green-400'
   let statusLabel = 'Aman'
   let statusBg = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+  let statusBadgeBg = 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-700'
+  let statusDotColor = 'bg-green-500'
   if (ratio < 1) {
     statusColor = 'text-red-700 dark:text-red-400'
     statusLabel = 'Kritis'
     statusBg = 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+    statusBadgeBg = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-700'
+    statusDotColor = 'bg-red-500'
   } else if (ratio < 1.5) {
     statusColor = 'text-yellow-700 dark:text-yellow-400'
     statusLabel = 'Rendah'
     statusBg = 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+    statusBadgeBg = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700'
+    statusDotColor = 'bg-yellow-500'
   }
 
   return (
-    <Card className={`border ${statusBg} hover:shadow-md transition-shadow`}>
+    <Card className={`border-l-3 ${statusBg} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`} style={{ boxShadow: 'var(--shadow-sm)' }}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0 ring-1 ring-black/5 dark:ring-white/5">
               <Package className="h-4 w-4 text-primary" />
             </div>
             <div className="min-w-0">
@@ -116,22 +140,26 @@ function StockCard({ stock, onEdit, onDelete }: {
               </div>
             </div>
           </div>
-          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 ${getTypeBadgeColor(stock.product.type)}`}>
+          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 font-semibold ${getTypeBadgeColor(stock.product.type)}`}>
             {stock.product.type}
           </Badge>
         </div>
 
-        <div className="mb-3">
+        <div className="mb-1">
           <p className={`text-3xl font-bold tabular-nums ${statusColor}`}>{formatNumber(stock.quantity)}</p>
           <p className="text-xs text-muted-foreground">kilogram</p>
         </div>
 
         <StockLevelBar quantity={stock.quantity} minStock={stock.minStock} />
+        <FillIndicatorBar quantity={stock.quantity} />
 
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span>Min: {formatNumber(stock.minStock)} kg</span>
-            <span className={`font-medium ${statusColor}`}>{statusLabel}</span>
+            <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-semibold ${statusBadgeBg}`}>
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotColor} mr-1 ${ratio < 1 ? 'pulse-dot' : ''}`} />
+              {statusLabel}
+            </Badge>
           </div>
           <div className="flex items-center gap-0.5">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(stock)}>
@@ -264,14 +292,17 @@ export function StockView() {
     if (deletingId) deleteMutation.mutate(deletingId)
   }
 
-  const filtered = (stocks || []).filter(
+  const allStocks = stocks || []
+  const totalStockKg = allStocks.reduce((sum, s) => sum + s.quantity, 0)
+
+  const filtered = allStocks.filter(
     (s) =>
       (warehouseFilter === 'all' || s.warehouseId === warehouseFilter) &&
       (s.product.name.toLowerCase().includes(search.toLowerCase()) ||
        s.warehouse.name.toLowerCase().includes(search.toLowerCase()))
   )
 
-  const alertCount = (stocks || []).filter((s) => s.quantity / s.minStock <= 1).length
+  const alertCount = allStocks.filter((s) => s.quantity / s.minStock <= 1).length
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
   const safePage = Math.min(page, totalPages)
@@ -281,7 +312,7 @@ export function StockView() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card className="border-l-2 border-l-teal-500">
+      <Card className="border-l-2 border-l-teal-500" style={{ boxShadow: 'var(--shadow-sm)' }}>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -304,21 +335,39 @@ export function StockView() {
                   className="pl-9 h-9 w-full sm:w-48"
                 />
               </div>
-              <Select value={warehouseFilter} onValueChange={(v) => { setWarehouseFilter(v); setPage(1) }}>
-                <SelectTrigger className="h-9 w-full sm:w-44">
-                  <SelectValue placeholder="Filter Gudang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Gudang</SelectItem>
-                  {(warehouses || []).map((w) => (
-                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleOpenAdd} size="sm" className="shrink-0">
+              <Button onClick={handleOpenAdd} size="sm" className="shrink-0 btn-gradient">
                 <Plus className="h-4 w-4 mr-1" />
                 Tambah Stok
               </Button>
+            </div>
+          </div>
+          {/* Total stock summary + warehouse filter pills */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+            <div className="glass rounded-lg px-4 py-2.5 flex items-center gap-3 border border-border/50">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0 ring-1 ring-black/5 dark:ring-white/5">
+                <Layers className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Stok Semua Gudang</p>
+                <p className="text-lg font-bold tabular-nums leading-tight">{formatNumber(totalStockKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => { setWarehouseFilter('all'); setPage(1) }}
+                className={`filter-pill ${warehouseFilter === 'all' ? 'active' : ''}`}
+              >
+                Semua
+              </button>
+              {(warehouses || []).map((w) => (
+                <button
+                  key={w.id}
+                  onClick={() => { setWarehouseFilter(w.id); setPage(1) }}
+                  className={`filter-pill ${warehouseFilter === w.id ? 'active' : ''}`}
+                >
+                  {w.name}
+                </button>
+              ))}
             </div>
           </div>
         </CardHeader>
@@ -326,7 +375,7 @@ export function StockView() {
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-44 w-full rounded-lg" />
+                <Skeleton key={i} className="h-52 w-full rounded-lg" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
@@ -453,7 +502,7 @@ export function StockView() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
-            <Button onClick={handleSave} disabled={addMutation.isPending}>
+            <Button onClick={handleSave} disabled={addMutation.isPending} className="btn-gradient">
               {addMutation.isPending ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
@@ -487,7 +536,7 @@ export function StockView() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Batal</Button>
-            <Button onClick={handleEditSave} disabled={updateMutation.isPending}>
+            <Button onClick={handleEditSave} disabled={updateMutation.isPending} className="btn-gradient">
               {updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>

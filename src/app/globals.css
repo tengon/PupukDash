@@ -123,12 +123,74 @@
   }
 }
 
+/* ===== Green-Tinted Shadow System ===== */
+:root {
+  --shadow-sm: 0 1px 2px 0 oklch(0.42 0.14 152 / 0.06), 0 1px 3px 0 oklch(0.42 0.14 152 / 0.04);
+  --shadow-md: 0 4px 6px -1px oklch(0.42 0.14 152 / 0.08), 0 2px 4px -2px oklch(0.42 0.14 152 / 0.05);
+  --shadow-lg: 0 10px 15px -3px oklch(0.42 0.14 152 / 0.10), 0 4px 6px -4px oklch(0.42 0.14 152 / 0.05);
+}
+
+.dark {
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.15), 0 1px 3px 0 oklch(0 0 0 / 0.10);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.20), 0 2px 4px -2px oklch(0 0 0 / 0.12);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.25), 0 4px 6px -4px oklch(0 0 0 / 0.15);
+}
+
+/* ===== Glassmorphism Effect ===== */
+.glass {
+  background: oklch(1 0 0 / 0.70);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass {
+  background: oklch(0.20 0.02 155 / 0.70);
+}
+
+/* ===== Subtle Animated Gradient for Header ===== */
+@keyframes header-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.header-gradient {
+  background: linear-gradient(
+    135deg,
+    oklch(0.985 0.002 150) 0%,
+    oklch(0.97 0.018 152) 25%,
+    oklch(0.985 0.002 150) 50%,
+    oklch(0.975 0.012 148) 75%,
+    oklch(0.985 0.002 150) 100%
+  );
+  background-size: 200% 200%;
+  animation: header-shimmer 15s ease-in-out infinite;
+}
+
+.dark .header-gradient {
+  background: linear-gradient(
+    135deg,
+    oklch(0.155 0.015 155) 0%,
+    oklch(0.18 0.03 152) 25%,
+    oklch(0.155 0.015 155) 50%,
+    oklch(0.17 0.025 158) 75%,
+    oklch(0.155 0.015 155) 100%
+  );
+  background-size: 200% 200%;
+  animation: header-shimmer 15s ease-in-out infinite;
+}
+
 /* Smooth transitions for all interactive elements */
 a, button, input, select, textarea,
 [role="button"], [role="tab"], [role="option"],
 [data-slot="sidebar-menu-button"],
 [data-radix-collection-item] {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth hover transition for cards and interactive containers */
+.card, [data-slot="card"], tr {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Text selection color — green agricultural theme */
@@ -142,11 +204,17 @@ a, button, input, select, textarea,
   color: inherit;
 }
 
-/* Focus-visible ring with green primary */
+/* Focus-visible ring — more visible green ring */
 *:focus-visible {
   outline: 2px solid oklch(0.55 0.14 152);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 3px oklch(0.55 0.14 152 / 0.15);
+}
+
+.dark *:focus-visible {
+  outline-color: oklch(0.65 0.14 152);
+  box-shadow: 0 0 0 3px oklch(0.65 0.14 152 / 0.20);
 }
 
 /* Custom scrollbar — improved */
@@ -193,4 +261,97 @@ a, button, input, select, textarea,
 
 .animate-pulse-gentle {
   animation: pulse-gentle 2s ease-in-out infinite;
+}
+
+/* ===== Filter Pill Styles ===== */
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--muted-foreground);
+}
+
+.filter-pill:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.filter-pill.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== Pulsing Dot Indicator ===== */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* ===== Gradient Button ===== */
+.btn-gradient {
+  background: linear-gradient(135deg, oklch(0.45 0.15 152), oklch(0.42 0.12 160));
+  color: oklch(0.985 0.002 150);
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, oklch(0.40 0.15 152), oklch(0.38 0.12 160));
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.dark .btn-gradient {
+  background: linear-gradient(135deg, oklch(0.50 0.14 152), oklch(0.48 0.11 160));
+  color: oklch(0.15 0.02 155);
+}
+
+.dark .btn-gradient:hover {
+  background: linear-gradient(135deg, oklch(0.55 0.14 152), oklch(0.52 0.11 160));
+}
+
+/* ===== Stock Fill Indicator Bar ===== */
+.stock-fill-bar {
+  position: relative;
+  height: 4px;
+  border-radius: 9999px;
+  background: oklch(0.92 0.01 155);
+  overflow: hidden;
+}
+
+.dark .stock-fill-bar {
+  background: oklch(0.30 0.02 155);
+}
+
+.stock-fill-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== Footer Gradient Border ===== */
+.footer-gradient-border {
+  border-image: linear-gradient(to right, oklch(0.55 0.14 152 / 0.3), oklch(0.65 0.12 148 / 0.15), oklch(0.55 0.14 152 / 0.3)) 1;
+}
+
+.dark .footer-gradient-border {
+  border-image: linear-gradient(to right, oklch(0.55 0.14 152 / 0.4), oklch(0.65 0.12 148 / 0.2), oklch(0.55 0.14 152 / 0.4)) 1;
 }

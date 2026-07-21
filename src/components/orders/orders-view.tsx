@@ -53,7 +53,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer, Check, Clock, PackageCheck } from 'lucide-react'
+import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer, Check, Clock, PackageCheck, CalendarDays, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 const ITEMS_PER_PAGE = 10
@@ -153,17 +153,21 @@ interface OrderItemForm {
 }
 
 export function OrdersView() {
-  const { refreshKey, triggerRefresh, shortcutAction, clearShortcut } = useAppStore()
+  const { refreshKey, triggerRefresh, shortcutAction, clearShortcut, prefillFarmerId, setPrefillFarmerId } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [showDateFilter, setShowDateFilter] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
   const [detailOrder, setDetailOrder] = useState<OrderWithDetails | null>(null)
   const [editingOrder, setEditingOrder] = useState<OrderWithDetails | null>(null)
   const [page, setPage] = useState(1)
+  const [prefillFarmer, setPrefillFarmer] = useState<string | undefined>(undefined)
 
   const [formFarmer, setFormFarmer] = useState('')
   const [formWarehouse, setFormWarehouse] = useState('')
@@ -171,10 +175,17 @@ export function OrdersView() {
   const [formNotes, setFormNotes] = useState('')
   const [farmerSearch, setFarmerSearch] = useState('')
 
-  const { data: orders, isLoading } = useQuery({
-    queryKey: ['orders', refreshKey],
-    queryFn: fetchOrders,
+  const { data: ordersData, isLoading } = useQuery({
+    queryKey: ['orders', refreshKey, statusFilter, fromDate, toDate],
+    queryFn: () => fetchOrders({
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+    }),
   })
+
+  const orders = ordersData?.orders ?? []
+  const orderSummary = ordersData?.summary
 
   const { data: farmers } = useQuery({
     queryKey: ['farmers', refreshKey],
@@ -216,11 +227,12 @@ export function OrdersView() {
   })
 
   const resetCreateForm = () => {
-    setFormFarmer('')
+    setFormFarmer(prefillFarmer || '')
     setFormWarehouse('')
     setFormItems([])
     setFormNotes('')
     setFarmerSearch('')
+    setPrefillFarmer(undefined)
   }
 
   const addItem = () => {
@@ -311,7 +323,6 @@ export function OrdersView() {
       prevShortcutRef.current = shortcutAction
       if (shortcutAction === 'create-order') {
         resetCreateForm()
-        // Use timeout to avoid synchronous setState in effect
         const id = setTimeout(() => setCreateOpen(true), 0)
         clearShortcut()
         return () => clearTimeout(id)
@@ -408,12 +419,12 @@ export function OrdersView() {
     }
   }
 
-  const filtered = (orders || []).filter((o) => {
-    const matchStatus = statusFilter === 'all' || o.status === statusFilter
+  // Client-side search filter (API handles status + date)
+  const filtered = orders.filter((o) => {
     const matchSearch = !search ||
       o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
       o.farmer.name.toLowerCase().includes(search.toLowerCase())
-    return matchStatus && matchSearch
+    return matchSearch
   })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
@@ -421,6 +432,24 @@ export function OrdersView() {
   const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
   const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
   const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+
+  const clearDateFilter = () => {
+    setFromDate('')
+    setToDate('')
+  }
+
+  const hasDateFilter = fromDate || toDate
+
+  // Expose repeat order function for farmer detail
+  useEffect(() => {
+    if (prefillFarmer) {
+      const id = setTimeout(() => {
+        setFormFarmer(prefillFarmer)
+        setCreateOpen(true)
+      }, 0)
+      return () => clearTimeout(id)
+    }
+  }, [prefillFarmer])
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
@@ -441,7 +470,7 @@ export function OrdersView() {
                   exportToCSV(
                     'pesanan-pupuk',
                     ['No Pesanan', 'Petani', 'NIK', 'Gudang', 'Total', 'Subsidi', 'Status', 'Tanggal'],
-                    (orders || []).map((o) => [
+                    orders.map((o) => [
                       o.orderNumber,
                       o.farmer.name,
                       o.farmer.nik,
@@ -463,25 +492,64 @@ export function OrdersView() {
               </Button>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
-              <TabsList className="h-8">
-                {ORDER_STATUS_TABS.map((tab) => (
-                  <TabsTrigger key={tab.value} value={tab.value} className="text-xs px-3">
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-            <div className="relative flex-1 sm:max-w-xs sm:ml-auto">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari pesanan..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                className="pl-9 h-8 text-sm"
-              />
+          <div className="flex flex-col gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
+                <TabsList className="h-8">
+                  {ORDER_STATUS_TABS.map((tab) => (
+                    <TabsTrigger key={tab.value} value={tab.value} className="text-xs px-3">
+                      {tab.label}
+                      {orderSummary?.byStatus[tab.value] !== undefined && (
+                        <span className="ml-1 text-[10px] text-muted-foreground">({orderSummary.byStatus[tab.value]})</span>
+                      )}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+              <div className="flex items-center gap-2 sm:ml-auto">
+                <Button
+                  variant={showDateFilter ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => setShowDateFilter(!showDateFilter)}
+                >
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  Filter Tanggal
+                </Button>
+                <div className="relative flex-1 sm:max-w-[200px]">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cari pesanan..."
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                    className="pl-9 h-8 text-sm"
+                  />
+                </div>
+              </div>
             </div>
+            {showDateFilter && (
+              <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-lg border">
+                <Label className="text-xs text-muted-foreground shrink-0">Dari:</Label>
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => { setFromDate(e.target.value); setPage(1) }}
+                  className="h-8 text-xs w-auto sm:w-36"
+                />
+                <Label className="text-xs text-muted-foreground shrink-0">Sampai:</Label>
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => { setToDate(e.target.value); setPage(1) }}
+                  className="h-8 text-xs w-auto sm:w-36"
+                />
+                {hasDateFilter && (
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={clearDateFilter}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -493,6 +561,12 @@ export function OrdersView() {
             </div>
           ) : (
             <>
+              <div className="px-4 py-2 border-b bg-muted/30">
+                <p className="text-xs text-muted-foreground">
+                  Menampilkan {filtered.length > 0 ? `${startIndex}-${endIndex}` : '0'} dari {orderSummary?.total ?? filtered.length} pesanan
+                  {hasDateFilter && <span className="ml-1 text-primary">(filter aktif)</span>}
+                </p>
+              </div>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -514,6 +588,9 @@ export function OrdersView() {
                           <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <ShoppingCart className="h-10 w-10 opacity-30" />
                             <p className="text-sm font-medium">Tidak ada data pesanan</p>
+                            {(hasDateFilter || search) && (
+                              <p className="text-xs">Coba ubah filter atau kata kunci pencarian</p>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -596,7 +673,7 @@ export function OrdersView() {
       </Card>
 
       {/* Create Order Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) setPrefillFarmer(undefined) }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Buat Pesanan Baru</DialogTitle>
@@ -758,7 +835,6 @@ export function OrdersView() {
           </DialogHeader>
           {detailOrder && (
             <div className="space-y-4">
-              {/* Status Timeline */}
               <div className="rounded-lg border bg-muted/30 p-2">
                 <OrderStatusTimeline status={detailOrder.status} />
               </div>

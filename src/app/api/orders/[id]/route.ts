@@ -65,7 +65,10 @@ export async function PUT(
 
     const existing = await db.order.findUnique({
       where: { id },
-      include: { items: true },
+      include: {
+        items: true,
+        farmer: { select: { name: true } },
+      },
     })
 
     if (!existing) {
@@ -73,6 +76,13 @@ export async function PUT(
         { error: 'Pesanan tidak ditemukan' },
         { status: 404 }
       )
+    }
+
+    const statusLabels: Record<string, string> = {
+      PENDING: 'Menunggu',
+      CONFIRMED: 'Dikonfirmasi',
+      PICKED_UP: 'Diambil',
+      CANCELLED: 'Dibatalkan',
     }
 
     // If cancelling, restore stock
@@ -112,6 +122,15 @@ export async function PUT(
             product: { select: { name: true, type: true } },
           },
         },
+      },
+    })
+
+    // Log activity
+    const actionType = status === 'CANCELLED' ? 'CANCEL_ORDER' : 'UPDATE_STATUS'
+    await db.activityLog.create({
+      data: {
+        action: actionType,
+        detail: `Status pesanan ${existing.orderNumber} diubah dari ${statusLabels[existing.status] || existing.status} ke ${statusLabels[status] || status}`,
       },
     })
 

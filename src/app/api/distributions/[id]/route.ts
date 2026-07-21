@@ -43,12 +43,24 @@ export async function PUT(
     const body = await request.json()
     const { status, notes, targetVillage, targetGroup } = body
 
-    const existing = await db.distribution.findUnique({ where: { id } })
+    const existing = await db.distribution.findUnique({
+      where: { id },
+      include: {
+        warehouse: { select: { name: true } },
+      },
+    })
     if (!existing) {
       return NextResponse.json(
         { error: 'Distribusi tidak ditemukan' },
         { status: 404 }
       )
+    }
+
+    const statusLabels: Record<string, string> = {
+      DRAFT: 'Draft',
+      IN_TRANSIT: 'Dalam Pengiriman',
+      DELIVERED: 'Diterima',
+      CANCELLED: 'Dibatalkan',
     }
 
     // If cancelling, restore stock
@@ -91,6 +103,17 @@ export async function PUT(
         warehouse: { select: { name: true, code: true, regency: true, province: true } },
       },
     })
+
+    // Log activity for status changes
+    if (status && status !== existing.status) {
+      const actionType = status === 'CANCELLED' ? 'CANCEL_DISTRIBUTION' : 'UPDATE_DISTRIBUTION_STATUS'
+      await db.activityLog.create({
+        data: {
+          action: actionType,
+          detail: `Status distribusi ${existing.distributionNo} diubah dari ${statusLabels[existing.status] || existing.status} ke ${statusLabels[status] || status}`,
+        },
+      })
+    }
 
     return NextResponse.json(distribution)
   } catch (error) {

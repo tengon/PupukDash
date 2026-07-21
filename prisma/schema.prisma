@@ -117,3 +117,11 @@ model OrderItem {
   order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product         FertilizerProduct @relation(fields: [productId], references: [id])
 }
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  detail    String
+  userId    String?
+  createdAt DateTime @default(now())
+}

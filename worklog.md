@@ -191,3 +191,25 @@ Stage Summary:
 - Stock view completely redesigned with visual card grid
 - All tables now have client-side pagination
 - All views have colored card accent borders
+
+---
+Task ID: 6-a
+Agent: Styling Sub-agent
+Task: Comprehensive styling improvements
+
+Work Log:
+- **globals.css**: Added green-tinted shadow system (--shadow-sm/md/lg) with dark mode variants; added glassmorphism `.glass` class; added animated header gradient `.header-gradient` with 15s shimmer; improved focus-visible ring with box-shadow glow (green-tinted); added `.filter-pill` styles for interactive pill buttons; added `.pulse-dot` animation for stock alerts; added `.btn-gradient` class with green gradient + hover lift effect; added `.stock-fill-bar` for capacity indicators; added `.footer-gradient-border` for gradient top border
+- **Dashboard View**: Added WelcomeSection with time-of-day greeting (Pagi/Siang/Sore/Malam) and Indonesian date format; stat cards now have gradient overlays (`bg-gradient-to-br from-<color>-50/40 to-white`) with `hover:-translate-y-0.5` and shadow-lg; QuickInfo cards upgraded with border colors, ring effects, and larger icon badges; RecentOrders now has "Lihat Semua >" link; TopFarmers ranking now shows gold/silver/bronze medal colors with emoji medals and colored amounts; StockAlerts rows now have colored left borders (red/yellow) and pulsing dot indicators
+- **Products View**: Added type filter pills row (Semua, UREA, NPK, SP-36, ZA, ORGANIK) with active state; "Tambah Produk" button now uses `.btn-gradient`; product type badges now use distinctive per-type colors with dark mode support; added active product count indicator badge in header; table rows have hover left-border effect; added `shadow-sm` via CSS variable to card
+- **Orders View**: Added status summary bar showing counts per status (Menunggu/Dikonfirmasi/Diambil/Dibatalkan) with colored dots, clickable to filter; "Buat Pesanan" button now uses `.btn-gradient`; order detail dialog items redesigned from table to card-like layout (rounded border cards with product name, type badge, subtotal, and qty × price breakdown); status stepper enlarged (h-11/w-11 circles, h-[3px] connecting lines) with glow shadows; table rows have hover left-border effect; fixed pre-existing lint error with setState-in-effect
+- **Stock View**: Added total stock summary card (glass effect, Layers icon, total kg across all warehouses); replaced Select warehouse filter with filter pills; stock cards now have `border-l-3` with status-colored left border; added FillIndicatorBar (4px bar showing % of 20,000 kg capacity); status badges now use prominent background colors with pulsing dot for Kritis status; cards have `hover:-translate-y-0.5` and shadow-lg
+- **Footer**: Added gradient top border (2px, `.footer-gradient-border`); added "v1.0.0" version badge; added "Dibangun dengan Next.js" text; improved layout with proper separator
+- **Header**: Applied `.glass` and `.header-gradient` classes for animated shimmer + glassmorphism effect
+- **Dark Mode**: All new CSS classes have proper `.dark` variants; all inline color classes include `dark:` prefixes; shadows adapt in dark mode (black shadows instead of green-tinted)
+
+Stage Summary:
+- ESLint: 0 errors
+- All APIs return 200
+- 7 files modified: globals.css, dashboard-view.tsx, products-view.tsx, orders-view.tsx, stock-view.tsx, page.tsx, worklog.md
+- No backend/API changes — all modifications are purely frontend styling
+- All styling improvements are dark-mode compatible

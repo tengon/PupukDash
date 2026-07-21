@@ -9,6 +9,9 @@ interface AppState {
   shortcutAction: string | null
   triggerShortcut: (action: string) => void
   clearShortcut: () => void
+  /** Pre-fill farmer ID when creating a repeat order */
+  prefillFarmerId: string | null
+  setPrefillFarmerId: (id: string | null) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -19,4 +22,6 @@ export const useAppStore = create<AppState>((set) => ({
   shortcutAction: null,
   triggerShortcut: (action) => set({ shortcutAction: action }),
   clearShortcut: () => set({ shortcutAction: null }),
+  prefillFarmerId: null,
+  setPrefillFarmerId: (id) => set({ prefillFarmerId: id }),
 }))

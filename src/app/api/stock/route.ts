@@ -39,7 +39,13 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const existing = await db.stock.findUnique({ where: { id } })
+    const existing = await db.stock.findUnique({
+      where: { id },
+      include: {
+        product: { select: { name: true } },
+        warehouse: { select: { name: true } },
+      },
+    })
     if (!existing) {
       return NextResponse.json(
         { error: 'Data stok tidak ditemukan' },
@@ -65,6 +71,18 @@ export async function PUT(request: NextRequest) {
         warehouse: { select: { name: true, code: true, regency: true, province: true } },
       },
     })
+
+    // Log activity
+    if (quantity !== undefined && quantity !== existing.quantity) {
+      const diff = quantity - existing.quantity
+      const direction = diff > 0 ? 'ditambah' : 'dikurangi'
+      await db.activityLog.create({
+        data: {
+          action: 'UPDATE_STOCK',
+          detail: `Stok ${existing.product.name} di ${existing.warehouse.name} ${direction} menjadi ${quantity} kg`,
+        },
+      })
+    }
 
     return NextResponse.json(stock)
   } catch (error) {
@@ -122,9 +140,10 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    let result
     if (existingStock) {
       // Increment existing stock
-      const updatedStock = await db.stock.update({
+      result = await db.stock.update({
         where: { id: existingStock.id },
         data: {
           quantity: existingStock.quantity + quantity,
@@ -136,26 +155,32 @@ export async function POST(request: NextRequest) {
           warehouse: { select: { name: true, code: true, regency: true, province: true } },
         },
       })
-
-      return NextResponse.json(updatedStock, { status: 200 })
+    } else {
+      // Create new stock entry
+      result = await db.stock.create({
+        data: {
+          warehouseId,
+          productId,
+          quantity,
+          minStock: minStock ?? 500,
+          ...(isRestock ? { lastRestocked: new Date() } : {}),
+        },
+        include: {
+          product: { select: { name: true, type: true, pricePerKg: true, subsidyPrice: true } },
+          warehouse: { select: { name: true, code: true, regency: true, province: true } },
+        },
+      })
     }
 
-    // Create new stock entry
-    const newStock = await db.stock.create({
+    // Log activity
+    await db.activityLog.create({
       data: {
-        warehouseId,
-        productId,
-        quantity,
-        minStock: minStock ?? 500,
-        ...(isRestock ? { lastRestocked: new Date() } : {}),
-      },
-      include: {
-        product: { select: { name: true, type: true, pricePerKg: true, subsidyPrice: true } },
-        warehouse: { select: { name: true, code: true, regency: true, province: true } },
+        action: 'ADD_STOCK',
+        detail: `Stok ${product.name} di ${warehouse.name} ditambah ${quantity} kg`,
       },
     })
 
-    return NextResponse.json(newStock, { status: 201 })
+    return NextResponse.json(result, { status: existingStock ? 200 : 201 })
   } catch (error) {
     console.error('Add stock error:', error)
     return NextResponse.json(
