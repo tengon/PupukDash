@@ -159,7 +159,7 @@ export function OrdersView() {
 
   const updateItem = (index: number, field: keyof OrderItemForm, value: string | number) => {
     const updated = [...formItems]
-    ;(updated[index] as Record<string, string | number>)[field] = value
+    ;(updated[index] as unknown as Record<string, string | number>)[field] = value
 
     if (field === 'productId' && typeof value === 'string') {
       const product = (products || []).find((p) => p.id === value)

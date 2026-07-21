@@ -5,8 +5,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
 
     const where = {
       isActive: true,
@@ -22,28 +20,15 @@ export async function GET(request: NextRequest) {
         : {}),
     }
 
-    const [farmers, total] = await Promise.all([
-      db.farmer.findMany({
-        where,
-        include: {
-          _count: { select: { orders: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      db.farmer.count({ where }),
-    ])
-
-    return NextResponse.json({
-      data: farmers,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+    const farmers = await db.farmer.findMany({
+      where,
+      include: {
+        _count: { select: { orders: true } },
       },
+      orderBy: { createdAt: 'desc' },
     })
+
+    return NextResponse.json(farmers)
   } catch (error) {
     console.error('List farmers error:', error)
     return NextResponse.json(
