@@ -1,0 +1,619 @@
+     1→'use client'
+     2→
+     3→import { useState } from 'react'
+     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+     5→import { useAppStore } from '@/lib/store'
+     6→import {
+     7→  fetchStock, addStock, updateStock, deleteStock,
+     8→  fetchWarehouses, fetchProducts,
+     9→  type StockWithProductAndWarehouse,
+    10→} from '@/lib/api'
+    11→import { formatNumber, getTypeBadgeColor } from '@/lib/format'
+    12→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    13→import { Button } from '@/components/ui/button'
+    14→import { Input } from '@/components/ui/input'
+    15→import { Label } from '@/components/ui/label'
+    16→import { Badge } from '@/components/ui/badge'
+    17→import { Skeleton } from '@/components/ui/skeleton'
+    18→import {
+    19→  Dialog,
+    20→  DialogContent,
+    21→  DialogDescription,
+    22→  DialogFooter,
+    23→  DialogHeader,
+    24→  DialogTitle,
+    25→} from '@/components/ui/dialog'
+    26→import {
+    27→  AlertDialog,
+    28→  AlertDialogAction,
+    29→  AlertDialogCancel,
+    30→  AlertDialogContent,
+    31→  AlertDialogDescription,
+    32→  AlertDialogFooter,
+    33→  AlertDialogHeader,
+    34→  AlertDialogTitle,
+    35→} from '@/components/ui/alert-dialog'
+    36→import {
+    37→  Select,
+    38→  SelectContent,
+    39→  SelectItem,
+    40→  SelectTrigger,
+    41→  SelectValue,
+    42→} from '@/components/ui/select'
+    43→import {
+    44→  Pagination,
+    45→  PaginationContent,
+    46→  PaginationItem,
+    47→  PaginationLink,
+    48→  PaginationNext,
+    49→  PaginationPrevious,
+    50→  PaginationEllipsis,
+    51→} from '@/components/ui/pagination'
+    52→import { motion } from 'framer-motion'
+    53→import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Package, Warehouse as WarehouseIcon, Layers, PackagePlus } from 'lucide-react'
+    54→import { useToast } from '@/hooks/use-toast'
+    55→import { Switch } from '@/components/ui/switch'
+    56→import { QuickRestockDialog } from './quick-restock-dialog'
+    57→
+    58→const ITEMS_PER_PAGE = 10
+    59→const MAX_CAPACITY = 20000 // reference max for fill indicator
+    60→
+    61→function StockLevelBar({ quantity, minStock }: { quantity: number; minStock: number }) {
+    62→  const ratio = quantity / minStock
+    63→  const percent = Math.min((ratio / 2) * 100, 100)
+    64→
+    65→  let barColor = 'bg-green-500'
+    66→  let bgColor = 'bg-green-100 dark:bg-green-900/30'
+    67→  if (ratio < 1) {
+    68→    barColor = 'bg-red-500'
+    69→    bgColor = 'bg-red-100 dark:bg-red-900/30'
+    70→  } else if (ratio < 1.5) {
+    71→    barColor = 'bg-yellow-500'
+    72→    bgColor = 'bg-yellow-100 dark:bg-yellow-900/30'
+    73→  }
+    74→
+    75→  return (
+    76→    <div className={`w-full h-2 rounded-full ${bgColor} overflow-hidden`}>
+    77→      <div
+    78→        className={`h-full rounded-full ${barColor} transition-all duration-500`}
+    79→        style={{ width: `${percent}%` }}
+    80→      />
+    81→    </div>
+    82→  )
+    83→}
+    84→
+    85→function FillIndicatorBar({ quantity }: { quantity: number }) {
+    86→  const fillPercent = Math.min((quantity / MAX_CAPACITY) * 100, 100)
+    87→
+    88→  let fillColor = 'bg-green-500'
+    89→  if (fillPercent < 20) fillColor = 'bg-red-500'
+    90→  else if (fillPercent < 40) fillColor = 'bg-yellow-500'
+    91→
+    92→  return (
+    93→    <div className="stock-fill-bar mt-3">
+    94→      <div
+    95→        className={`absolute bottom-0 left-0 h-full rounded-full transition-all duration-700 ${fillColor}`}
+    96→        style={{ width: `${fillPercent}%` }}
+    97→      />
+    98→    </div>
+    99→  )
+   100→}
+   101→
+   102→function CapacityRing({ quantity, maxCapacity = 10000 }: { quantity: number; maxCapacity?: number }) {
+   103→  const radius = 28
+   104→  const stroke = 4
+   105→  const size = (radius + stroke) * 2
+   106→  const circumference = 2 * Math.PI * radius
+   107→  const percent = Math.min(quantity / maxCapacity, 1)
+   108→  const filled = percent * circumference
+   109→
+   110→  let ringColor = 'text-green-500'
+   111→  if (percent < 0.2) ringColor = 'text-red-500'
+   112→  else if (percent < 0.4) ringColor = 'text-yellow-500'
+   113→
+   114→  return (
+   115→    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+   116→      <svg width={size} height={size} className="-rotate-90">
+   117→        <circle cx={radius + stroke} cy={radius + stroke} r={radius} fill="none" className="stroke-muted" strokeWidth={stroke} />
+   118→        <circle cx={radius + stroke} cy={radius + stroke} r={radius} fill="none" className={`${ringColor} transition-all duration-700`} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${filled} ${circumference}`} />
+   119→      </svg>
+   120→      <span className="absolute text-[10px] font-bold tabular-nums">{Math.round(percent * 100)}%</span>
+   121→    </div>
+   122→  )
+   123→}
+   124→
+   125→function StockCard({ stock, onEdit, onDelete, onRestock }: {
+   126→  stock: StockWithProductAndWarehouse
+   127→  onEdit: (s: StockWithProductAndWarehouse) => void
+   128→  onDelete: (id: string) => void
+   129→  onRestock: (s: StockWithProductAndWarehouse) => void
+   130→}) {
+   131→  const ratio = stock.quantity / stock.minStock
+   132→
+   133→  let statusColor = 'text-green-700 dark:text-green-400'
+   134→  let statusLabel = 'Aman'
+   135→  let statusBg = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+   136→  let statusBadgeBg = 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-700'
+   137→  let statusDotColor = 'bg-green-500'
+   138→  if (ratio < 1) {
+   139→    statusColor = 'text-red-700 dark:text-red-400'
+   140→    statusLabel = 'Kritis'
+   141→    statusBg = 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+   142→    statusBadgeBg = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-700'
+   143→    statusDotColor = 'bg-red-500'
+   144→  } else if (ratio < 1.5) {
+   145→    statusColor = 'text-yellow-700 dark:text-yellow-400'
+   146→    statusLabel = 'Rendah'
+   147→    statusBg = 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+   148→    statusBadgeBg = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700'
+   149→    statusDotColor = 'bg-yellow-500'
+   150→  }
+   151→
+   152→  return (
+   153→    <Card className={`border-l-3 ${statusBg} hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out`} style={{ boxShadow: 'var(--shadow-sm)' }}>
+   154→      <CardContent className="p-4">
+   155→        <div className="flex items-start justify-between gap-3 mb-3">
+   156→          <div className="flex items-center gap-2 min-w-0">
+   157→            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0 ring-1 ring-black/5 dark:ring-white/5">
+   158→              <Package className="h-4 w-4 text-primary" />
+   159→            </div>
+   160→            <div className="min-w-0">
+   161→              <p className="text-base font-semibold truncate">{stock.product.name}</p>
+   162→              <div className="flex items-center gap-1.5">
+   163→                <WarehouseIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+   164→                <p className="text-xs text-muted-foreground truncate">{stock.warehouse.name}</p>
+   165→              </div>
+   166→            </div>
+   167→          </div>
+   168→          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 font-semibold ${getTypeBadgeColor(stock.product.type)}`}>
+   169→            {stock.product.type}
+   170→          </Badge>
+   171→        </div>
+   172→
+   173→        <div className="flex items-center gap-3 mb-2">
+   174→          <CapacityRing quantity={stock.quantity} />
+   175→          <div>
+   176→            <p className={`text-2xl font-bold tabular-nums ${statusColor}`}>{formatNumber(stock.quantity)}</p>
+   177→            <p className="text-xs text-muted-foreground">kilogram</p>
+   178→          </div>
+   179→        </div>
+   180→
+   181→        <StockLevelBar quantity={stock.quantity} minStock={stock.minStock} />
+   182→        <div className="flex items-center justify-between mt-1.5">
+   183→          <span className="text-[10px] text-muted-foreground">Kapasitas</span>
+   184→          <span className="text-[10px] font-medium text-muted-foreground">{Math.min(Math.round((stock.quantity / MAX_CAPACITY) * 100), 100)}%</span>
+   185→        </div>
+   186→        <FillIndicatorBar quantity={stock.quantity} />
+   187→
+   188→        <div className="flex items-center justify-between mt-3">
+   189→          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+   190→            <span>Min: {formatNumber(stock.minStock)} kg</span>
+   191→            <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-semibold ${statusBadgeBg}`}>
+   192→              <span className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotColor} mr-1 ${ratio < 1 ? 'pulse-dot' : ''}`} />
+   193→              {statusLabel}
+   194→            </Badge>
+   195→          </div>
+   196→          <div className="flex items-center gap-0.5">
+   197→            <Button variant="outline" size="sm" className="h-7 gap-1 text-[10px] text-primary border-primary/30 hover:bg-primary/10 hidden sm:inline-flex" onClick={() => onRestock(stock)}>
+   198→              <PackagePlus className="h-3 w-3" />
+   199→              Restok
+   200→            </Button>
+   201→            <Button variant="outline" size="icon" className="h-7 w-7 text-primary border-primary/30 hover:bg-primary/10 sm:hidden" onClick={() => onRestock(stock)} title="Restok Cepat">
+   202→              <PackagePlus className="h-3 w-3" />
+   203→            </Button>
+   204→            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(stock)}>
+   205→              <Pencil className="h-3 w-3" />
+   206→            </Button>
+   207→            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(stock.id)}>
+   208→              <Trash2 className="h-3 w-3" />
+   209→            </Button>
+   210→          </div>
+   211→        </div>
+   212→      </CardContent>
+   213→    </Card>
+   214→  )
+   215→}
+   216→
+   217→export function StockView() {
+   218→  const { refreshKey, triggerRefresh } = useAppStore()
+   219→  const { toast } = useToast()
+   220→  const queryClient = useQueryClient()
+   221→  const [warehouseFilter, setWarehouseFilter] = useState<string>('all')
+   222→  const [search, setSearch] = useState('')
+   223→  const [dialogOpen, setDialogOpen] = useState(false)
+   224→  const [editDialogOpen, setEditDialogOpen] = useState(false)
+   225→  const [deleteOpen, setDeleteOpen] = useState(false)
+   226→  const [editingId, setEditingId] = useState<string | null>(null)
+   227→  const [deletingId, setDeletingId] = useState<string | null>(null)
+   228→  const [formWarehouse, setFormWarehouse] = useState('')
+   229→  const [formProduct, setFormProduct] = useState('')
+   230→  const [formQty, setFormQty] = useState(0)
+   231→  const [formMinStock, setFormMinStock] = useState(500)
+   232→  const [isRestock, setIsRestock] = useState(false)
+   233→  const [editQty, setEditQty] = useState(0)
+   234→  const [editMinStock, setEditMinStock] = useState(500)
+   235→  const [page, setPage] = useState(1)
+   236→  const [restockOpen, setRestockOpen] = useState(false)
+   237→  const [restockItem, setRestockItem] = useState<StockWithProductAndWarehouse | null>(null)
+   238→
+   239→  const { data: stocks, isLoading } = useQuery({
+   240→    queryKey: ['stock', refreshKey],
+   241→    queryFn: fetchStock,
+   242→  })
+   243→
+   244→  const { data: warehouses } = useQuery({
+   245→    queryKey: ['warehouses', refreshKey],
+   246→    queryFn: fetchWarehouses,
+   247→  })
+   248→
+   249→  const { data: products } = useQuery({
+   250→    queryKey: ['products', refreshKey],
+   251→    queryFn: () => fetchProducts(),
+   252→  })
+   253→
+   254→  const addMutation = useMutation({
+   255→    mutationFn: addStock,
+   256→    onSuccess: () => {
+   257→      queryClient.invalidateQueries({ queryKey: ['stock'] })
+   258→      triggerRefresh()
+   259→      setDialogOpen(false)
+   260→      resetForm()
+   261→      toast({ title: 'Berhasil', description: 'Stok berhasil ditambahkan' })
+   262→    },
+   263→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   264→  })
+   265→
+   266→  const updateMutation = useMutation({
+   267→    mutationFn: ({ id, data }: { id: string; data: { quantity?: number; minStock?: number } }) => updateStock(id, data),
+   268→    onSuccess: () => {
+   269→      queryClient.invalidateQueries({ queryKey: ['stock'] })
+   270→      triggerRefresh()
+   271→      setEditDialogOpen(false)
+   272→      toast({ title: 'Berhasil', description: 'Stok berhasil diperbarui' })
+   273→    },
+   274→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   275→  })
+   276→
+   277→  const deleteMutation = useMutation({
+   278→    mutationFn: deleteStock,
+   279→    onSuccess: () => {
+   280→      queryClient.invalidateQueries({ queryKey: ['stock'] })
+   281→      triggerRefresh()
+   282→      setDeleteOpen(false)
+   283→      setDeletingId(null)
+   284→      toast({ title: 'Berhasil', description: 'Stok berhasil dihapus' })
+   285→    },
+   286→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   287→  })
+   288→
+   289→  const resetForm = () => {
+   290→    setFormWarehouse('')
+   291→    setFormProduct('')
+   292→    setFormQty(0)
+   293→    setFormMinStock(500)
+   294→    setIsRestock(false)
+   295→  }
+   296→
+   297→  const handleOpenAdd = () => {
+   298→    resetForm()
+   299→    setDialogOpen(true)
+   300→  }
+   301→
+   302→  const handleOpenEdit = (stock: StockWithProductAndWarehouse) => {
+   303→    setEditingId(stock.id)
+   304→    setEditQty(stock.quantity)
+   305→    setEditMinStock(stock.minStock)
+   306→    setEditDialogOpen(true)
+   307→  }
+   308→
+   309→  const handleQuickRestock = (stock: StockWithProductAndWarehouse) => {
+   310→    setRestockItem(stock)
+   311→    setRestockOpen(true)
+   312→  }
+   313→
+   314→  const handleSave = () => {
+   315→    if (!formWarehouse || !formProduct) {
+   316→      toast({ title: 'Validasi', description: 'Pilih gudang dan produk', variant: 'destructive' })
+   317→      return
+   318→    }
+   319→    if (formQty <= 0) {
+   320→      toast({ title: 'Validasi', description: 'Jumlah stok harus lebih dari 0', variant: 'destructive' })
+   321→      return
+   322→    }
+   323→    addMutation.mutate({
+   324→      warehouseId: formWarehouse,
+   325→      productId: formProduct,
+   326→      quantity: formQty,
+   327→      minStock: formMinStock,
+   328→    })
+   329→  }
+   330→
+   331→  const handleEditSave = () => {
+   332→    if (editingId) {
+   333→      updateMutation.mutate({ id: editingId, data: { quantity: editQty, minStock: editMinStock } })
+   334→    }
+   335→  }
+   336→
+   337→  const handleDelete = () => {
+   338→    if (deletingId) deleteMutation.mutate(deletingId)
+   339→  }
+   340→
+   341→  const allStocks = stocks || []
+   342→  const totalStockKg = allStocks.reduce((sum, s) => sum + s.quantity, 0)
+   343→
+   344→  const filtered = allStocks.filter(
+   345→    (s) =>
+   346→      (warehouseFilter === 'all' || s.warehouseId === warehouseFilter) &&
+   347→      (s.product.name.toLowerCase().includes(search.toLowerCase()) ||
+   348→       s.warehouse.name.toLowerCase().includes(search.toLowerCase()))
+   349→  )
+   350→
+   351→  const alertCount = allStocks.filter((s) => s.quantity / s.minStock <= 1).length
+   352→
+   353→  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+   354→  const safePage = Math.min(page, totalPages)
+   355→  const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+   356→  const startIndex = (safePage - 1) * ITEMS_PER_PAGE + 1
+   357→  const endIndex = Math.min(safePage * ITEMS_PER_PAGE, filtered.length)
+   358→
+   359→  return (
+   360→    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
+   361→      <Card className="border-l-2 border-l-teal-500" style={{ boxShadow: 'var(--shadow-sm)' }}>
+   362→        <CardHeader className="pb-3">
+   363→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   364→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   365→              <Boxes className="h-5 w-5" />
+   366→              Manajemen Stok
+   367→              {alertCount > 0 && (
+   368→                <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 text-[10px] gap-1 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800">
+   369→                  <AlertTriangle className="h-3 w-3" />
+   370→                  {alertCount} peringatan
+   371→                </Badge>
+   372→              )}
+   373→            </CardTitle>
+   374→            <div className="flex items-center gap-2">
+   375→              <div className="relative">
+   376→                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+   377→                <Input
+   378→                  placeholder="Cari stok..."
+   379→                  value={search}
+   380→                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+   381→                  className="pl-9 h-9 w-full sm:w-48"
+   382→                />
+   383→              </div>
+   384→              <Button onClick={handleOpenAdd} size="sm" className="shrink-0 btn-gradient">
+   385→                <Plus className="h-4 w-4 mr-1" />
+   386→                Tambah Stok
+   387→              </Button>
+   388→            </div>
+   389→          </div>
+   390→          {/* Total stock summary + warehouse filter pills */}
+   391→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+   392→            <div className="glass rounded-lg px-4 py-2.5 flex items-center gap-3 border border-border/50">
+   393→              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0 ring-1 ring-black/5 dark:ring-white/5">
+   394→                <Layers className="h-4 w-4 text-primary" />
+   395→              </div>
+   396→              <div>
+   397→                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Stok Semua Gudang</p>
+   398→                <p className="text-lg font-bold tabular-nums leading-tight">{formatNumber(totalStockKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+   399→              </div>
+   400→            </div>
+   401→            <div className="flex flex-wrap items-center gap-1.5">
+   402→              <button
+   403→                onClick={() => { setWarehouseFilter('all'); setPage(1) }}
+   404→                className={`filter-pill ${warehouseFilter === 'all' ? 'active' : ''}`}
+   405→              >
+   406→                Semua
+   407→              </button>
+   408→              {(warehouses || []).map((w) => (
+   409→                <button
+   410→                  key={w.id}
+   411→                  onClick={() => { setWarehouseFilter(w.id); setPage(1) }}
+   412→                  className={`filter-pill ${warehouseFilter === w.id ? 'active' : ''}`}
+   413→                >
+   414→                  {w.name}
+   415→                </button>
+   416→              ))}
+   417→            </div>
+   418→          </div>
+   419→        </CardHeader>
+   420→        <CardContent>
+   421→          {isLoading ? (
+   422→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   423→              {Array.from({ length: 6 }).map((_, i) => (
+   424→                <Skeleton key={i} className="h-52 w-full rounded-lg" />
+   425→              ))}
+   426→            </div>
+   427→          ) : filtered.length === 0 ? (
+   428→            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+   429→              <Boxes className="h-12 w-12 opacity-30 mb-3" />
+   430→              <p className="text-sm font-medium">
+   431→                {warehouseFilter !== 'all' || search ? 'Tidak ada stok yang cocok' : 'Belum ada data stok'}
+   432→              </p>
+   433→              {(warehouseFilter !== 'all' || search) && (
+   434→                <p className="text-xs mt-1">Coba ubah filter atau kata kunci pencarian</p>
+   435→              )}
+   436→            </div>
+   437→          ) : (
+   438→            <>
+   439→              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   440→                {paged.map((stock) => (
+   441→                  <StockCard
+   442→                    key={stock.id}
+   443→                    stock={stock}
+   444→                    onEdit={handleOpenEdit}
+   445→                    onDelete={(id) => { setDeletingId(id); setDeleteOpen(true) }}
+   446→                    onRestock={handleQuickRestock}
+   447→                  />
+   448→                ))}
+   449→              </div>
+   450→              {filtered.length > ITEMS_PER_PAGE && (
+   451→                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+   452→                  <p className="text-xs text-muted-foreground">
+   453→                    Menampilkan {startIndex}-{endIndex} dari {filtered.length} data
+   454→                  </p>
+   455→                  <Pagination>
+   456→                    <PaginationContent>
+   457→                      <PaginationItem>
+   458→                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+   459→                      </PaginationItem>
+   460→                      {safePage > 3 && (
+   461→                        <>
+   462→                          <PaginationItem>
+   463→                            <PaginationLink onClick={() => setPage(1)} className="cursor-pointer">1</PaginationLink>
+   464→                          </PaginationItem>
+   465→                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+   466→                        </>
+   467→                      )}
+   468→                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+   469→                        .filter((p) => p >= safePage - 1 && p <= safePage + 1)
+   470→                        .map((p) => (
+   471→                          <PaginationItem key={p}>
+   472→                            <PaginationLink isActive={p === safePage} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+   473→                          </PaginationItem>
+   474→                        ))
+   475→                      }
+   476→                      {safePage < totalPages - 2 && (
+   477→                        <>
+   478→                          <PaginationItem><PaginationEllipsis /></PaginationItem>
+   479→                          <PaginationItem>
+   480→                            <PaginationLink onClick={() => setPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink>
+   481→                          </PaginationItem>
+   482→                        </>
+   483→                      )}
+   484→                      <PaginationItem>
+   485→                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+   486→                      </PaginationItem>
+   487→                    </PaginationContent>
+   488→                  </Pagination>
+   489→                </div>
+   490→              )}
+   491→            </>
+   492→          )}
+   493→        </CardContent>
+   494→      </Card>
+   495→
+   496→      {/* Add Stock Dialog */}
+   497→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+   498→        <DialogContent className="sm:max-w-md">
+   499→          <DialogHeader>
+   500→            <DialogTitle>Tambah Stok</DialogTitle>
+   501→            <DialogDescription>Tambahkan stok produk ke gudang</DialogDescription>
+   502→          </DialogHeader>
+   503→          <div className="grid gap-4 py-2">
+   504→            <div className="grid gap-2">
+   505→              <Label>Gudang *</Label>
+   506→              <Select value={formWarehouse} onValueChange={setFormWarehouse}>
+   507→                <SelectTrigger><SelectValue placeholder="Pilih gudang" /></SelectTrigger>
+   508→                <SelectContent>
+   509→                  {(warehouses || []).map((w) => (
+   510→                    <SelectItem key={w.id} value={w.id}>{w.name} ({w.code})</SelectItem>
+   511→                  ))}
+   512→                </SelectContent>
+   513→              </Select>
+   514→            </div>
+   515→            <div className="grid gap-2">
+   516→              <Label>Produk *</Label>
+   517→              <Select value={formProduct} onValueChange={setFormProduct}>
+   518→                <SelectTrigger><SelectValue placeholder="Pilih produk" /></SelectTrigger>
+   519→                <SelectContent>
+   520→                  {(products || []).map((p) => (
+   521→                    <SelectItem key={p.id} value={p.id}>{p.name} ({p.type})</SelectItem>
+   522→                  ))}
+   523→                </SelectContent>
+   524→              </Select>
+   525→            </div>
+   526→            <div className="grid gap-2">
+   527→              <div className="flex items-center justify-between">
+   528→                <Label>Jumlah (kg) *</Label>
+   529→                <div className="flex items-center gap-2">
+   530→                  <Label htmlFor="restock" className="text-xs text-muted-foreground">Restock?</Label>
+   531→                  <Switch id="restock" checked={isRestock} onCheckedChange={setIsRestock} />
+   532→                </div>
+   533→              </div>
+   534→              <Input
+   535→                type="number"
+   536→                value={formQty || ''}
+   537→                onChange={(e) => setFormQty(parseFloat(e.target.value) || 0)}
+   538→                placeholder={isRestock ? 'Jumlah restock (kg)' : 'Jumlah stok awal (kg)'}
+   539→              />
+   540→            </div>
+   541→            <div className="grid gap-2">
+   542→              <Label>Stok Minimum (kg)</Label>
+   543→              <Input
+   544→                type="number"
+   545→                value={formMinStock || ''}
+   546→                onChange={(e) => setFormMinStock(parseFloat(e.target.value) || 500)}
+   547→              />
+   548→            </div>
+   549→          </div>
+   550→          <DialogFooter>
+   551→            <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
+   552→            <Button onClick={handleSave} disabled={addMutation.isPending} className="btn-gradient">
+   553→              {addMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+   554→            </Button>
+   555→          </DialogFooter>
+   556→        </DialogContent>
+   557→      </Dialog>
+   558→
+   559→      {/* Edit Stock Dialog */}
+   560→      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+   561→        <DialogContent className="sm:max-w-sm">
+   562→          <DialogHeader>
+   563→            <DialogTitle>Edit Stok</DialogTitle>
+   564→            <DialogDescription>Perbarui jumlah stok</DialogDescription>
+   565→          </DialogHeader>
+   566→          <div className="grid gap-4 py-2">
+   567→            <div className="grid gap-2">
+   568→              <Label>Jumlah Stok (kg)</Label>
+   569→              <Input
+   570→                type="number"
+   571→                value={editQty || ''}
+   572→                onChange={(e) => setEditQty(parseFloat(e.target.value) || 0)}
+   573→              />
+   574→            </div>
+   575→            <div className="grid gap-2">
+   576→              <Label>Stok Minimum (kg)</Label>
+   577→              <Input
+   578→                type="number"
+   579→                value={editMinStock || ''}
+   580→                onChange={(e) => setEditMinStock(parseFloat(e.target.value) || 500)}
+   581→              />
+   582→            </div>
+   583→          </div>
+   584→          <DialogFooter>
+   585→            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Batal</Button>
+   586→            <Button onClick={handleEditSave} disabled={updateMutation.isPending} className="btn-gradient">
+   587→              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+   588→            </Button>
+   589→          </DialogFooter>
+   590→        </DialogContent>
+   591→      </Dialog>
+   592→
+   593→      {/* Delete Dialog */}
+   594→      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+   595→        <AlertDialogContent>
+   596→          <AlertDialogHeader>
+   597→            <AlertDialogTitle>Hapus Data Stok?</AlertDialogTitle>
+   598→            <AlertDialogDescription>
+   599→              Tindakan ini tidak dapat dibatalkan. Data stok akan dihapus permanen.
+   600→            </AlertDialogDescription>
+   601→          </AlertDialogHeader>
+   602→          <AlertDialogFooter>
+   603→            <AlertDialogCancel>Batal</AlertDialogCancel>
+   604→            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">Hapus</AlertDialogAction>
+   605→          </AlertDialogFooter>
+   606→        </AlertDialogContent>
+   607→      </AlertDialog>
+   608→
+   609→      {/* Quick Restock Dialog */}
+   610→      {restockItem && (
+   611→        <QuickRestockDialog
+   612→          open={restockOpen}
+   613→          onOpenChange={setRestockOpen}
+   614→          stock={restockItem}
+   615→        />
+   616→      )}
+   617→    </motion.div>
+   618→  )
+   619→}

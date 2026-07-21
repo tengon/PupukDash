@@ -1,0 +1,726 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo } from 'react'
+     4→import { useQuery } from '@tanstack/react-query'
+     5→import {
+     6→  fetchMonthlyReport,
+     7→  type MonthlyReportData,
+     8→} from '@/lib/api'
+     9→import {
+    10→  formatRupiah,
+    11→  formatNumber,
+    12→  getTypeBadgeColor,
+    13→} from '@/lib/format'
+    14→import { exportToCSV } from '@/lib/export'
+    15→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    16→import { Button } from '@/components/ui/button'
+    17→import { Badge } from '@/components/ui/badge'
+    18→import { Skeleton } from '@/components/ui/skeleton'
+    19→import {
+    20→  Select,
+    21→  SelectContent,
+    22→  SelectItem,
+    23→  SelectTrigger,
+    24→  SelectValue,
+    25→} from '@/components/ui/select'
+    26→import {
+    27→  Table,
+    28→  TableBody,
+    29→  TableCell,
+    30→  TableHead,
+    31→  TableHeader,
+    32→  TableRow,
+    33→} from '@/components/ui/table'
+    34→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+    35→import { motion } from 'framer-motion'
+    36→import {
+    37→  Printer,
+    38→  Download,
+    39→  ShoppingCart,
+    40→  Package,
+    41→  Banknote,
+    42→  HandCoins,
+    43→  Users,
+    44→  Calculator,
+    45→  AlertCircle,
+    46→} from 'lucide-react'
+    47→
+    48→// ─── Constants ───────────────────────────────────────────────────────────────
+    49→
+    50→const MONTHS = [
+    51→  { value: '01', label: 'Januari' },
+    52→  { value: '02', label: 'Februari' },
+    53→  { value: '03', label: 'Maret' },
+    54→  { value: '04', label: 'April' },
+    55→  { value: '05', label: 'Mei' },
+    56→  { value: '06', label: 'Juni' },
+    57→  { value: '07', label: 'Juli' },
+    58→  { value: '08', label: 'Agustus' },
+    59→  { value: '09', label: 'September' },
+    60→  { value: '10', label: 'Oktober' },
+    61→  { value: '11', label: 'November' },
+    62→  { value: '12', label: 'Desember' },
+    63→]
+    64→
+    65→const YEARS = ['2024', '2025', '2026', '2027']
+    66→
+    67→function getDefaultMonth(): string {
+    68→  const now = new Date()
+    69→  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    70→}
+    71→
+    72→// ─── Loading Skeleton ────────────────────────────────────────────────────────
+    73→
+    74→function ReportSkeleton() {
+    75→  return (
+    76→    <div className="space-y-4">
+    77→      {/* Header skeleton */}
+    78→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    79→        <div className="space-y-2">
+    80→          <Skeleton className="h-8 w-48" />
+    81→          <Skeleton className="h-5 w-64" />
+    82→        </div>
+    83→        <div className="flex gap-2">
+    84→          <Skeleton className="h-9 w-32" />
+    85→          <Skeleton className="h-9 w-32" />
+    86→        </div>
+    87→      </div>
+    88→
+    89→      {/* Summary cards skeleton */}
+    90→      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    91→        {Array.from({ length: 6 }).map((_, i) => (
+    92→          <Skeleton key={i} className="h-24 w-full rounded-lg" />
+    93→        ))}
+    94→      </div>
+    95→
+    96→      {/* Daily chart skeleton */}
+    97→      <Skeleton className="h-32 w-full rounded-lg" />
+    98→
+    99→      {/* Tabs skeleton */}
+   100→      <Skeleton className="h-9 w-64" />
+   101→      <div className="space-y-2">
+   102→        {Array.from({ length: 5 }).map((_, i) => (
+   103→          <Skeleton key={i} className="h-12 w-full" />
+   104→        ))}
+   105→      </div>
+   106→    </div>
+   107→  )
+   108→}
+   109→
+   110→// ─── Daily Sales Mini Chart ──────────────────────────────────────────────────
+   111→
+   112→function DailySalesChart({ dailySales }: { dailySales: MonthlyReportData['dailySales'] }) {
+   113→  const maxRevenue = useMemo(
+   114→    () => Math.max(...dailySales.map((d) => d.revenue), 1),
+   115→    [dailySales],
+   116→  )
+   117→
+   118→  // Build an array of 31 entries (1-indexed day), fill missing with zeros
+   119→  const days = useMemo(() => {
+   120→    const map = new Map(dailySales.map((d) => [new Date(d.date).getDate(), d]))
+   121→    return Array.from({ length: 31 }, (_, i) => {
+   122→      const day = i + 1
+   123→      const sale = map.get(day)
+   124→      return {
+   125→        day,
+   126→        orders: sale?.orders ?? 0,
+   127→        kg: sale?.kg ?? 0,
+   128→        revenue: sale?.revenue ?? 0,
+   129→      }
+   130→    })
+   131→  }, [dailySales])
+   132→
+   133→  return (
+   134→    <Card>
+   135→      <CardHeader className="pb-2">
+   136→        <CardTitle className="text-sm font-medium text-muted-foreground">
+   137→          Penjualan Harian
+   138→        </CardTitle>
+   139→      </CardHeader>
+   140→      <CardContent className="pt-0">
+   141→        <div className="flex items-end gap-[2px] h-24 print:h-16">
+   142→          {days.map((d) => {
+   143→            const height = d.revenue > 0 ? Math.max((d.revenue / maxRevenue) * 100, 4) : 2
+   144→            return (
+   145→              <div
+   146→                key={d.day}
+   147→                className="group relative flex-1 flex flex-col items-center justify-end h-full"
+   148→              >
+   149→                {/* Tooltip */}
+   150→                {d.revenue > 0 && (
+   151→                  <div className="absolute bottom-full mb-1 hidden group-hover:block z-10">
+   152→                    <div className="bg-popover text-popover-foreground border rounded-md shadow-md px-2 py-1 text-[10px] whitespace-nowrap">
+   153→                      <div className="font-medium">Tgl {d.day}</div>
+   154→                      <div>{formatRupiah(d.revenue)}</div>
+   155→                      <div>{formatNumber(d.kg)} kg · {d.orders} pesanan</div>
+   156→                    </div>
+   157→                  </div>
+   158→                )}
+   159→                <div
+   160→                  className={`w-full rounded-t-sm transition-colors ${
+   161→                    d.revenue > 0
+   162→                      ? 'bg-green-500/80 hover:bg-green-500'
+   163→                      : 'bg-muted-foreground/10'
+   164→                  }`}
+   165→                  style={{ height: `${height}%` }}
+   166→                />
+   167→              </div>
+   168→            )
+   169→          })}
+   170→        </div>
+   171→        <div className="flex justify-between mt-1">
+   172→          <span className="text-[9px] text-muted-foreground">1</span>
+   173→          <span className="text-[9px] text-muted-foreground">15</span>
+   174→          <span className="text-[9px] text-muted-foreground">31</span>
+   175→        </div>
+   176→      </CardContent>
+   177→    </Card>
+   178→  )
+   179→}
+   180→
+   181→// ─── Summary Card ────────────────────────────────────────────────────────────
+   182→
+   183→function SummaryCard({
+   184→  icon: Icon,
+   185→  label,
+   186→  value,
+   187→  borderColor,
+   188→}: {
+   189→  icon: typeof ShoppingCart
+   190→  label: string
+   191→  value: string
+   192→  borderColor: string
+   193→}) {
+   194→  return (
+   195→    <Card className={`border-l-4 ${borderColor}`}>
+   196→      <CardContent className="p-3 flex items-start gap-2.5">
+   197→        <div className="mt-0.5 text-muted-foreground">
+   198→          <Icon className="h-4 w-4" />
+   199→        </div>
+   200→        <div className="min-w-0">
+   201→          <p className="text-[11px] text-muted-foreground leading-tight">{label}</p>
+   202→          <p className="text-sm font-semibold font-mono truncate">{value}</p>
+   203→        </div>
+   204→      </CardContent>
+   205→    </Card>
+   206→  )
+   207→}
+   208→
+   209→// ─── Main Component ──────────────────────────────────────────────────────────
+   210→
+   211→export function ReportsView() {
+   212→  const [selectedMonth, setSelectedMonth] = useState(getDefaultMonth)
+   213→
+   214→  const monthValue = selectedMonth.slice(5)
+   215→  const yearValue = selectedMonth.slice(0, 4)
+   216→
+   217→  const { data: report, isLoading, isError, error } = useQuery({
+   218→    queryKey: ['monthly-report', selectedMonth],
+   219→    queryFn: () => fetchMonthlyReport(selectedMonth),
+   220→  })
+   221→
+   222→  const periodLabel = useMemo(() => {
+   223→    const m = MONTHS.find((m) => m.value === monthValue)
+   224→    return m ? `${m.label.toUpperCase()} ${yearValue}` : selectedMonth
+   225→  }, [monthValue, yearValue])
+   226→
+   227→  // ─── CSV Download ─────────────────────────────────────────────────────────
+   228→  const handleDownloadCSV = () => {
+   229→    if (!report) return
+   230→
+   231→    const filename = `laporan-bulanan-${selectedMonth}`
+   232→
+   233→    // Product rows
+   234→    const productHeaders = [
+   235→      'Produk', 'Jenis', 'Terjual (kg)', 'Pendapatan (Rp)',
+   236→      'Subsidi (Rp)', 'Pesanan', 'Harga Rata²/kg',
+   237→    ]
+   238→    const productRows = report.byProduct.map((p) => [
+   239→      p.productName,
+   240→      p.productType,
+   241→      p.totalKg,
+   242→      p.totalRevenue,
+   243→      p.totalSubsidy,
+   244→      p.orderCount,
+   245→      p.avgPricePerKg,
+   246→    ])
+   247→
+   248→    // Warehouse rows
+   249→    const warehouseHeaders = [
+   250→      'Kode', 'Gudang', 'Pesanan', 'Terjual (kg)', 'Pendapatan (Rp)', 'Subsidi (Rp)',
+   251→    ]
+   252→    const warehouseRows = report.byWarehouse.map((w) => [
+   253→      w.warehouseCode,
+   254→      w.warehouseName,
+   255→      w.totalOrders,
+   256→      w.totalKg,
+   257→      w.totalRevenue,
+   258→      w.totalSubsidy,
+   259→    ])
+   260→
+   261→    // Farmer rows
+   262→    const farmerHeaders = [
+   263→      'No', 'Nama', 'NIK', 'Pesanan', 'Total (kg)', 'Total (Rp)', 'Subsidi (Rp)',
+   264→    ]
+   265→    const farmerRows = report.topFarmers.map((f, i) => [
+   266→      i + 1,
+   267→      f.farmerName,
+   268→      f.farmerNik,
+   269→      f.totalOrders,
+   270→      f.totalKg,
+   271→      f.totalAmount,
+   272→      f.totalSubsidy,
+   273→    ])
+   274→
+   275→    // Combine into one CSV with section headers
+   276→    const allRows: (string | number | null | undefined)[][] = [
+   277→      [`LAPORAN BULANAN — ${periodLabel}`],
+   278→      [],
+   279→      ['== RINGKASAN =='],
+   280→      ['Total Pesanan', report.summary.totalOrders],
+   281→      ['Pesanan Selesai', report.summary.completedOrders],
+   282→      ['Pesanan Dibatalkan', report.summary.cancelledOrders],
+   283→      ['Total Berat Terjual (kg)', report.summary.totalKgSold],
+   284→      ['Total Pendapatan (Rp)', report.summary.totalRevenue],
+   285→      ['Total Subsidi (Rp)', report.summary.totalSubsidy],
+   286→      ['Petani Dilayani', report.summary.totalFarmersServed],
+   287→      [],
+   288→      ['== PER PRODUK =='],
+   289→      ...productRows.map((r) => r as (string | number)[]),
+   290→      [],
+   291→      ['== PER GUDANG =='],
+   292→      ...warehouseRows.map((r) => r as (string | number)[]),
+   293→      [],
+   294→      ['== TOP PETANI =='],
+   295→      ...farmerRows.map((r) => r as (string | number)[]),
+   296→    ]
+   297→
+   298→    exportToCSV(filename, ['Laporan Bulanan SiPUPUK'], allRows)
+   299→  }
+   300→
+   301→  // ─── Avg kg per order ────────────────────────────────────────────────────
+   302→  const avgKgPerOrder = report
+   303→    ? report.summary.totalOrders > 0
+   304→      ? Math.round(report.summary.totalKgSold / report.summary.totalOrders)
+   305→      : 0
+   306→    : 0
+   307→
+   308→  // ─── Render ───────────────────────────────────────────────────────────────
+   309→
+   310→  return (
+   311→    <motion.div
+   312→      initial={{ opacity: 0, y: 8 }}
+   313→      animate={{ opacity: 1, y: 0 }}
+   314→      transition={{ duration: 0.3 }}
+   315→      className="space-y-4"
+   316→    >
+   317→      {/* Print-specific styles */}
+   318→      <style>{`
+   319→        @media print {
+   320→          /* Hide everything except the report content */
+   321→          aside, nav, header, footer,
+   322→          .print\\:hidden,
+   323→          [data-slot="sidebar"],
+   324→          button.print\\:hidden,
+   325→          .no-print {
+   326→            display: none !important;
+   327→          }
+   328→          /* Ensure report header shows */
+   329→          .print-header {
+   330→            display: block !important;
+   331→          }
+   332→          /* Clean white background */
+   333→          body, .print\\:bg-white {
+   334→            background: white !important;
+   335→            color: black !important;
+   336→            -webkit-print-color-adjust: exact;
+   337→            print-color-adjust: exact;
+   338→          }
+   339→          /* Page breaks */
+   340→          .print-page-break {
+   341→            page-break-before: always;
+   342→          }
+   343→          /* Table borders in print */
+   344→          table, th, td {
+   345→            border: 1px solid #ccc !important;
+   346→            border-collapse: collapse !important;
+   347→          }
+   348→          th, td {
+   349→            padding: 4px 8px !important;
+   350→            font-size: 11px !important;
+   351→          }
+   352→          /* Remove shadows, rounded corners for print */
+   353→          .rounded-lg, .rounded-md {
+   354→            border-radius: 0 !important;
+   355→          }
+   356→          .shadow-sm, .shadow, .shadow-md {
+   357→            box-shadow: none !important;
+   358→          }
+   359→          /* Full width */
+   360→          main, .print-container {
+   361→            max-width: 100% !important;
+   362→            margin: 0 !important;
+   363→            padding: 0 !important;
+   364→          }
+   365→        }
+   366→      `}</style>
+   367→
+   368→      {/* ─── Header ─────────────────────────────────────────────────────────── */}
+   369→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   370→        <div>
+   371→          <h1 className="text-2xl font-bold tracking-tight">Laporan Bulanan</h1>
+   372→          <p className="text-sm text-muted-foreground">
+   373→            Ringkasan penjualan pupuk bersubsidi per bulan
+   374→          </p>
+   375→        </div>
+   376→        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 print:hidden">
+   377→          <div className="flex items-center gap-2">
+   378→            <Select
+   379→              value={monthValue}
+   380→              onValueChange={(v) =>
+   381→                setSelectedMonth(`${yearValue}-${v}`)
+   382→              }
+   383→            >
+   384→              <SelectTrigger className="w-[130px] h-9 text-sm">
+   385→                <SelectValue placeholder="Bulan" />
+   386→              </SelectTrigger>
+   387→              <SelectContent>
+   388→                {MONTHS.map((m) => (
+   389→                  <SelectItem key={m.value} value={m.value}>
+   390→                    {m.label}
+   391→                  </SelectItem>
+   392→                ))}
+   393→              </SelectContent>
+   394→            </Select>
+   395→            <Select
+   396→              value={yearValue}
+   397→              onValueChange={(v) =>
+   398→                setSelectedMonth(`${v}-${monthValue}`)
+   399→              }
+   400→            >
+   401→              <SelectTrigger className="w-[90px] h-9 text-sm">
+   402→                <SelectValue placeholder="Tahun" />
+   403→              </SelectTrigger>
+   404→              <SelectContent>
+   405→                {YEARS.map((y) => (
+   406→                  <SelectItem key={y} value={y}>
+   407→                    {y}
+   408→                  </SelectItem>
+   409→                ))}
+   410→              </SelectContent>
+   411→            </Select>
+   412→          </div>
+   413→          <div className="flex gap-2">
+   414→            <Button
+   415→              variant="outline"
+   416→              size="sm"
+   417→              className="h-9 gap-1.5"
+   418→              onClick={() => window.print()}
+   419→            >
+   420→              <Printer className="h-4 w-4" />
+   421→              <span className="hidden sm:inline">Cetak Laporan</span>
+   422→              <span className="sm:hidden">Cetak</span>
+   423→            </Button>
+   424→            <Button
+   425→              variant="outline"
+   426→              size="sm"
+   427→              className="h-9 gap-1.5"
+   428→              onClick={handleDownloadCSV}
+   429→              disabled={!report}
+   430→            >
+   431→              <Download className="h-4 w-4" />
+   432→              <span className="hidden sm:inline">Download CSV</span>
+   433→              <span className="sm:hidden">CSV</span>
+   434→            </Button>
+   435→          </div>
+   436→        </div>
+   437→      </div>
+   438→
+   439→      {/* ─── Loading ─────────────────────────────────────────────────────────── */}
+   440→      {isLoading && <ReportSkeleton />}
+   441→
+   442→      {/* ─── Error ───────────────────────────────────────────────────────────── */}
+   443→      {isError && (
+   444→        <Card className="border-destructive/50">
+   445→          <CardContent className="flex items-center gap-3 py-6">
+   446→            <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+   447→            <div>
+   448→              <p className="text-sm font-medium text-destructive">
+   449→                Gagal memuat laporan
+   450→              </p>
+   451→              <p className="text-xs text-muted-foreground">
+   452→                {error instanceof Error ? error.message : 'Terjadi kesalahan'}
+   453→              </p>
+   454→            </div>
+   455→          </CardContent>
+   456→        </Card>
+   457→      )}
+   458→
+   459→      {/* ─── Report Content ──────────────────────────────────────────────────── */}
+   460→      {report && (
+   461→        <div className="space-y-4">
+   462→          {/* Print Header — hidden on screen, shown in print */}
+   463→          <div className="hidden print-header">
+   464→            <div className="text-center mb-4">
+   465→              <h1 className="text-lg font-bold">
+   466→                SiPUPUK — Sistem Informasi Penjualan Pupuk Bersubsidi
+   467→              </h1>
+   468→              <p className="text-xs text-muted-foreground">
+   469→                Distributor PPST
+   470→              </p>
+   471→              <p className="text-sm font-semibold mt-2">
+   472→                LAPORAN BULANAN — {periodLabel}
+   473→              </p>
+   474→              <hr className="mt-2 border-black" />
+   475→            </div>
+   476→          </div>
+   477→
+   478→          {/* Summary Stats Row */}
+   479→          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+   480→            <SummaryCard
+   481→              icon={ShoppingCart}
+   482→              label="Total Pesanan"
+   483→              value={formatNumber(report.summary.totalOrders)}
+   484→              borderColor="border-l-green-500"
+   485→            />
+   486→            <SummaryCard
+   487→              icon={Package}
+   488→              label="Total Berat Terjual"
+   489→              value={`${formatNumber(report.summary.totalKgSold)} kg`}
+   490→              borderColor="border-l-emerald-500"
+   491→            />
+   492→            <SummaryCard
+   493→              icon={Banknote}
+   494→              label="Total Pendapatan"
+   495→              value={formatRupiah(report.summary.totalRevenue)}
+   496→              borderColor="border-l-teal-500"
+   497→            />
+   498→            <SummaryCard
+   499→              icon={HandCoins}
+   500→              label="Total Subsidi"
+   501→              value={formatRupiah(report.summary.totalSubsidy)}
+   502→              borderColor="border-l-lime-500"
+   503→            />
+   504→            <SummaryCard
+   505→              icon={Users}
+   506→              label="Petani Dilayani"
+   507→              value={formatNumber(report.summary.totalFarmersServed)}
+   508→              borderColor="border-l-green-600"
+   509→            />
+   510→            <SummaryCard
+   511→              icon={Calculator}
+   512→              label="Rata-rata/Pesanan"
+   513→              value={`${formatNumber(avgKgPerOrder)} kg`}
+   514→              borderColor="border-l-teal-600"
+   515→            />
+   516→          </div>
+   517→
+   518→          {/* Daily Sales Mini Chart */}
+   519→          <DailySalesChart dailySales={report.dailySales} />
+   520→
+   521→          {/* Print Header (visible on screen for report context) */}
+   522→          <div className="print:block hidden" />
+   523→
+   524→          {/* Tabbed Tables */}
+   525→          <Tabs defaultValue="product" className="print-page-break">
+   526→            <TabsList>
+   527→              <TabsTrigger value="product">Per Produk</TabsTrigger>
+   528→              <TabsTrigger value="warehouse">Per Gudang</TabsTrigger>
+   529→              <TabsTrigger value="farmer">Top Petani</TabsTrigger>
+   530→            </TabsList>
+   531→
+   532→            {/* ─── Tab: Per Produk ────────────────────────────────────────────── */}
+   533→            <TabsContent value="product" className="mt-3">
+   534→              <Card>
+   535→                <CardHeader className="pb-2">
+   536→                  <CardTitle className="text-sm font-medium">
+   537→                    Penjualan per Produk — {periodLabel}
+   538→                  </CardTitle>
+   539→                </CardHeader>
+   540→                <CardContent className="p-0">
+   541→                  <div className="overflow-x-auto">
+   542→                    <Table>
+   543→                      <TableHeader>
+   544→                        <TableRow>
+   545→                          <TableHead className="text-xs">Produk</TableHead>
+   546→                          <TableHead className="text-xs">Jenis</TableHead>
+   547→                          <TableHead className="text-xs text-right">Terjual (kg)</TableHead>
+   548→                          <TableHead className="text-xs text-right">Pendapatan (Rp)</TableHead>
+   549→                          <TableHead className="text-xs text-right">Subsidi (Rp)</TableHead>
+   550→                          <TableHead className="text-xs text-right">Pesanan</TableHead>
+   551→                          <TableHead className="text-xs text-right">Harga Rata²/kg</TableHead>
+   552→                        </TableRow>
+   553→                      </TableHeader>
+   554→                      <TableBody>
+   555→                        {report.byProduct.length === 0 ? (
+   556→                          <TableRow>
+   557→                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-sm">
+   558→                              Tidak ada data produk
+   559→                            </TableCell>
+   560→                          </TableRow>
+   561→                        ) : (
+   562→                          report.byProduct.map((p, idx) => (
+   563→                            <TableRow key={idx}>
+   564→                              <TableCell className="text-sm font-medium">
+   565→                                {p.productName}
+   566→                              </TableCell>
+   567→                              <TableCell className="text-sm">
+   568→                                <Badge
+   569→                                  variant="outline"
+   570→                                  className={`text-[10px] px-1.5 py-0 ${getTypeBadgeColor(p.productType)}`}
+   571→                                >
+   572→                                  {p.productType}
+   573→                                </Badge>
+   574→                              </TableCell>
+   575→                              <TableCell className="text-sm text-right font-mono">
+   576→                                {formatNumber(p.totalKg)}
+   577→                              </TableCell>
+   578→                              <TableCell className="text-sm text-right font-mono">
+   579→                                {formatRupiah(p.totalRevenue)}
+   580→                              </TableCell>
+   581→                              <TableCell className="text-sm text-right font-mono">
+   582→                                {formatRupiah(p.totalSubsidy)}
+   583→                              </TableCell>
+   584→                              <TableCell className="text-sm text-right font-mono">
+   585→                                {formatNumber(p.orderCount)}
+   586→                              </TableCell>
+   587→                              <TableCell className="text-sm text-right font-mono">
+   588→                                {formatRupiah(p.avgPricePerKg)}
+   589→                              </TableCell>
+   590→                            </TableRow>
+   591→                          ))
+   592→                        )}
+   593→                      </TableBody>
+   594→                    </Table>
+   595→                  </div>
+   596→                </CardContent>
+   597→              </Card>
+   598→            </TabsContent>
+   599→
+   600→            {/* ─── Tab: Per Gudang ────────────────────────────────────────────── */}
+   601→            <TabsContent value="warehouse" className="mt-3">
+   602→              <Card>
+   603→                <CardHeader className="pb-2">
+   604→                  <CardTitle className="text-sm font-medium">
+   605→                    Penjualan per Gudang — {periodLabel}
+   606→                  </CardTitle>
+   607→                </CardHeader>
+   608→                <CardContent className="p-0">
+   609→                  <div className="overflow-x-auto">
+   610→                    <Table>
+   611→                      <TableHeader>
+   612→                        <TableRow>
+   613→                          <TableHead className="text-xs">Kode</TableHead>
+   614→                          <TableHead className="text-xs">Gudang</TableHead>
+   615→                          <TableHead className="text-xs text-right">Pesanan</TableHead>
+   616→                          <TableHead className="text-xs text-right">Terjual (kg)</TableHead>
+   617→                          <TableHead className="text-xs text-right">Pendapatan (Rp)</TableHead>
+   618→                          <TableHead className="text-xs text-right">Subsidi (Rp)</TableHead>
+   619→                        </TableRow>
+   620→                      </TableHeader>
+   621→                      <TableBody>
+   622→                        {report.byWarehouse.length === 0 ? (
+   623→                          <TableRow>
+   624→                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground text-sm">
+   625→                              Tidak ada data gudang
+   626→                            </TableCell>
+   627→                          </TableRow>
+   628→                        ) : (
+   629→                          report.byWarehouse.map((w) => (
+   630→                            <TableRow key={w.warehouseId}>
+   631→                              <TableCell className="text-sm font-mono font-medium">
+   632→                                {w.warehouseCode}
+   633→                              </TableCell>
+   634→                              <TableCell className="text-sm">
+   635→                                {w.warehouseName}
+   636→                              </TableCell>
+   637→                              <TableCell className="text-sm text-right font-mono">
+   638→                                {formatNumber(w.totalOrders)}
+   639→                              </TableCell>
+   640→                              <TableCell className="text-sm text-right font-mono">
+   641→                                {formatNumber(w.totalKg)}
+   642→                              </TableCell>
+   643→                              <TableCell className="text-sm text-right font-mono">
+   644→                                {formatRupiah(w.totalRevenue)}
+   645→                              </TableCell>
+   646→                              <TableCell className="text-sm text-right font-mono">
+   647→                                {formatRupiah(w.totalSubsidy)}
+   648→                              </TableCell>
+   649→                            </TableRow>
+   650→                          ))
+   651→                        )}
+   652→                      </TableBody>
+   653→                    </Table>
+   654→                  </div>
+   655→                </CardContent>
+   656→              </Card>
+   657→            </TabsContent>
+   658→
+   659→            {/* ─── Tab: Top Petani ────────────────────────────────────────────── */}
+   660→            <TabsContent value="farmer" className="mt-3">
+   661→              <Card>
+   662→                <CardHeader className="pb-2">
+   663→                  <CardTitle className="text-sm font-medium">
+   664→                    Top Petani — {periodLabel}
+   665→                  </CardTitle>
+   666→                </CardHeader>
+   667→                <CardContent className="p-0">
+   668→                  <div className="overflow-x-auto">
+   669→                    <Table>
+   670→                      <TableHeader>
+   671→                        <TableRow>
+   672→                          <TableHead className="text-xs w-10 text-center">#</TableHead>
+   673→                          <TableHead className="text-xs">Nama</TableHead>
+   674→                          <TableHead className="text-xs">NIK</TableHead>
+   675→                          <TableHead className="text-xs text-right">Pesanan</TableHead>
+   676→                          <TableHead className="text-xs text-right">Total (kg)</TableHead>
+   677→                          <TableHead className="text-xs text-right">Total (Rp)</TableHead>
+   678→                          <TableHead className="text-xs text-right">Subsidi (Rp)</TableHead>
+   679→                        </TableRow>
+   680→                      </TableHeader>
+   681→                      <TableBody>
+   682→                        {report.topFarmers.length === 0 ? (
+   683→                          <TableRow>
+   684→                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-sm">
+   685→                              Tidak ada data petani
+   686→                            </TableCell>
+   687→                          </TableRow>
+   688→                        ) : (
+   689→                          report.topFarmers.map((f, idx) => (
+   690→                            <TableRow key={f.farmerId}>
+   691→                              <TableCell className="text-sm text-center font-mono text-muted-foreground">
+   692→                                {idx + 1}
+   693→                              </TableCell>
+   694→                              <TableCell className="text-sm font-medium">
+   695→                                {f.farmerName}
+   696→                              </TableCell>
+   697→                              <TableCell className="text-sm font-mono text-muted-foreground">
+   698→                                {f.farmerNik}
+   699→                              </TableCell>
+   700→                              <TableCell className="text-sm text-right font-mono">
+   701→                                {formatNumber(f.totalOrders)}
+   702→                              </TableCell>
+   703→                              <TableCell className="text-sm text-right font-mono">
+   704→                                {formatNumber(f.totalKg)}
+   705→                              </TableCell>
+   706→                              <TableCell className="text-sm text-right font-mono">
+   707→                                {formatRupiah(f.totalAmount)}
+   708→                              </TableCell>
+   709→                              <TableCell className="text-sm text-right font-mono">
+   710→                                {formatRupiah(f.totalSubsidy)}
+   711→                              </TableCell>
+   712→                            </TableRow>
+   713→                          ))
+   714→                        )}
+   715→                      </TableBody>
+   716→                    </Table>
+   717→                  </div>
+   718→                </CardContent>
+   719→              </Card>
+   720→            </TabsContent>
+   721→          </Tabs>
+   722→        </div>
+   723→      )}
+   724→    </motion.div>
+   725→  )
+   726→}

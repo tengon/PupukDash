@@ -25,6 +25,8 @@ import {
   Truck,
   ShoppingCart,
   Leaf,
+  FileBarChart,
+  ClipboardList,
 } from 'lucide-react'
 
 const navItems = [
@@ -35,6 +37,8 @@ const navItems = [
   { id: 'stock', label: 'Stok', icon: Boxes },
   { id: 'distributions', label: 'Distribusi', icon: Truck },
   { id: 'orders', label: 'Penjualan', icon: ShoppingCart },
+  { id: 'rpkp', label: 'RPKP', icon: ClipboardList, separator: true },
+  { id: 'reports', label: 'Laporan', icon: FileBarChart },
 ]
 
 export function AppSidebar() {
@@ -92,7 +96,7 @@ export function AppSidebar() {
                       </div>
                       <span>{item.label}</span>
                     </SidebarMenuButton>
-                    {index === 3 && (
+                    {(item as typeof navItems[number]).separator && (
                       <div className="my-2 mx-3 h-px bg-sidebar-border/50" />
                     )}
                   </SidebarMenuItem>

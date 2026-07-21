@@ -449,3 +449,123 @@ SiPUPUK is a comprehensive PPST distributor management system with 7 fully funct
   3. Add RPKP (Rencana Kebutuhan Pupuk Pupuk) allocation planning module
   4. Add data validation: max order quantity per farmer based on land area (HET limits) — PARTIALLY DONE (HET validation exists, needs integration with farmer selection)
   5. Add notification system (stock below minimum, pending orders >7 days)
+
+---
+Task ID: 10-b
+Agent: frontend-styling-expert
+Task: Create RPKP (Rencana Kebutuhan Pupuk) Planning View
+Status: DONE
+
+Changes:
+1. Added RPKP types (RPKPProduct, RPKPData) and fetchRPKP API function to `/home/z/my-project/src/lib/api.ts` (before Seed section)
+2. Created `/home/z/my-project/src/components/rpkp/rpkp-view.tsx` — full RPKP planning view component
+
+Component features:
+- Header with title, subtitle, and year Select dropdown (2024 to current year + 1)
+- 3 summary cards in responsive grid (Total Lahan, Total Alokasi, Pemanfaatan) with colored left borders (emerald, teal, amber)
+- Full-width utilization progress bar with color coding (green >=80%, yellow 50-80%, red <50%)
+- Product allocation table with: product type badges + emoji icons, allocation/ha, total allocation, sold, remaining (amber/red if low), mini progress bars for utilization %, subsidy values (Rupiah)
+- Footer totals row in table
+- Info box with Permentan allocation/ha reference
+- Loading skeleton states and error handling
+- framer-motion entrance animations
+- Dark mode compatible
+- Uses shadcn/ui: Card, Badge, Table, Select, Skeleton
+- Exported as `export function RPKPView()`
+
+---
+Task ID: 10-a
+Agent: Task 10-a Agent
+Task: Create 2 Backend API Routes (RPKP & Monthly Report)
+
+Work Log:
+- Created `/api/reports/rpkp/route.ts` — Rencana Kebutuhan Pupuk (Fertilizer Needs Plan) endpoint
+  - GET handler with optional `?year=YYYY` query param (defaults to current year)
+  - Fetches all active farmers to compute total land area
+  - Queries OrderItems with order relation, filtering by year and non-CANCELLED status
+  - Groups actual sales by normalized product type using `normalizeProductType` from `@/lib/het`
+  - Computes allocation per ha (UREA 250, NPK 300, SP-36 250, ZA 150, ORGANIK 500)
+  - Uses HET prices from `@/lib/het` for subsidy value calculations
+  - Returns products array with allocation, sold, remaining, utilization %, HET price, subsidy value
+  - Returns summary object with total allocation, sold, remaining, overall utilization %, total subsidy
+- Created `/api/reports/monthly/route.ts` — Monthly Report endpoint
+  - GET handler with required `?month=YYYY-MM` query param
+  - Validates month format with proper error responses
+  - Fetches all orders in the month period with items, product, farmer, and warehouse relations
+  - Computes summary: total/completed/cancelled/pending orders, total kg sold, revenue, subsidy, unique farmers, unique products
+  - Groups by product type (with avg price per kg), by warehouse, and by farmer (top farmers sorted by kg)
+  - Generates dailySales array for all 31 days (or correct days in month) including zero-activity days
+  - Uses Indonesian month names (Januari–Desember)
+  - Activity logging via `logActivity` from `@/lib/db` (both routes)
+- Verified both endpoints return 200 with valid JSON matching the specified response shapes
+- Lint passes with no errors
+
+Stage Summary:
+- Both API routes fully implemented and verified
+- `/api/reports/rpkp` returns RPKP data for 5 product types with 15 active farmers, 15.1 ha total land
+- `/api/reports/monthly?month=2026-07` returns complete monthly report with 13 orders, 8 farmers, 5 products, daily sales for all 31 days
+- No TypeScript or lint errors
+---
+Task ID: 10-c
+Agent: frontend-styling-expert
+Task: Create Monthly Report View with Print Capability
+
+Work Log:
+- Read reference files: orders-view.tsx (table/filter/animation patterns), format.ts (formatters, badge colors), api.ts (API pattern), store.ts, tabs.tsx, export.ts
+- Added MonthlyReport types (MonthlyReportProduct, MonthlyReportWarehouse, MonthlyReportFarmer, DailySale, MonthlyReportData) and fetchMonthlyReport function to api.ts
+- Created /src/components/reports/reports-view.tsx with full feature set:
+  - Header with title, month/year Select dropdowns (Januari-Desember, 2024-2027), Print button (window.print()), Download CSV button
+  - Report header card with SiPUPUK branding (hidden on screen via `hidden print-header`, shown in print via @media print `.print-header { display: block !important }`)
+  - 6 summary stat cards in responsive 2×3/6-col grid with border-l-4 colored left borders and icons
+  - Pure CSS daily sales mini chart: 31 flex bars, proportional height, green color, hover tooltip with date/revenue/kg/orders, 2px bars for zero days
+  - Three tabbed sections (Per Produk, Per Gudang, Top Petani) using shadcn Tabs with full data tables
+  - Print styles via @media print: hide sidebar/buttons, white bg, table borders, page breaks between sections
+  - CSV download generating combined report via Blob URL
+  - Loading skeleton state, error state with AlertCircle
+  - framer-motion entrance animation, dark mode compatible
+  - Uses existing formatRupiah, formatNumber, getTypeBadgeColor, exportToCSV utilities
+- TypeScript check passes (no new errors introduced)
+
+Stage Summary:
+- Monthly report view fully implemented at /src/components/reports/reports-view.tsx
+- API types and fetchMonthlyReport added to /src/lib/api.ts
+- All requirements met: print capability, CSV export, daily chart (pure CSS), tabbed tables, responsive grid, dark mode, loading/error states
+## Task 10-d: Enhance the Notification Center
+
+**Status:** ✅ Completed
+
+**Summary:**
+Enhanced the notification bell from a simple count+redirect button into a full-featured popover notification panel.
+
+### Changes Made:
+
+1. **`src/lib/api.ts`** — Added `AppNotification` interface and `fetchNotifications()` API function before the Seed section.
+
+2. **`src/app/api/notifications/route.ts`** — Created new GET endpoint that:
+   - Queries low stock items (`quantity <= minStock`) with product/warehouse includes
+   - Queries pending orders (oldest) and groups orders by status for count
+   - Queries active distributions (`IN_TRANSIT`) with warehouse info
+   - Queries recent restocks (within 24h)
+   - Builds notification array dynamically with id, type, title, message, icon, color, createdAt, action
+   - Sorts by createdAt descending, limits to 10
+
+3. **`src/components/notification-bell.tsx`** — Rewrote component with:
+   - shadcn `Popover` dropdown with controlled open state
+   - Header with "Notifikasi" title, count badge, "Tandai sudah dibaca" button
+   - Notification list with colored icon circles, bold title, muted 2-line truncated message, relative time
+   - Click-to-navigate: each notification calls `setActiveTab(action.tab)` and closes popover
+   - Empty state with CheckCircle icon: "Tidak ada notifikasi baru"
+   - Loading spinner state
+   - Footer: "Lihat Semua di Dashboard" link
+   - `max-h-96 overflow-y-auto` for scrollable list
+   - framer-motion entrance animation (scale 0.95→1, opacity 0→1)
+   - Dark mode compatible color classes
+   - Responsive width: `w-80` desktop, `w-[calc(100vw-2rem)]` mobile
+   - Refetch interval reduced from 60s to 30s
+   - Badge on bell shows total notification count
+
+**Verification:**
+- API returns 200 with valid JSON (confirmed via curl)
+- ESLint passes with no errors
+- Dev server compiles successfully
+

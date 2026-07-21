@@ -296,5 +296,115 @@ export interface WarehouseStockDetail {
 export const fetchWarehouseStock = (warehouseId: string) =>
   apiFetch<WarehouseStockDetail>(`/api/warehouses/${warehouseId}/stock`)
 
+// RPKP
+export interface RPKPProduct {
+  productType: string
+  allocationPerHa: number
+  totalAllocationKg: number
+  actualSoldKg: number
+  remainingKg: number
+  utilizationPercent: number
+  hetPrice: number
+  totalSubsidyValue: number
+}
+
+export interface RPKPData {
+  year: number
+  totalLandAreaHa: number
+  totalFarmers: number
+  products: RPKPProduct[]
+  summary: {
+    totalAllocationKg: number
+    totalSoldKg: number
+    totalRemainingKg: number
+    overallUtilizationPercent: number
+    totalSubsidyValue: number
+  }
+}
+
+export const fetchRPKP = (year?: number) => {
+  const params = year ? `?year=${year}` : ''
+  return apiFetch<RPKPData>(`/api/reports/rpkp${params}`)
+}
+
+// Monthly Report
+export interface MonthlyReportProduct {
+  productName: string
+  productType: string
+  totalKg: number
+  totalRevenue: number
+  totalSubsidy: number
+  orderCount: number
+  avgPricePerKg: number
+}
+
+export interface MonthlyReportWarehouse {
+  warehouseId: string
+  warehouseName: string
+  warehouseCode: string
+  totalOrders: number
+  totalKg: number
+  totalRevenue: number
+  totalSubsidy: number
+}
+
+export interface MonthlyReportFarmer {
+  farmerId: string
+  farmerName: string
+  farmerNik: string
+  totalOrders: number
+  totalKg: number
+  totalAmount: number
+  totalSubsidy: number
+}
+
+export interface DailySale {
+  date: string
+  orders: number
+  kg: number
+  revenue: number
+}
+
+export interface MonthlyReportData {
+  period: {
+    month: number
+    year: number
+    label: string
+  }
+  summary: {
+    totalOrders: number
+    completedOrders: number
+    cancelledOrders: number
+    pendingOrders: number
+    totalKgSold: number
+    totalRevenue: number
+    totalSubsidy: number
+    totalFarmersServed: number
+    uniqueProductsSold: number
+  }
+  byProduct: MonthlyReportProduct[]
+  byWarehouse: MonthlyReportWarehouse[]
+  topFarmers: MonthlyReportFarmer[]
+  dailySales: DailySale[]
+}
+
+export const fetchMonthlyReport = (month: string) =>
+  apiFetch<MonthlyReportData>(`/api/reports/monthly?month=${month}`)
+
+// Notifications
+export interface AppNotification {
+  id: string
+  type: string
+  title: string
+  message: string
+  icon: string
+  color: string
+  createdAt: string
+  action: { tab: string; filter?: string }
+}
+
+export const fetchNotifications = () =>
+  apiFetch<{ notifications: AppNotification[] }>('/api/notifications')
+
 // Seed
 export const seedData = () => apiFetch<{ message: string }>('/api/seed', { method: 'POST' })

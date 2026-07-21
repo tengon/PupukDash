@@ -13,6 +13,8 @@ import { WarehousesView } from '@/components/warehouses/warehouses-view'
 import { StockView } from '@/components/stock/stock-view'
 import { DistributionsView } from '@/components/distributions/distributions-view'
 import { OrdersView } from '@/components/orders/orders-view'
+import { RPKPView } from '@/components/rpkp/rpkp-view'
+import { ReportsView } from '@/components/reports/reports-view'
 import { seedData, fetchFarmers, fetchStock, fetchOrders } from '@/lib/api'
 import { Leaf, Database, Clock, Users, Package, ShoppingCart } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -31,6 +33,8 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   stock: { title: 'Stok Gudang', description: 'Monitor dan kelola stok pupuk di setiap gudang' },
   distributions: { title: 'Distribusi', description: 'Kelola distribusi pupuk ke kelompok tani' },
   orders: { title: 'Penjualan', description: 'Kelola pesanan penjualan pupuk bersubsidi' },
+  rpkp: { title: 'RPKP', description: 'Rencana Kebutuhan Pupuk — Perencanaan alokasi tahunan' },
+  reports: { title: 'Laporan', description: 'Laporan bulanan penjualan pupuk bersubsidi' },
 }
 
 function useWIBClock() {
@@ -231,6 +235,8 @@ export default function HomePage() {
               {activeTab === 'stock' && <StockView />}
               {activeTab === 'distributions' && <DistributionsView />}
               {activeTab === 'orders' && <OrdersView />}
+              {activeTab === 'rpkp' && <RPKPView />}
+              {activeTab === 'reports' && <ReportsView />}
             </motion.div>
           </AnimatePresence>
         </main>
@@ -242,7 +248,7 @@ export default function HomePage() {
               <Leaf className="h-3 w-3 text-primary" />
               <span className="font-medium text-foreground/80">SiPUPUK</span>
               <span className="hidden sm:inline">— Sistem Informasi Penjualan Pupuk Bersubsidi</span>
-              <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1 font-mono">v1.0.0</Badge>
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1 font-mono">v1.1.0</Badge>
             </div>
             <div className="flex items-center gap-2">
               <span>Dibangun dengan <span className="font-medium text-foreground/70">Next.js</span></span>
