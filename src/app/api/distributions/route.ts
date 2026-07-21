@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, logActivity } from '@/lib/db'
 
 function generateDistributionNo(): string {
   const now = new Date()
@@ -122,12 +122,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Log activity
-    await db.activityLog.create({
-      data: {
-        action: 'CREATE_DISTRIBUTION',
-        detail: `Distribusi baru ${distributionNo} untuk ${quantity} kg ${product.name} dari ${warehouse.name}`,
-      },
-    })
+    logActivity('CREATE_DISTRIBUTION', `Distribusi baru ${distributionNo} untuk ${quantity} kg ${product.name} dari ${warehouse.name}`)
 
     return NextResponse.json(distribution, { status: 201 })
   } catch (error) {

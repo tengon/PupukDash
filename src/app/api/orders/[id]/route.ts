@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, logActivity } from '@/lib/db'
 
 const VALID_STATUSES = ['PENDING', 'CONFIRMED', 'PICKED_UP', 'CANCELLED']
 
@@ -127,12 +127,7 @@ export async function PUT(
 
     // Log activity
     const actionType = status === 'CANCELLED' ? 'CANCEL_ORDER' : 'UPDATE_STATUS'
-    await db.activityLog.create({
-      data: {
-        action: actionType,
-        detail: `Status pesanan ${existing.orderNumber} diubah dari ${statusLabels[existing.status] || existing.status} ke ${statusLabels[status] || status}`,
-      },
-    })
+    logActivity(actionType, `Status pesanan ${existing.orderNumber} diubah dari ${statusLabels[existing.status] || existing.status} ke ${statusLabels[status] || status}`)
 
     return NextResponse.json(order)
   } catch (error) {

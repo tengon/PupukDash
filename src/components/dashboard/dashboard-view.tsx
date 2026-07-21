@@ -1,18 +1,21 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import { fetchDashboard, fetchStock, fetchProducts, fetchDistributions, type DashboardData } from '@/lib/api'
 import { formatRupiah, formatNumber, getStatusColor, getStatusLabel, getStockStatusColor, getStockStatusLabel } from '@/lib/format'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { motion } from 'framer-motion'
-import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles } from 'lucide-react'
+import { Users, Package, ShoppingCart, Banknote, TrendingUp, AlertTriangle, Award, TrendingDown, Truck, Sun, CloudSun, Moon, ChevronRight, Sparkles, PackagePlus } from 'lucide-react'
+import { QuickRestockDialog } from '@/components/stock/quick-restock-dialog'
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
 const itemVariants = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } }
@@ -38,7 +41,7 @@ function WelcomeSection() {
   const { greeting, icon: GreetingIcon } = getGreeting()
   return (
     <motion.div variants={itemVariants}>
-      <div className="glass rounded-xl p-4 sm:p-5 border border-border/50" style={{ boxShadow: 'var(--shadow-sm)' }}>
+      <div className="glass rounded-xl p-4 sm:p-5 border border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" style={{ boxShadow: 'var(--shadow-sm)' }}>
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0">
             <GreetingIcon className="h-6 w-6 text-primary" />
@@ -61,10 +64,10 @@ function WelcomeSection() {
 
 function StatsCards({ data }: { data: DashboardData }) {
   const stats = [
-    { title: 'Total Petani', value: formatNumber(data.totalFarmers), icon: Users, trend: '+12%', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-50 dark:bg-emerald-900/20', borderColor: 'border-l-emerald-500', gradient: 'from-emerald-50/40 to-white dark:from-emerald-900/10 dark:to-card' },
-    { title: 'Total Produk', value: formatNumber(data.totalProducts), icon: Package, trend: '+5%', color: 'text-teal-600 dark:text-teal-400', bgColor: 'bg-teal-50 dark:bg-teal-900/20', borderColor: 'border-l-teal-500', gradient: 'from-teal-50/40 to-white dark:from-teal-900/10 dark:to-card' },
-    { title: 'Total Penjualan', value: formatNumber(data.totalOrders), icon: ShoppingCart, trend: '+18%', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-900/20', borderColor: 'border-l-green-500', gradient: 'from-green-50/40 to-white dark:from-green-900/10 dark:to-card' },
-    { title: 'Total Subsidi', value: formatRupiah(data.totalSubsidy), icon: Banknote, trend: '+8%', color: 'text-lime-600 dark:text-lime-400', bgColor: 'bg-lime-50 dark:bg-lime-900/20', borderColor: 'border-l-lime-500', gradient: 'from-lime-50/40 to-white dark:from-lime-900/10 dark:to-card' },
+    { title: 'Total Petani', value: formatNumber(data.totalFarmers), icon: Users, trend: '+12%', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-900/20', borderColor: 'border-l-green-500', gradient: 'from-green-50/40 to-white dark:from-green-900/10 dark:to-card' },
+    { title: 'Total Produk', value: formatNumber(data.totalProducts), icon: Package, trend: '+5%', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-50 dark:bg-emerald-900/20', borderColor: 'border-l-emerald-500', gradient: 'from-emerald-50/40 to-white dark:from-emerald-900/10 dark:to-card' },
+    { title: 'Total Penjualan', value: formatNumber(data.totalOrders), icon: ShoppingCart, trend: '+18%', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-50 dark:bg-amber-900/20', borderColor: 'border-l-amber-500', gradient: 'from-amber-50/40 to-white dark:from-amber-900/10 dark:to-card' },
+    { title: 'Total Subsidi', value: formatRupiah(data.totalSubsidy), icon: Banknote, trend: '+8%', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-900/20', borderColor: 'border-l-red-500', gradient: 'from-red-50/40 to-white dark:from-red-900/10 dark:to-card' },
   ]
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -175,14 +178,24 @@ function RecentOrders({ data }: { data: DashboardData }) {
             <TableBody>
               {data.recentOrders.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">Belum ada pesanan</TableCell></TableRow>
-              ) : data.recentOrders.map((order) => (
+              ) : data.recentOrders.map((order) => {
+                const isToday = new Date(order.createdAt).toDateString() === new Date().toDateString()
+                return (
                 <TableRow key={order.id} className="hover:border-l-2 hover:border-l-primary/30">
-                  <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
+                  <TableCell className="text-xs font-mono">
+                    <div className="flex items-center gap-1.5">
+                      {order.orderNumber}
+                      {isToday && (
+                        <Badge className="text-[8px] px-1 py-0 h-4 bg-green-500 text-white border-0 font-bold">BARU</Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-xs">{order.farmer.name}</TableCell>
                   <TableCell className="text-xs text-right">{formatRupiah(order.totalAmount)}</TableCell>
                   <TableCell><Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>{getStatusLabel(order.status)}</Badge></TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -192,6 +205,14 @@ function RecentOrders({ data }: { data: DashboardData }) {
 }
 
 function StockAlerts({ data }: { data: DashboardData }) {
+  const [restockOpen, setRestockOpen] = useState(false)
+  const [restockItem, setRestockItem] = useState<typeof data.stockAlerts[0] | null>(null)
+
+  const handleRestock = (item: typeof data.stockAlerts[0]) => {
+    setRestockItem(item)
+    setRestockOpen(true)
+  }
+
   return (
     <motion.div variants={itemVariants}>
       <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
@@ -217,7 +238,7 @@ function StockAlerts({ data }: { data: DashboardData }) {
               </div>
             ) : (
               <Table>
-                <TableHeader><TableRow><TableHead className="text-xs">Gudang</TableHead><TableHead className="text-xs">Produk</TableHead><TableHead className="text-xs text-right">Stok</TableHead><TableHead className="text-xs">Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead className="text-xs">Gudang</TableHead><TableHead className="text-xs">Produk</TableHead><TableHead className="text-xs text-right">Stok</TableHead><TableHead className="text-xs">Status</TableHead><TableHead className="text-xs text-right">Aksi</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {data.stockAlerts.map((s) => {
                     const ratio = s.quantity / s.minStock
@@ -235,6 +256,17 @@ function StockAlerts({ data }: { data: DashboardData }) {
                         <TableCell className="text-xs">{s.product.name}</TableCell>
                         <TableCell className="text-xs text-right font-mono">{formatNumber(s.quantity)} kg</TableCell>
                         <TableCell><Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStockStatusColor(s.quantity, s.minStock)}`}>{getStockStatusLabel(s.quantity, s.minStock)}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 gap-1 text-[10px] text-primary border-primary/30 hover:bg-primary/10"
+                            onClick={() => handleRestock(s)}
+                          >
+                            <PackagePlus className="h-3 w-3" />
+                            Restok
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     )
                   })}
@@ -244,6 +276,13 @@ function StockAlerts({ data }: { data: DashboardData }) {
           </div>
         </CardContent>
       </Card>
+      {restockItem && (
+        <QuickRestockDialog
+          open={restockOpen}
+          onOpenChange={setRestockOpen}
+          stock={restockItem}
+        />
+      )}
     </motion.div>
   )
 }
@@ -261,6 +300,8 @@ function TopFarmers({ data }: { data: DashboardData }) {
     'text-orange-500 dark:text-orange-400',
   ]
 
+  const maxAmount = Math.max(...data.topFarmers.map((f) => f.totalAmount), 1)
+
   return (
     <motion.div variants={itemVariants}>
       <Card className="hover:shadow-lg transition-all duration-300" style={{ boxShadow: 'var(--shadow-sm)' }}>
@@ -275,11 +316,13 @@ function TopFarmers({ data }: { data: DashboardData }) {
         </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow><TableHead className="text-xs w-10">#</TableHead><TableHead className="text-xs">Nama</TableHead><TableHead className="text-xs text-right">Total</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="text-xs w-10">#</TableHead><TableHead className="text-xs">Nama</TableHead><TableHead className="text-xs text-right">Total</TableHead><TableHead className="text-xs w-24">Pembelian</TableHead></TableRow></TableHeader>
             <TableBody>
               {data.topFarmers.length === 0 ? (
-                <TableRow><TableCell colSpan={3} className="text-center text-xs text-muted-foreground py-6">Belum ada data</TableCell></TableRow>
-              ) : data.topFarmers.map((f, i) => (
+                <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">Belum ada data</TableCell></TableRow>
+              ) : data.topFarmers.map((f, i) => {
+                const barPercent = (f.totalAmount / maxAmount) * 100
+                return (
                 <TableRow key={f.id} className="hover:border-l-2 hover:border-l-amber-300">
                   <TableCell className="text-xs">
                     {i < 3 ? (
@@ -303,8 +346,14 @@ function TopFarmers({ data }: { data: DashboardData }) {
                     </div>
                   </TableCell>
                   <TableCell className={`text-xs text-right font-semibold ${i < 3 ? medalTextColors[i] : ''}`}>{formatRupiah(f.totalAmount)}</TableCell>
+                  <TableCell className="text-xs w-24 px-2">
+                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-700 ${i === 0 ? 'bg-amber-400' : i === 1 ? 'bg-gray-400' : i === 2 ? 'bg-orange-400' : 'bg-primary/60'}`} style={{ width: `${barPercent}%` }} />
+                    </div>
+                  </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>

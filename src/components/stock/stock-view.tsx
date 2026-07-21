@@ -50,9 +50,10 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Package, Warehouse as WarehouseIcon, Layers } from 'lucide-react'
+import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Package, Warehouse as WarehouseIcon, Layers, PackagePlus } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Switch } from '@/components/ui/switch'
+import { QuickRestockDialog } from './quick-restock-dialog'
 
 const ITEMS_PER_PAGE = 10
 const MAX_CAPACITY = 20000 // reference max for fill indicator
@@ -98,10 +99,11 @@ function FillIndicatorBar({ quantity }: { quantity: number }) {
   )
 }
 
-function StockCard({ stock, onEdit, onDelete }: {
+function StockCard({ stock, onEdit, onDelete, onRestock }: {
   stock: StockWithProductAndWarehouse
   onEdit: (s: StockWithProductAndWarehouse) => void
   onDelete: (id: string) => void
+  onRestock: (s: StockWithProductAndWarehouse) => void
 }) {
   const ratio = stock.quantity / stock.minStock
 
@@ -125,7 +127,7 @@ function StockCard({ stock, onEdit, onDelete }: {
   }
 
   return (
-    <Card className={`border-l-3 ${statusBg} hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`} style={{ boxShadow: 'var(--shadow-sm)' }}>
+    <Card className={`border-l-3 ${statusBg} hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out`} style={{ boxShadow: 'var(--shadow-sm)' }}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -151,6 +153,10 @@ function StockCard({ stock, onEdit, onDelete }: {
         </div>
 
         <StockLevelBar quantity={stock.quantity} minStock={stock.minStock} />
+        <div className="flex items-center justify-between mt-1.5">
+          <span className="text-[10px] text-muted-foreground">Kapasitas</span>
+          <span className="text-[10px] font-medium text-muted-foreground">{Math.min(Math.round((stock.quantity / MAX_CAPACITY) * 100), 100)}%</span>
+        </div>
         <FillIndicatorBar quantity={stock.quantity} />
 
         <div className="flex items-center justify-between mt-3">
@@ -162,6 +168,9 @@ function StockCard({ stock, onEdit, onDelete }: {
             </Badge>
           </div>
           <div className="flex items-center gap-0.5">
+            <Button variant="outline" size="icon" className="h-7 w-7 text-primary border-primary/30 hover:bg-primary/10" onClick={() => onRestock(stock)} title="Restok Cepat">
+              <PackagePlus className="h-3 w-3" />
+            </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(stock)}>
               <Pencil className="h-3 w-3" />
             </Button>
@@ -194,6 +203,8 @@ export function StockView() {
   const [editQty, setEditQty] = useState(0)
   const [editMinStock, setEditMinStock] = useState(500)
   const [page, setPage] = useState(1)
+  const [restockOpen, setRestockOpen] = useState(false)
+  const [restockItem, setRestockItem] = useState<StockWithProductAndWarehouse | null>(null)
 
   const { data: stocks, isLoading } = useQuery({
     queryKey: ['stock', refreshKey],
@@ -263,6 +274,11 @@ export function StockView() {
     setEditQty(stock.quantity)
     setEditMinStock(stock.minStock)
     setEditDialogOpen(true)
+  }
+
+  const handleQuickRestock = (stock: StockWithProductAndWarehouse) => {
+    setRestockItem(stock)
+    setRestockOpen(true)
   }
 
   const handleSave = () => {
@@ -397,6 +413,7 @@ export function StockView() {
                     stock={stock}
                     onEdit={handleOpenEdit}
                     onDelete={(id) => { setDeletingId(id); setDeleteOpen(true) }}
+                    onRestock={handleQuickRestock}
                   />
                 ))}
               </div>
@@ -558,6 +575,15 @@ export function StockView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Quick Restock Dialog */}
+      {restockItem && (
+        <QuickRestockDialog
+          open={restockOpen}
+          onOpenChange={setRestockOpen}
+          stock={restockItem}
+        />
+      )}
     </motion.div>
   )
 }

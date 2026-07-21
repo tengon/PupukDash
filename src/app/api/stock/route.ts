@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, logActivity } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,12 +76,7 @@ export async function PUT(request: NextRequest) {
     if (quantity !== undefined && quantity !== existing.quantity) {
       const diff = quantity - existing.quantity
       const direction = diff > 0 ? 'ditambah' : 'dikurangi'
-      await db.activityLog.create({
-        data: {
-          action: 'UPDATE_STOCK',
-          detail: `Stok ${existing.product.name} di ${existing.warehouse.name} ${direction} menjadi ${quantity} kg`,
-        },
-      })
+      logActivity('UPDATE_STOCK', `Stok ${existing.product.name} di ${existing.warehouse.name} ${direction} menjadi ${quantity} kg`)
     }
 
     return NextResponse.json(stock)
@@ -173,12 +168,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity
-    await db.activityLog.create({
-      data: {
-        action: 'ADD_STOCK',
-        detail: `Stok ${product.name} di ${warehouse.name} ditambah ${quantity} kg`,
-      },
-    })
+    logActivity('ADD_STOCK', `Stok ${product.name} di ${warehouse.name} ditambah ${quantity} kg`)
 
     return NextResponse.json(result, { status: existingStock ? 200 : 201 })
   } catch (error) {

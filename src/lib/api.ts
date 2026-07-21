@@ -148,6 +148,35 @@ export const deleteProduct = (id: string) =>
 
 // Farmers
 export const fetchFarmers = () => apiFetch<Farmer[]>('/api/farmers')
+
+export interface FarmerOrderSummary {
+  totalOrders: number
+  totalKg: number
+  totalSubsidy: number
+  totalAmount: number
+}
+
+export interface FarmerOrdersResponse {
+  farmer: {
+    id: string
+    name: string
+    nik: string
+    phone: string | null
+    address: string | null
+    village: string | null
+    district: string | null
+    regency: string | null
+    province: string | null
+    landAreaHa: number | null
+    farmerGroup: string | null
+    isActive: boolean
+  }
+  orders: OrderWithDetails[]
+  summary: FarmerOrderSummary
+}
+
+export const fetchFarmerOrders = (farmerId: string) =>
+  apiFetch<FarmerOrdersResponse>(`/api/farmers/${farmerId}/orders`)
 export const createFarmer = (data: Omit<Farmer, 'id' | 'createdAt' | 'updatedAt' | '_count'>) =>
   apiFetch<Farmer>('/api/farmers', { method: 'POST', body: JSON.stringify(data) })
 export const updateFarmer = (id: string, data: Partial<Farmer>) =>

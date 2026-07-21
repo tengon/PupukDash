@@ -13,13 +13,15 @@ import { WarehousesView } from '@/components/warehouses/warehouses-view'
 import { StockView } from '@/components/stock/stock-view'
 import { DistributionsView } from '@/components/distributions/distributions-view'
 import { OrdersView } from '@/components/orders/orders-view'
-import { seedData } from '@/lib/api'
-import { Leaf, Database, Clock } from 'lucide-react'
+import { seedData, fetchFarmers, fetchStock, fetchOrders } from '@/lib/api'
+import { Leaf, Database, Clock, Users, Package, ShoppingCart } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/notification-bell'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
+import { formatNumber } from '@/lib/format'
 
 const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   dashboard: { title: 'Dashboard', description: 'Ringkasan data penjualan pupuk bersubsidi' },
@@ -55,11 +57,35 @@ function useWIBClock() {
 }
 
 export default function HomePage() {
-  const { activeTab, triggerShortcut } = useAppStore()
+  const { activeTab, triggerShortcut, refreshKey } = useAppStore()
   const { toast } = useToast()
   const [isSeeding, setIsSeeding] = useState(false)
   const wibTime = useWIBClock()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Quick stats data
+  const { data: farmersData } = useQuery({
+    queryKey: ['farmers', refreshKey],
+    queryFn: fetchFarmers,
+  })
+  const { data: stockData } = useQuery({
+    queryKey: ['stock', refreshKey],
+    queryFn: fetchStock,
+  })
+  const { data: ordersData } = useQuery({
+    queryKey: ['orders', refreshKey],
+    queryFn: fetchOrders,
+  })
+
+  const activeFarmerCount = (farmersData || []).filter(f => f.isActive).length
+  const totalStockKg = (stockData || []).reduce((sum, s) => sum + s.quantity, 0)
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+  const ordersThisMonth = (ordersData?.orders || []).filter(o => {
+    const d = new Date(o.createdAt)
+    return d >= startOfMonth && d <= endOfMonth
+  }).length
 
   const pageInfo = PAGE_TITLES[activeTab] || PAGE_TITLES.dashboard
 
@@ -168,6 +194,25 @@ export default function HomePage() {
             </div>
           </div>
         </header>
+
+        {/* Quick Stats Bar */}
+        <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b overflow-x-auto">
+          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-3 py-1 shrink-0">
+            <Users className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">{formatNumber(activeFarmerCount)}</span>
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400">Petani Aktif</span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 px-3 py-1 shrink-0">
+            <Package className="h-3 w-3 text-teal-600 dark:text-teal-400" />
+            <span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300">{formatNumber(totalStockKg)}</span>
+            <span className="text-[10px] text-teal-600 dark:text-teal-400">kg Stok</span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-1 shrink-0">
+            <ShoppingCart className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">{formatNumber(ordersThisMonth)}</span>
+            <span className="text-[10px] text-amber-600 dark:text-amber-400">Pesanan Bulan Ini</span>
+          </div>
+        </div>
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-6 overflow-auto">

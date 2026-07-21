@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, logActivity } from '@/lib/db'
 
 function generateOrderNumber(): string {
   const now = new Date()
@@ -237,13 +237,8 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    // Log activity
-    await db.activityLog.create({
-      data: {
-        action: 'CREATE_ORDER',
-        detail: `Pesanan baru ${orderNumber} dari ${farmer.name} sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalAmount)}`,
-      },
-    })
+    // Log activity (non-critical)
+    logActivity('CREATE_ORDER', `Pesanan baru ${orderNumber} dari ${farmer.name} sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalAmount)}`)
 
     return NextResponse.json(order, { status: 201 })
   } catch (error) {

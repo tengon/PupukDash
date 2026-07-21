@@ -28,9 +28,9 @@ export function NotificationBell() {
       className="relative h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent transition-colors"
       title={alertCount > 0 ? `${alertCount} peringatan stok` : 'Tidak ada notifikasi'}
     >
-      <Bell className={`h-4 w-4 ${alertCount > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+      <Bell className={`h-4 w-4 ${alertCount > 0 ? 'text-primary bell-pulse-green' : 'text-muted-foreground'}`} />
       {alertCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white animate-pulse-gentle">
+        <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
           {alertCount > 9 ? '9+' : alertCount}
         </span>
       )}

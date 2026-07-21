@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, logActivity } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -106,12 +106,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Log activity
-    await db.activityLog.create({
-      data: {
-        action: 'TRANSFER_STOCK',
-        detail: `Transfer ${quantity} kg ${product.name} dari ${fromWarehouse.name} ke ${toWarehouse.name}`,
-      },
-    })
+    logActivity('TRANSFER_STOCK', `Transfer ${quantity} kg ${product.name} dari ${fromWarehouse.name} ke ${toWarehouse.name}`)
 
     return NextResponse.json({
       message: `Berhasil mentransfer ${quantity} kg ${product.name} dari ${fromWarehouse.name} ke ${toWarehouse.name}`,

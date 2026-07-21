@@ -79,24 +79,24 @@
 }
 
 .dark {
-  --background: oklch(0.155 0.015 155);
-  --foreground: oklch(0.94 0.01 150);
-  --card: oklch(0.20 0.02 155);
-  --card-foreground: oklch(0.94 0.01 150);
-  --popover: oklch(0.20 0.02 155);
-  --popover-foreground: oklch(0.94 0.01 150);
-  --primary: oklch(0.55 0.14 152);
-  --primary-foreground: oklch(0.15 0.02 155);
-  --secondary: oklch(0.269 0.03 155);
-  --secondary-foreground: oklch(0.94 0.01 150);
-  --muted: oklch(0.22 0.02 155);
-  --muted-foreground: oklch(0.65 0.02 150);
-  --accent: oklch(0.269 0.03 155);
-  --accent-foreground: oklch(0.94 0.01 150);
+  --background: oklch(0.145 0.015 155);
+  --foreground: oklch(0.95 0.01 150);
+  --card: oklch(0.19 0.02 155);
+  --card-foreground: oklch(0.95 0.01 150);
+  --popover: oklch(0.19 0.02 155);
+  --popover-foreground: oklch(0.95 0.01 150);
+  --primary: oklch(0.58 0.15 152);
+  --primary-foreground: oklch(0.13 0.02 155);
+  --secondary: oklch(0.25 0.03 155);
+  --secondary-foreground: oklch(0.95 0.01 150);
+  --muted: oklch(0.21 0.02 155);
+  --muted-foreground: oklch(0.70 0.03 150);
+  --accent: oklch(0.25 0.03 155);
+  --accent-foreground: oklch(0.95 0.01 150);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.55 0.14 152);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.58 0.15 152);
   --chart-1: oklch(0.55 0.14 152);
   --chart-2: oklch(0.65 0.10 165);
   --chart-3: oklch(0.72 0.08 140);
@@ -193,6 +193,31 @@ a, button, input, select, textarea,
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Improved table row hover effects */
+tbody tr:hover {
+  background-color: oklch(0.65 0.14 152 / 0.06);
+}
+
+tbody tr:nth-child(even) {
+  background-color: oklch(0.65 0.14 152 / 0.02);
+}
+
+tbody tr:nth-child(even):hover {
+  background-color: oklch(0.65 0.14 152 / 0.07);
+}
+
+.dark tbody tr:hover {
+  background-color: oklch(0.55 0.14 152 / 0.08);
+}
+
+.dark tbody tr:nth-child(even) {
+  background-color: oklch(0.55 0.14 152 / 0.03);
+}
+
+.dark tbody tr:nth-child(even):hover {
+  background-color: oklch(0.55 0.14 152 / 0.10);
+}
+
 /* Text selection color — green agricultural theme */
 ::selection {
   background-color: oklch(0.65 0.15 150 / 30%);
@@ -217,10 +242,10 @@ a, button, input, select, textarea,
   box-shadow: 0 0 0 3px oklch(0.65 0.14 152 / 0.20);
 }
 
-/* Custom scrollbar — improved */
+/* Custom scrollbar — thinner green accent */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -228,24 +253,23 @@ a, button, input, select, textarea,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.80 0.02 155);
+  background: oklch(0.75 0.03 152);
   border-radius: 9999px;
   transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.60 0.06 150);
-  width: 8px;
+  background: oklch(0.55 0.12 150);
 }
 
-/* Firefox scrollbar */
+/* Firefox scrollbar — thinner */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.80 0.02 155) transparent;
+  scrollbar-color: oklch(0.75 0.03 152) transparent;
 }
 
 *:hover {
-  scrollbar-color: oklch(0.60 0.06 150) transparent;
+  scrollbar-color: oklch(0.55 0.12 150) transparent;
 }
 
 /* Smooth transitions */
@@ -261,6 +285,16 @@ a, button, input, select, textarea,
 
 .animate-pulse-gentle {
   animation: pulse-gentle 2s ease-in-out infinite;
+}
+
+/* Green pulse animation for notification bell */
+@keyframes bell-pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.55 0.14 152 / 0.5); }
+  50% { box-shadow: 0 0 0 6px oklch(0.55 0.14 152 / 0); }
+}
+
+.bell-pulse-green {
+  animation: bell-pulse-green 2s ease-in-out infinite;
 }
 
 /* ===== Filter Pill Styles ===== */

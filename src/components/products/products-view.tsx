@@ -51,6 +51,14 @@ import { useToast } from '@/hooks/use-toast'
 
 const PRODUCT_TYPES = ['UREA', 'NPK', 'SP-36', 'ZA', 'ORGANIK']
 
+const TYPE_ICONS: Record<string, string> = {
+  UREA: '🌱',
+  NPK: '🧪',
+  'SP-36': '💎',
+  ZA: '⚡',
+  ORGANIK: '🍃',
+}
+
 const TYPE_PILL_COLORS: Record<string, string> = {
   UREA: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700',
   NPK: 'bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700',
@@ -195,7 +203,7 @@ export function ProductsView() {
                   className="pl-9 h-9 w-full sm:w-60"
                 />
               </div>
-              <Button onClick={handleOpenAdd} size="sm" className="shrink-0 btn-gradient">
+              <Button onClick={handleOpenAdd} size="sm" className="shrink-0 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
                 <Plus className="h-4 w-4 mr-1" />
                 Tambah Produk
               </Button>
@@ -248,12 +256,22 @@ export function ProductsView() {
                         <TableCell className="text-sm font-medium">{product.name}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-semibold ${TYPE_PILL_COLORS[product.type] || getTypeBadgeColor(product.type)}`}>
-                            {product.type}
+                            {TYPE_ICONS[product.type] || ''} {product.type}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-right">{formatRupiah(product.pricePerKg)}/kg</TableCell>
                         <TableCell className="text-sm text-right text-primary font-medium">{formatRupiah(product.subsidyPrice)}/kg</TableCell>
-                        <TableCell className="text-sm text-right font-mono">{formatNumber(product.totalStock ?? 0)} kg</TableCell>
+                        <TableCell className="text-sm text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="font-mono">{formatNumber(product.totalStock ?? 0)} kg</span>
+                            <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${(product.totalStock ?? 0) > 1000 ? 'bg-green-500' : (product.totalStock ?? 0) >= 500 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                style={{ width: `${Math.min((product.totalStock ?? 0) / 20, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={product.isActive ? 'default' : 'secondary'} className="text-[10px]">
                             {product.isActive ? 'Aktif' : 'Tidak Aktif'}
