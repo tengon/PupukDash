@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model FertilizerProduct {
+  id            String   @id @default(cuid())
+  name          String
+  type          String
+  pricePerKg    Float
+  description   String?
+  subsidyPrice  Float
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  stock         Stock[]
+  orderItems    OrderItem[]
+}
+
+model Farmer {
+  id            String   @id @default(cuid())
+  nik           String   @unique
+  name          String
+  phone         String?
+  address       String?
+  village       String?
+  district      String?
+  regency       String?
+  province      String?
+  landAreaHa    Float?
+  farmerGroup   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  orders        Order[]
+}
+
+model Warehouse {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  address       String
+  district      String?
+  regency       String?
+  province      String
+  managerName   String?
+  managerPhone  String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  stock         Stock[]
+  distributions Distribution[]
+  orders        Order[]
+}
+
+model Stock {
+  id              String            @id @default(cuid())
+  warehouseId     String
+  productId       String
+  quantity        Float
+  minStock        Float             @default(500)
+  lastRestocked   DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  warehouse       Warehouse         @relation(fields: [warehouseId], references: [id])
+  product         FertilizerProduct @relation(fields: [productId], references: [id])
+
+  @@unique([warehouseId, productId])
+}
+
+model Distribution {
+  id              String     @id @default(cuid())
+  distributionNo  String     @unique
+  warehouseId     String
+  productId       String
+  productName     String
+  quantity        Float
+  sourceRegency   String?
+  targetVillage   String?
+  targetGroup     String?
+  status          String     @default("DRAFT")
+  notes           String?
+  distributedAt   DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  warehouse       Warehouse  @relation(fields: [warehouseId], references: [id])
+}
+
+model Order {
+  id              String     @id @default(cuid())
+  orderNumber     String     @unique
+  farmerId        String
+  warehouseId     String
+  status          String     @default("PENDING")
+  totalAmount     Float
+  totalSubsidy    Float
+  notes           String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  farmer          Farmer     @relation(fields: [farmerId], references: [id])
+  warehouse       Warehouse  @relation(fields: [warehouseId], references: [id])
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id              String            @id @default(cuid())
+  orderId         String
+  productId       String
+  productName     String
+  quantity        Float
+  pricePerKg      Float
+  subtotal        Float
+  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         FertilizerProduct @relation(fields: [productId], references: [id])
+}
