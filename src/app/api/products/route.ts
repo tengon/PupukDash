@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
       pricePerKg: p.pricePerKg,
       subsidyPrice: p.subsidyPrice,
       description: p.description,
+      isActive: p.isActive,
       totalStock: p.stock.reduce((sum, s) => sum + s.quantity, 0),
       stockByWarehouse: p.stock.map((s) => ({
         warehouseName: s.warehouse.name,

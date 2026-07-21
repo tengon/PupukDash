@@ -1,0 +1,710 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo } from 'react'
+     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+     5→import { useAppStore } from '@/lib/store'
+     6→import {
+     7→  fetchOrders, fetchFarmers, fetchWarehouses, fetchProducts,
+     8→  createOrder, updateOrder,
+     9→  type OrderWithDetails, type Farmer, type Warehouse, type Product,
+    10→} from '@/lib/api'
+    11→import { formatRupiah, formatNumber, formatDate, getStatusColor, getStatusLabel, getTypeBadgeColor } from '@/lib/format'
+    12→import { exportToCSV } from '@/lib/export'
+    13→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    14→import { Button } from '@/components/ui/button'
+    15→import { Input } from '@/components/ui/input'
+    16→import { Label } from '@/components/ui/label'
+    17→import { Badge } from '@/components/ui/badge'
+    18→import { Textarea } from '@/components/ui/textarea'
+    19→import { Skeleton } from '@/components/ui/skeleton'
+    20→import {
+    21→  Dialog,
+    22→  DialogContent,
+    23→  DialogDescription,
+    24→  DialogFooter,
+    25→  DialogHeader,
+    26→  DialogTitle,
+    27→} from '@/components/ui/dialog'
+    28→import {
+    29→  Select,
+    30→  SelectContent,
+    31→  SelectItem,
+    32→  SelectTrigger,
+    33→  SelectValue,
+    34→} from '@/components/ui/select'
+    35→import {
+    36→  Table,
+    37→  TableBody,
+    38→  TableCell,
+    39→  TableHead,
+    40→  TableHeader,
+    41→  TableRow,
+    42→} from '@/components/ui/table'
+    43→import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    44→import { ScrollArea } from '@/components/ui/scroll-area'
+    45→import { Separator } from '@/components/ui/separator'
+    46→import { motion } from 'framer-motion'
+    47→import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer } from 'lucide-react'
+    48→import { useToast } from '@/hooks/use-toast'
+    49→
+    50→const ORDER_STATUS_TABS = [
+    51→  { value: 'all', label: 'Semua' },
+    52→  { value: 'PENDING', label: 'Menunggu' },
+    53→  { value: 'CONFIRMED', label: 'Dikonfirmasi' },
+    54→  { value: 'PICKED_UP', label: 'Diambil' },
+    55→  { value: 'CANCELLED', label: 'Dibatalkan' },
+    56→]
+    57→
+    58→const ORDER_STATUS_FLOW: Record<string, string[]> = {
+    59→  PENDING: ['CONFIRMED', 'CANCELLED'],
+    60→  CONFIRMED: ['PICKED_UP', 'CANCELLED'],
+    61→  PICKED_UP: [],
+    62→  CANCELLED: [],
+    63→}
+    64→
+    65→interface OrderItemForm {
+    66→  productId: string
+    67→  productName: string
+    68→  quantity: number
+    69→  pricePerKg: number
+    70→  subsidyPrice: number
+    71→  subtotal: number
+    72→  subsidySubtotal: number
+    73→}
+    74→
+    75→export function OrdersView() {
+    76→  const { refreshKey, triggerRefresh } = useAppStore()
+    77→  const { toast } = useToast()
+    78→  const queryClient = useQueryClient()
+    79→  const [statusFilter, setStatusFilter] = useState('all')
+    80→  const [search, setSearch] = useState('')
+    81→  const [createOpen, setCreateOpen] = useState(false)
+    82→  const [detailOpen, setDetailOpen] = useState(false)
+    83→  const [statusOpen, setStatusOpen] = useState(false)
+    84→  const [detailOrder, setDetailOrder] = useState<OrderWithDetails | null>(null)
+    85→  const [editingOrder, setEditingOrder] = useState<OrderWithDetails | null>(null)
+    86→
+    87→  const [formFarmer, setFormFarmer] = useState('')
+    88→  const [formWarehouse, setFormWarehouse] = useState('')
+    89→  const [formItems, setFormItems] = useState<OrderItemForm[]>([])
+    90→  const [formNotes, setFormNotes] = useState('')
+    91→  const [farmerSearch, setFarmerSearch] = useState('')
+    92→
+    93→  const { data: orders, isLoading } = useQuery({
+    94→    queryKey: ['orders', refreshKey],
+    95→    queryFn: fetchOrders,
+    96→  })
+    97→
+    98→  const { data: farmers } = useQuery({
+    99→    queryKey: ['farmers', refreshKey],
+   100→    queryFn: fetchFarmers,
+   101→  })
+   102→
+   103→  const { data: warehouses } = useQuery({
+   104→    queryKey: ['warehouses', refreshKey],
+   105→    queryFn: fetchWarehouses,
+   106→  })
+   107→
+   108→  const { data: products } = useQuery({
+   109→    queryKey: ['products', refreshKey],
+   110→    queryFn: () => fetchProducts(),
+   111→  })
+   112→
+   113→  const createMutation = useMutation({
+   114→    mutationFn: createOrder,
+   115→    onSuccess: () => {
+   116→      queryClient.invalidateQueries({ queryKey: ['orders'] })
+   117→      triggerRefresh()
+   118→      setCreateOpen(false)
+   119→      resetCreateForm()
+   120→      toast({ title: 'Berhasil', description: 'Pesanan berhasil dibuat' })
+   121→    },
+   122→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   123→  })
+   124→
+   125→  const updateMutation = useMutation({
+   126→    mutationFn: ({ id, data }: { id: string; data: { status?: string; notes?: string } }) => updateOrder(id, data),
+   127→    onSuccess: () => {
+   128→      queryClient.invalidateQueries({ queryKey: ['orders'] })
+   129→      triggerRefresh()
+   130→      setStatusOpen(false)
+   131→      setEditingOrder(null)
+   132→      toast({ title: 'Berhasil', description: 'Status pesanan diperbarui' })
+   133→    },
+   134→    onError: (err: Error) => toast({ title: 'Gagal', description: err.message, variant: 'destructive' }),
+   135→  })
+   136→
+   137→  const resetCreateForm = () => {
+   138→    setFormFarmer('')
+   139→    setFormWarehouse('')
+   140→    setFormItems([])
+   141→    setFormNotes('')
+   142→    setFarmerSearch('')
+   143→  }
+   144→
+   145→  const addItem = () => {
+   146→    setFormItems([...formItems, {
+   147→      productId: '',
+   148→      productName: '',
+   149→      quantity: 0,
+   150→      pricePerKg: 0,
+   151→      subsidyPrice: 0,
+   152→      subtotal: 0,
+   153→      subsidySubtotal: 0,
+   154→    }])
+   155→  }
+   156→
+   157→  const removeItem = (index: number) => {
+   158→    setFormItems(formItems.filter((_, i) => i !== index))
+   159→  }
+   160→
+   161→  const updateItem = (index: number, field: keyof OrderItemForm, value: string | number) => {
+   162→    const updated = [...formItems]
+   163→    ;(updated[index] as unknown as Record<string, string | number>)[field] = value
+   164→
+   165→    if (field === 'productId' && typeof value === 'string') {
+   166→      const product = (products || []).find((p) => p.id === value)
+   167→      if (product) {
+   168→        updated[index].productName = product.name
+   169→        updated[index].pricePerKg = product.pricePerKg
+   170→        updated[index].subsidyPrice = product.subsidyPrice
+   171→      }
+   172→    }
+   173→
+   174→    updated[index].subtotal = updated[index].quantity * updated[index].pricePerKg
+   175→    updated[index].subsidySubtotal = updated[index].quantity * updated[index].subsidyPrice
+   176→
+   177→    setFormItems(updated)
+   178→  }
+   179→
+   180→  const totals = useMemo(() => {
+   181→    const totalAmount = formItems.reduce((sum, item) => sum + item.subtotal, 0)
+   182→    const totalSubsidy = formItems.reduce((sum, item) => sum + item.subsidySubtotal, 0)
+   183→    return { totalAmount, totalSubsidy }
+   184→  }, [formItems])
+   185→
+   186→  const handleCreate = () => {
+   187→    if (!formFarmer || !formWarehouse || formItems.length === 0) {
+   188→      toast({ title: 'Validasi', description: 'Lengkapi petani, gudang, dan minimal 1 item', variant: 'destructive' })
+   189→      return
+   190→    }
+   191→    const validItems = formItems.filter((i) => i.productId && i.quantity > 0)
+   192→    if (validItems.length === 0) {
+   193→      toast({ title: 'Validasi', description: 'Tambahkan minimal 1 item produk', variant: 'destructive' })
+   194→      return
+   195→    }
+   196→    createMutation.mutate({
+   197→      farmerId: formFarmer,
+   198→      warehouseId: formWarehouse,
+   199→      items: validItems.map((i) => ({
+   200→        productId: i.productId,
+   201→        productName: i.productName,
+   202→        quantity: i.quantity,
+   203→        pricePerKg: i.pricePerKg,
+   204→        subtotal: i.subtotal,
+   205→      })),
+   206→      totalAmount: totals.totalAmount,
+   207→      totalSubsidy: totals.totalSubsidy,
+   208→      notes: formNotes || undefined,
+   209→    })
+   210→  }
+   211→
+   212→  const handleStatusUpdate = (newStatus: string) => {
+   213→    if (editingOrder) {
+   214→      updateMutation.mutate({ id: editingOrder.id, data: { status: newStatus } })
+   215→    }
+   216→  }
+   217→
+   218→  const filteredFarmers = useMemo(() => {
+   219→    if (!farmers) return []
+   220→    if (!farmerSearch) return farmers
+   221→    return farmers.filter(
+   222→      (f) => f.name.toLowerCase().includes(farmerSearch.toLowerCase()) || f.nik.includes(farmerSearch)
+   223→    )
+   224→  }, [farmers, farmerSearch])
+   225→
+   226→  const handlePrintOrder = (order: OrderWithDetails) => {
+   227→    const now = new Date()
+   228→    const printedAt = new Intl.DateTimeFormat('id-ID', {
+   229→      day: 'numeric', month: 'long', year: 'numeric',
+   230→      hour: '2-digit', minute: '2-digit', second: '2-digit',
+   231→    }).format(now)
+   232→
+   233→    const html = `<!DOCTYPE html>
+   234→<html lang="id">
+   235→<head>
+   236→  <meta charset="UTF-8">
+   237→  <title>Bukti Pesanan - ${order.orderNumber}</title>
+   238→  <style>
+   239→    * { margin: 0; padding: 0; box-sizing: border-box; }
+   240→    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 32px; color: #1a1a1a; font-size: 13px; }
+   241→    .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #16a34a; padding-bottom: 16px; }
+   242→    .header h1 { font-size: 18px; color: #16a34a; margin-bottom: 4px; }
+   243→    .header .subtitle { font-size: 12px; color: #666; }
+   244→    .header .date { font-size: 11px; color: #888; margin-top: 4px; }
+   245→    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+   246→    .info-item { font-size: 12px; }
+   247→    .info-item .label { color: #666; }
+   248→    .info-item .value { font-weight: 600; }
+   249→    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+   250→    th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 12px; }
+   251→    th { background-color: #f0fdf4; font-weight: 600; color: #166534; }
+   252→    td.num { text-align: right; font-family: 'Courier New', monospace; }
+   253→    .totals { margin-left: auto; width: 260px; border: 1px solid #ddd; }
+   254→    .totals .row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 12px; }
+   255→    .totals .row + .row { border-top: 1px solid #eee; }
+   256→    .totals .row.total { font-weight: 700; background: #f0fdf4; color: #166534; }
+   257→    .totals .row.subsidy { font-weight: 700; color: #16a34a; }
+   258→    .totals .row.diff { font-weight: 700; color: #065f46; }
+   259→    .footer { margin-top: 32px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; }
+   260→    @media print { body { padding: 16px; } }
+   261→  </style>
+   262→</head>
+   263→<body>
+   264→  <div class="header">
+   265→    <h1>SI PUPUK - Bukti Pesanan</h1>
+   266→    <div class="subtitle">Sistem Informasi Penjualan Pupuk Bersubsidi</div>
+   267→    <div class="date">Tanggal Pesanan: ${formatDate(order.createdAt)}</div>
+   268→  </div>
+   269→  <div class="info-grid">
+   270→    <div class="info-item"><span class="label">No. Pesanan:</span> <span class="value">${order.orderNumber}</span></div>
+   271→    <div class="info-item"><span class="label">Status:</span> <span class="value">${getStatusLabel(order.status)}</span></div>
+   272→    <div class="info-item"><span class="label">Petani:</span> <span class="value">${order.farmer.name}</span></div>
+   273→    <div class="info-item"><span class="label">NIK:</span> <span class="value">${order.farmer.nik}</span></div>
+   274→    <div class="info-item" style="grid-column: span 2"><span class="label">Gudang:</span> <span class="value">${order.warehouse.name} (${order.warehouse.code})</span></div>
+   275→  </div>
+   276→  <table>
+   277→    <thead>
+   278→      <tr><th>Produk</th><th style="text-align:right">Qty (kg)</th><th style="text-align:right">Harga/kg</th><th style="text-align:right">Subtotal</th></tr>
+   279→    </thead>
+   280→    <tbody>
+   281→      ${order.items.map((item) => `
+   282→      <tr>
+   283→        <td>${item.productName}</td>
+   284→        <td class="num">${formatNumber(item.quantity)}</td>
+   285→        <td class="num">${formatRupiah(item.pricePerKg)}</td>
+   286→        <td class="num">${formatRupiah(item.subtotal)}</td>
+   287→      </tr>`).join('')}
+   288→    </tbody>
+   289→  </table>
+   290→  <div class="totals">
+   291→    <div class="row"><span>Total Harga Normal</span><span>${formatRupiah(order.totalAmount)}</span></div>
+   292→    <div class="row subsidy"><span>Total Harga Subsidi</span><span>${formatRupiah(order.totalSubsidy)}</span></div>
+   293→    <div class="row diff"><span>Selisih Subsidi</span><span>${formatRupiah(order.totalAmount - order.totalSubsidy)}</span></div>
+   294→  </div>
+   295→  ${order.notes ? `<div style="margin-top:12px;font-size:12px"><strong>Catatan:</strong> ${order.notes}</div>` : ''}
+   296→  <div class="footer">Dicetak pada: ${printedAt}</div>
+   297→</body>
+   298→</html>`
+   299→
+   300→    const printWindow = window.open('', '_blank')
+   301→    if (printWindow) {
+   302→      printWindow.document.write(html)
+   303→      printWindow.document.close()
+   304→      printWindow.onload = () => {
+   305→        printWindow.print()
+   306→      }
+   307→    }
+   308→  }
+   309→
+   310→  const filtered = (orders || []).filter((o) => {
+   311→    const matchStatus = statusFilter === 'all' || o.status === statusFilter
+   312→    const matchSearch = !search ||
+   313→      o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
+   314→      o.farmer.name.toLowerCase().includes(search.toLowerCase())
+   315→    return matchStatus && matchSearch
+   316→  })
+   317→
+   318→  return (
+   319→    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
+   320→      <Card>
+   321→        <CardHeader className="pb-3">
+   322→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   323→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   324→              <ShoppingCart className="h-5 w-5" />
+   325→              Penjualan / Pesanan
+   326→            </CardTitle>
+   327→            <div className="flex items-center gap-2">
+   328→              <Button
+   329→                variant="outline"
+   330→                size="sm"
+   331→                className="shrink-0 gap-1.5"
+   332→                disabled={!orders || orders.length === 0}
+   333→                onClick={() => {
+   334→                  exportToCSV(
+   335→                    'pesanan-pupuk',
+   336→                    ['No Pesanan', 'Petani', 'NIK', 'Gudang', 'Total', 'Subsidi', 'Status', 'Tanggal'],
+   337→                    (orders || []).map((o) => [
+   338→                      o.orderNumber,
+   339→                      o.farmer.name,
+   340→                      o.farmer.nik,
+   341→                      o.warehouse.name,
+   342→                      o.totalAmount,
+   343→                      o.totalSubsidy,
+   344→                      getStatusLabel(o.status),
+   345→                      formatDate(o.createdAt),
+   346→                    ]),
+   347→                  )
+   348→                }}
+   349→              >
+   350→                <Download className="h-4 w-4" />
+   351→                <span className="hidden sm:inline">Export CSV</span>
+   352→              </Button>
+   353→              <Button onClick={() => { resetCreateForm(); setCreateOpen(true) }} size="sm" className="shrink-0">
+   354→                <Plus className="h-4 w-4 mr-1" />
+   355→                Buat Pesanan
+   356→              </Button>
+   357→            </div>
+   358→          </div>
+   359→          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+   360→            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+   361→              <TabsList className="h-8">
+   362→                {ORDER_STATUS_TABS.map((tab) => (
+   363→                  <TabsTrigger key={tab.value} value={tab.value} className="text-xs px-3">
+   364→                    {tab.label}
+   365→                  </TabsTrigger>
+   366→                ))}
+   367→              </TabsList>
+   368→            </Tabs>
+   369→            <div className="relative flex-1 sm:max-w-xs sm:ml-auto">
+   370→              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+   371→              <Input
+   372→                placeholder="Cari pesanan..."
+   373→                value={search}
+   374→                onChange={(e) => setSearch(e.target.value)}
+   375→                className="pl-9 h-8 text-sm"
+   376→              />
+   377→            </div>
+   378→          </div>
+   379→        </CardHeader>
+   380→        <CardContent className="p-0">
+   381→          {isLoading ? (
+   382→            <div className="p-4 space-y-3">
+   383→              {Array.from({ length: 5 }).map((_, i) => (
+   384→                <Skeleton key={i} className="h-12 w-full" />
+   385→              ))}
+   386→            </div>
+   387→          ) : (
+   388→            <div className="overflow-x-auto">
+   389→              <Table>
+   390→                <TableHeader>
+   391→                  <TableRow>
+   392→                    <TableHead className="text-xs">No. Pesanan</TableHead>
+   393→                    <TableHead className="text-xs">Petani</TableHead>
+   394→                    <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
+   395→                    <TableHead className="text-xs text-right">Total (Rp)</TableHead>
+   396→                    <TableHead className="text-xs text-right hidden sm:table-cell">Subsidi (Rp)</TableHead>
+   397→                    <TableHead className="text-xs">Status</TableHead>
+   398→                    <TableHead className="text-xs hidden md:table-cell">Tanggal</TableHead>
+   399→                    <TableHead className="text-xs text-right">Aksi</TableHead>
+   400→                  </TableRow>
+   401→                </TableHeader>
+   402→                <TableBody>
+   403→                  {filtered.length === 0 ? (
+   404→                    <TableRow>
+   405→                      <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+   406→                        Tidak ada data pesanan
+   407→                      </TableCell>
+   408→                    </TableRow>
+   409→                  ) : (
+   410→                    filtered.map((order, idx) => (
+   411→                      <TableRow key={order.id}>
+   412→                        <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
+   413→                        <TableCell className="text-sm font-medium">{order.farmer.name}</TableCell>
+   414→                        <TableCell className="text-xs hidden md:table-cell">{order.warehouse.name}</TableCell>
+   415→                        <TableCell className="text-sm text-right font-medium">{formatRupiah(order.totalAmount)}</TableCell>
+   416→                        <TableCell className="text-xs text-right hidden sm:table-cell text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
+   417→                        <TableCell>
+   418→                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(order.status)}`}>
+   419→                            {getStatusLabel(order.status)}
+   420→                          </Badge>
+   421→                        </TableCell>
+   422→                        <TableCell className="text-xs hidden md:table-cell">{formatDate(order.createdAt)}</TableCell>
+   423→                        <TableCell className="text-right">
+   424→                          <div className="flex items-center justify-end gap-1">
+   425→                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setDetailOrder(order); setDetailOpen(true) }}>
+   426→                              <Eye className="h-3.5 w-3.5" />
+   427→                            </Button>
+   428→                            {ORDER_STATUS_FLOW[order.status]?.length > 0 && (
+   429→                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingOrder(order); setStatusOpen(true) }}>
+   430→                                <ArrowRight className="h-3.5 w-3.5" />
+   431→                              </Button>
+   432→                            )}
+   433→                          </div>
+   434→                        </TableCell>
+   435→                      </TableRow>
+   436→                    ))
+   437→                  )}
+   438→                </TableBody>
+   439→              </Table>
+   440→            </div>
+   441→          )}
+   442→        </CardContent>
+   443→      </Card>
+   444→
+   445→      {/* Create Order Dialog */}
+   446→      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+   447→        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+   448→          <DialogHeader>
+   449→            <DialogTitle>Buat Pesanan Baru</DialogTitle>
+   450→            <DialogDescription>Isi data pesanan pembelian pupuk bersubsidi</DialogDescription>
+   451→          </DialogHeader>
+   452→          <div className="grid gap-4 py-2">
+   453→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   454→              <div className="grid gap-2">
+   455→                <Label>Petani *</Label>
+   456→                <Select value={formFarmer} onValueChange={setFormFarmer}>
+   457→                  <SelectTrigger><SelectValue placeholder="Pilih petani" /></SelectTrigger>
+   458→                  <SelectContent>
+   459→                    <div className="p-2">
+   460→                      <Input
+   461→                        placeholder="Cari nama atau NIK..."
+   462→                        value={farmerSearch}
+   463→                        onChange={(e) => setFarmerSearch(e.target.value)}
+   464→                        className="h-8 text-xs mb-1"
+   465→                        onClick={(e) => e.stopPropagation()}
+   466→                      />
+   467→                    </div>
+   468→                    {filteredFarmers.map((f) => (
+   469→                      <SelectItem key={f.id} value={f.id}>{f.name} — {f.nik}</SelectItem>
+   470→                    ))}
+   471→                  </SelectContent>
+   472→                </Select>
+   473→              </div>
+   474→              <div className="grid gap-2">
+   475→                <Label>Gudang *</Label>
+   476→                <Select value={formWarehouse} onValueChange={setFormWarehouse}>
+   477→                  <SelectTrigger><SelectValue placeholder="Pilih gudang" /></SelectTrigger>
+   478→                  <SelectContent>
+   479→                    {(warehouses || []).map((w) => (
+   480→                      <SelectItem key={w.id} value={w.id}>{w.name} ({w.code})</SelectItem>
+   481→                    ))}
+   482→                  </SelectContent>
+   483→                </Select>
+   484→              </div>
+   485→            </div>
+   486→
+   487→            <Separator />
+   488→
+   489→            <div>
+   490→              <div className="flex items-center justify-between mb-3">
+   491→                <Label className="text-sm font-semibold">Item Pesanan</Label>
+   492→                <Button type="button" variant="outline" size="sm" onClick={addItem}>
+   493→                  <Plus className="h-3 w-3 mr-1" />
+   494→                  Tambah Item
+   495→                </Button>
+   496→              </div>
+   497→
+   498→              {formItems.length === 0 ? (
+   499→                <div className="text-center py-6 text-sm text-muted-foreground border border-dashed rounded-lg">
+   500→                  Belum ada item. Klik &quot;Tambah Item&quot; untuk menambahkan produk.
+   501→                </div>
+   502→              ) : (
+   503→                <ScrollArea className="max-h-60">
+   504→                  <div className="space-y-3 pr-3">
+   505→                    {formItems.map((item, idx) => (
+   506→                      <div key={idx} className="grid grid-cols-12 gap-2 items-end p-3 bg-muted/50 rounded-lg">
+   507→                        <div className="col-span-12 sm:col-span-5">
+   508→                          <Label className="text-[10px] text-muted-foreground">Produk</Label>
+   509→                          <Select value={item.productId} onValueChange={(v) => updateItem(idx, 'productId', v)}>
+   510→                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pilih" /></SelectTrigger>
+   511→                            <SelectContent>
+   512→                              {(products || []).filter(p => p.isActive !== false).map((p) => (
+   513→                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+   514→                              ))}
+   515→                            </SelectContent>
+   516→                          </Select>
+   517→                        </div>
+   518→                        <div className="col-span-4 sm:col-span-2">
+   519→                          <Label className="text-[10px] text-muted-foreground">Qty (kg)</Label>
+   520→                          <Input
+   521→                            type="number"
+   522→                            className="h-8 text-xs"
+   523→                            value={item.quantity || ''}
+   524→                            onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
+   525→                          />
+   526→                        </div>
+   527→                        <div className="col-span-3 sm:col-span-2">
+   528→                          <Label className="text-[10px] text-muted-foreground">Harga/kg</Label>
+   529→                          <div className="h-8 flex items-center text-xs font-mono">
+   530→                            {item.pricePerKg ? formatRupiah(item.pricePerKg) : '-'}
+   531→                          </div>
+   532→                        </div>
+   533→                        <div className="col-span-3 sm:col-span-2">
+   534→                          <Label className="text-[10px] text-muted-foreground">Subtotal</Label>
+   535→                          <div className="h-8 flex items-center text-xs font-mono font-medium">
+   536→                            {item.subtotal ? formatRupiah(item.subtotal) : 'Rp 0'}
+   537→                          </div>
+   538→                        </div>
+   539→                        <div className="col-span-2 sm:col-span-1 flex justify-end">
+   540→                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
+   541→                            <Minus className="h-3.5 w-3.5" />
+   542→                          </Button>
+   543→                        </div>
+   544→                      </div>
+   545→                    ))}
+   546→                  </div>
+   547→                </ScrollArea>
+   548→              )}
+   549→            </div>
+   550→
+   551→            {formItems.length > 0 && (
+   552→              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+   553→                <div className="flex justify-between text-sm">
+   554→                  <span className="text-muted-foreground">Total Harga Normal</span>
+   555→                  <span className="font-medium">{formatRupiah(totals.totalAmount)}</span>
+   556→                </div>
+   557→                <div className="flex justify-between text-sm">
+   558→                  <span className="text-muted-foreground">Total Harga Subsidi</span>
+   559→                  <span className="font-bold text-primary">{formatRupiah(totals.totalSubsidy)}</span>
+   560→                </div>
+   561→                <div className="flex justify-between text-sm">
+   562→                  <span className="text-muted-foreground">Selisih Subsidi</span>
+   563→                  <span className="font-bold text-green-600">{formatRupiah(totals.totalAmount - totals.totalSubsidy)}</span>
+   564→                </div>
+   565→              </div>
+   566→            )}
+   567→
+   568→            <div className="grid gap-2">
+   569→              <Label>Catatan</Label>
+   570→              <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Catatan tambahan..." rows={2} />
+   571→            </div>
+   572→          </div>
+   573→          <DialogFooter>
+   574→            <Button variant="outline" onClick={() => setCreateOpen(false)}>Batal</Button>
+   575→            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+   576→              {createMutation.isPending ? 'Menyimpan...' : 'Buat Pesanan'}
+   577→            </Button>
+   578→          </DialogFooter>
+   579→        </DialogContent>
+   580→      </Dialog>
+   581→
+   582→      {/* Order Detail Dialog */}
+   583→      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+   584→        <DialogContent className="sm:max-w-lg max-h-[90vh]">
+   585→          <DialogHeader>
+   586→            <div className="flex items-center justify-between pr-2">
+   587→              <div>
+   588→                <DialogTitle>Detail Pesanan</DialogTitle>
+   589→                <DialogDescription>
+   590→                  {detailOrder && <span className="font-mono">{detailOrder.orderNumber}</span>}
+   591→                </DialogDescription>
+   592→              </div>
+   593→              {detailOrder && (
+   594→                <Button
+   595→                  variant="outline"
+   596→                  size="sm"
+   597→                  className="gap-1.5"
+   598→                  onClick={() => handlePrintOrder(detailOrder)}
+   599→                >
+   600→                  <Printer className="h-3.5 w-3.5" />
+   601→                  Cetak
+   602→                </Button>
+   603→              )}
+   604→            </div>
+   605→          </DialogHeader>
+   606→          {detailOrder && (
+   607→            <div className="space-y-4">
+   608→              <div className="grid grid-cols-2 gap-3 text-sm">
+   609→                <div><span className="text-muted-foreground">Petani:</span> <span className="font-medium">{detailOrder.farmer.name}</span></div>
+   610→                <div><span className="text-muted-foreground">Gudang:</span> <span className="font-medium">{detailOrder.warehouse.name}</span></div>
+   611→                <div><span className="text-muted-foreground">Tanggal:</span> {formatDate(detailOrder.createdAt)}</div>
+   612→                <div>
+   613→                  <span className="text-muted-foreground">Status:</span>{' '}
+   614→                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(detailOrder.status)}`}>
+   615→                    {getStatusLabel(detailOrder.status)}
+   616→                  </Badge>
+   617→                </div>
+   618→              </div>
+   619→              <Separator />
+   620→              <div>
+   621→                <h4 className="text-sm font-semibold mb-2">Item Pesanan</h4>
+   622→                <Table>
+   623→                  <TableHeader>
+   624→                    <TableRow>
+   625→                      <TableHead className="text-xs">Produk</TableHead>
+   626→                      <TableHead className="text-xs text-right">Qty (kg)</TableHead>
+   627→                      <TableHead className="text-xs text-right">Harga/kg</TableHead>
+   628→                      <TableHead className="text-xs text-right">Subtotal</TableHead>
+   629→                    </TableRow>
+   630→                  </TableHeader>
+   631→                  <TableBody>
+   632→                    {detailOrder.items.map((item) => (
+   633→                      <TableRow key={item.id}>
+   634→                        <TableCell className="text-xs">
+   635→                          {item.productName}
+   636→                          <Badge variant="outline" className={`ml-1 text-[9px] px-1 py-0 ${getTypeBadgeColor(item.product?.type || '')}`}>
+   637→                            {item.product?.type}
+   638→                          </Badge>
+   639→                        </TableCell>
+   640→                        <TableCell className="text-xs text-right font-mono">{formatNumber(item.quantity)}</TableCell>
+   641→                        <TableCell className="text-xs text-right font-mono">{formatRupiah(item.pricePerKg)}</TableCell>
+   642→                        <TableCell className="text-xs text-right font-mono font-medium">{formatRupiah(item.subtotal)}</TableCell>
+   643→                      </TableRow>
+   644→                    ))}
+   645→                  </TableBody>
+   646→                </Table>
+   647→              </div>
+   648→              <Separator />
+   649→              <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+   650→                <div className="flex justify-between text-sm">
+   651→                  <span className="text-muted-foreground">Total Harga Normal</span>
+   652→                  <span className="font-medium">{formatRupiah(detailOrder.totalAmount)}</span>
+   653→                </div>
+   654→                <div className="flex justify-between text-sm">
+   655→                  <span className="text-muted-foreground">Total Harga Subsidi</span>
+   656→                  <span className="font-bold text-primary">{formatRupiah(detailOrder.totalSubsidy)}</span>
+   657→                </div>
+   658→                <div className="flex justify-between text-sm">
+   659→                  <span className="text-muted-foreground">Selisih Subsidi</span>
+   660→                  <span className="font-bold text-green-600">{formatRupiah(detailOrder.totalAmount - detailOrder.totalSubsidy)}</span>
+   661→                </div>
+   662→              </div>
+   663→              {detailOrder.notes && (
+   664→                <div className="text-sm">
+   665→                  <span className="text-muted-foreground">Catatan:</span> {detailOrder.notes}
+   666→                </div>
+   667→              )}
+   668→            </div>
+   669→          )}
+   670→        </DialogContent>
+   671→      </Dialog>
+   672→
+   673→      {/* Status Update Dialog */}
+   674→      <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
+   675→        <DialogContent className="sm:max-w-sm">
+   676→          <DialogHeader>
+   677→            <DialogTitle>Update Status Pesanan</DialogTitle>
+   678→            <DialogDescription>
+   679→              {editingOrder && (
+   680→                <span>Pesanan <span className="font-mono font-medium">{editingOrder.orderNumber}</span> — Status: <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getStatusColor(editingOrder.status)}`}>{getStatusLabel(editingOrder.status)}</Badge></span>
+   681→              )}
+   682→            </DialogDescription>
+   683→          </DialogHeader>
+   684→          <div className="grid gap-2 py-2">
+   685→            {editingOrder && ORDER_STATUS_FLOW[editingOrder.status]?.map((nextStatus) => (
+   686→              <Button
+   687→                key={nextStatus}
+   688→                variant="outline"
+   689→                className="justify-start h-12"
+   690→                onClick={() => handleStatusUpdate(nextStatus)}
+   691→                disabled={updateMutation.isPending}
+   692→              >
+   693→                <ArrowRight className="h-4 w-4 mr-2 shrink-0" />
+   694→                <div className="text-left">
+   695→                  <div className="text-sm font-medium">{getStatusLabel(nextStatus)}</div>
+   696→                  <div className="text-[10px] text-muted-foreground">
+   697→                    {nextStatus === 'CONFIRMED' && 'Konfirmasi pesanan oleh gudang'}
+   698→                    {nextStatus === 'PICKED_UP' && 'Pupuk sudah diambil oleh petani'}
+   699→                    {nextStatus === 'CANCELLED' && 'Batalkan pesanan ini'}
+   700→                  </div>
+   701→                </div>
+   702→              </Button>
+   703→            ))}
+   704→          </div>
+   705→        </DialogContent>
+   706→      </Dialog>
+   707→    </motion.div>
+   708→  )
+   709→}
+   710→

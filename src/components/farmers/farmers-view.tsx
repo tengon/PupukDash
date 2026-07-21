@@ -40,7 +40,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, Pencil, Trash2, Users, Eye } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Users, Eye, Download } from 'lucide-react'
+import { exportToCSV } from '@/lib/export'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, getStatusColor, getStatusLabel } from '@/lib/format'
 
@@ -209,6 +210,34 @@ export function FarmersView() {
                   className="pl-9 h-9 w-full sm:w-60"
                 />
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1.5"
+                disabled={!farmers || farmers.length === 0}
+                onClick={() => {
+                  exportToCSV(
+                    'data-petani',
+                    ['NIK', 'Nama', 'Telepon', 'Alamat', 'Desa', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Luas Lahan (Ha)', 'Kelompok Tani', 'Status'],
+                    (farmers || []).map((f) => [
+                      f.nik,
+                      f.name,
+                      f.phone || '',
+                      f.address || '',
+                      f.village || '',
+                      f.district || '',
+                      f.regency || '',
+                      f.province || '',
+                      f.landAreaHa || '',
+                      f.farmerGroup || '',
+                      f.isActive ? 'Aktif' : 'Tidak Aktif',
+                    ]),
+                  )
+                }}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export CSV</span>
+              </Button>
               <Button onClick={handleOpenAdd} size="sm" className="shrink-0">
                 <Plus className="h-4 w-4 mr-1" />
                 Tambah Petani
@@ -249,7 +278,7 @@ export function FarmersView() {
                     </TableRow>
                   ) : (
                     filtered.map((farmer, idx) => (
-                      <TableRow key={farmer.id} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
+                      <TableRow key={farmer.id}>
                         <TableCell className="text-xs font-mono">{farmer.nik}</TableCell>
                         <TableCell className="text-sm font-medium">{farmer.name}</TableCell>
                         <TableCell className="text-xs hidden md:table-cell">{farmer.phone || '-'}</TableCell>

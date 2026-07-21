@@ -47,7 +47,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="bg-gradient-to-b from-sidebar via-sidebar to-oklch(0.24 0.04 155)">
       <SidebarHeader className="px-4 py-4">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0">
@@ -71,16 +71,24 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {navItems.map((item, index) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
                     tooltip={item.label}
                     onClick={() => handleNavClick(item.id)}
+                    className={`relative transition-all duration-200 ${activeTab === item.id
+                      ? 'bg-sidebar-accent/80 font-medium border-l-[3px] border-l-emerald-400 rounded-l-none pl-[calc(0.5rem-3px)]'
+                      : 'hover:bg-sidebar-accent/50 hover:border-l-[3px] hover:border-l-emerald-400/40 hover:rounded-l-none hover:pl-[calc(0.5rem-3px)]'
+                    } ${index === 3 ? 'mt-1' : ''}`}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className={`h-4 w-4 transition-colors duration-200 ${activeTab === item.id ? 'text-emerald-400' : ''}`} />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
+                  {/* Subtle separator between menu groups: nav (0-3) and operations (4-6) */}
+                  {index === 3 && (
+                    <div className="my-2 mx-3 h-px bg-sidebar-border/50" />
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

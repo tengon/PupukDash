@@ -235,7 +235,7 @@ export function DistributionsView() {
                     </TableRow>
                   ) : (
                     filtered.map((dist, idx) => (
-                      <TableRow key={dist.id} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
+                      <TableRow key={dist.id}>
                         <TableCell className="text-xs font-mono">{dist.distributionNo}</TableCell>
                         <TableCell className="text-xs hidden md:table-cell">{dist.warehouse.name}</TableCell>
                         <TableCell className="text-sm font-medium">{dist.productName}</TableCell>

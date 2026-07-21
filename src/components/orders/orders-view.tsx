@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import {
@@ -9,6 +9,7 @@ import {
   type OrderWithDetails, type Farmer, type Warehouse, type Product,
 } from '@/lib/api'
 import { formatRupiah, formatNumber, formatDate, getStatusColor, getStatusLabel, getTypeBadgeColor } from '@/lib/format'
+import { exportToCSV } from '@/lib/export'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,7 +44,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus } from 'lucide-react'
+import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 const ORDER_STATUS_TABS = [
@@ -72,7 +73,7 @@ interface OrderItemForm {
 }
 
 export function OrdersView() {
-  const { refreshKey, triggerRefresh } = useAppStore()
+  const { refreshKey, triggerRefresh, shortcutAction, clearShortcut } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState('all')
@@ -222,6 +223,110 @@ export function OrdersView() {
     )
   }, [farmers, farmerSearch])
 
+  // Handle keyboard shortcut from page.tsx
+  const prevShortcutRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (shortcutAction && shortcutAction !== prevShortcutRef.current) {
+      prevShortcutRef.current = shortcutAction
+      if (shortcutAction === 'create-order') {
+        resetCreateForm()
+        // Use timeout to avoid synchronous setState in effect
+        const id = setTimeout(() => setCreateOpen(true), 0)
+        clearShortcut()
+        return () => clearTimeout(id)
+      }
+      if (shortcutAction === 'focus-search') {
+        const input = document.querySelector<HTMLInputElement>('input[placeholder="Cari pesanan..."]')
+        if (input) input.focus()
+        clearShortcut()
+      }
+    }
+  }, [shortcutAction, clearShortcut])
+
+  const handlePrintOrder = (order: OrderWithDetails) => {
+    const now = new Date()
+    const printedAt = new Intl.DateTimeFormat('id-ID', {
+      day: 'numeric', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).format(now)
+
+    const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Bukti Pesanan - ${order.orderNumber}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 32px; color: #1a1a1a; font-size: 13px; }
+    .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #16a34a; padding-bottom: 16px; }
+    .header h1 { font-size: 18px; color: #16a34a; margin-bottom: 4px; }
+    .header .subtitle { font-size: 12px; color: #666; }
+    .header .date { font-size: 11px; color: #888; margin-top: 4px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+    .info-item { font-size: 12px; }
+    .info-item .label { color: #666; }
+    .info-item .value { font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 12px; }
+    th { background-color: #f0fdf4; font-weight: 600; color: #166534; }
+    td.num { text-align: right; font-family: 'Courier New', monospace; }
+    .totals { margin-left: auto; width: 260px; border: 1px solid #ddd; }
+    .totals .row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 12px; }
+    .totals .row + .row { border-top: 1px solid #eee; }
+    .totals .row.total { font-weight: 700; background: #f0fdf4; color: #166534; }
+    .totals .row.subsidy { font-weight: 700; color: #16a34a; }
+    .totals .row.diff { font-weight: 700; color: #065f46; }
+    .footer { margin-top: 32px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; }
+    @media print { body { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>SI PUPUK - Bukti Pesanan</h1>
+    <div class="subtitle">Sistem Informasi Penjualan Pupuk Bersubsidi</div>
+    <div class="date">Tanggal Pesanan: ${formatDate(order.createdAt)}</div>
+  </div>
+  <div class="info-grid">
+    <div class="info-item"><span class="label">No. Pesanan:</span> <span class="value">${order.orderNumber}</span></div>
+    <div class="info-item"><span class="label">Status:</span> <span class="value">${getStatusLabel(order.status)}</span></div>
+    <div class="info-item"><span class="label">Petani:</span> <span class="value">${order.farmer.name}</span></div>
+    <div class="info-item"><span class="label">NIK:</span> <span class="value">${order.farmer.nik}</span></div>
+    <div class="info-item" style="grid-column: span 2"><span class="label">Gudang:</span> <span class="value">${order.warehouse.name} (${order.warehouse.code})</span></div>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Produk</th><th style="text-align:right">Qty (kg)</th><th style="text-align:right">Harga/kg</th><th style="text-align:right">Subtotal</th></tr>
+    </thead>
+    <tbody>
+      ${order.items.map((item) => `
+      <tr>
+        <td>${item.productName}</td>
+        <td class="num">${formatNumber(item.quantity)}</td>
+        <td class="num">${formatRupiah(item.pricePerKg)}</td>
+        <td class="num">${formatRupiah(item.subtotal)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <div class="totals">
+    <div class="row"><span>Total Harga Normal</span><span>${formatRupiah(order.totalAmount)}</span></div>
+    <div class="row subsidy"><span>Total Harga Subsidi</span><span>${formatRupiah(order.totalSubsidy)}</span></div>
+    <div class="row diff"><span>Selisih Subsidi</span><span>${formatRupiah(order.totalAmount - order.totalSubsidy)}</span></div>
+  </div>
+  ${order.notes ? `<div style="margin-top:12px;font-size:12px"><strong>Catatan:</strong> ${order.notes}</div>` : ''}
+  <div class="footer">Dicetak pada: ${printedAt}</div>
+</body>
+</html>`
+
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(html)
+      printWindow.document.close()
+      printWindow.onload = () => {
+        printWindow.print()
+      }
+    }
+  }
+
   const filtered = (orders || []).filter((o) => {
     const matchStatus = statusFilter === 'all' || o.status === statusFilter
     const matchSearch = !search ||
@@ -239,10 +344,37 @@ export function OrdersView() {
               <ShoppingCart className="h-5 w-5" />
               Penjualan / Pesanan
             </CardTitle>
-            <Button onClick={() => { resetCreateForm(); setCreateOpen(true) }} size="sm" className="shrink-0">
-              <Plus className="h-4 w-4 mr-1" />
-              Buat Pesanan
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1.5"
+                disabled={!orders || orders.length === 0}
+                onClick={() => {
+                  exportToCSV(
+                    'pesanan-pupuk',
+                    ['No Pesanan', 'Petani', 'NIK', 'Gudang', 'Total', 'Subsidi', 'Status', 'Tanggal'],
+                    (orders || []).map((o) => [
+                      o.orderNumber,
+                      o.farmer.name,
+                      o.farmer.nik,
+                      o.warehouse.name,
+                      o.totalAmount,
+                      o.totalSubsidy,
+                      getStatusLabel(o.status),
+                      formatDate(o.createdAt),
+                    ]),
+                  )
+                }}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export CSV</span>
+              </Button>
+              <Button onClick={() => { resetCreateForm(); setCreateOpen(true) }} size="sm" className="shrink-0">
+                <Plus className="h-4 w-4 mr-1" />
+                Buat Pesanan
+              </Button>
+            </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
@@ -296,7 +428,7 @@ export function OrdersView() {
                     </TableRow>
                   ) : (
                     filtered.map((order, idx) => (
-                      <TableRow key={order.id} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
+                      <TableRow key={order.id}>
                         <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
                         <TableCell className="text-sm font-medium">{order.farmer.name}</TableCell>
                         <TableCell className="text-xs hidden md:table-cell">{order.warehouse.name}</TableCell>
@@ -397,7 +529,7 @@ export function OrdersView() {
                           <Select value={item.productId} onValueChange={(v) => updateItem(idx, 'productId', v)}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pilih" /></SelectTrigger>
                             <SelectContent>
-                              {(products || []).filter(p => p.isActive).map((p) => (
+                              {(products || []).filter(p => p.isActive !== false).map((p) => (
                                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                               ))}
                             </SelectContent>
@@ -471,10 +603,25 @@ export function OrdersView() {
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="sm:max-w-lg max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Detail Pesanan</DialogTitle>
-            <DialogDescription>
-              {detailOrder && <span className="font-mono">{detailOrder.orderNumber}</span>}
-            </DialogDescription>
+            <div className="flex items-center justify-between pr-2">
+              <div>
+                <DialogTitle>Detail Pesanan</DialogTitle>
+                <DialogDescription>
+                  {detailOrder && <span className="font-mono">{detailOrder.orderNumber}</span>}
+                </DialogDescription>
+              </div>
+              {detailOrder && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => handlePrintOrder(detailOrder)}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Cetak
+                </Button>
+              )}
+            </div>
           </DialogHeader>
           {detailOrder && (
             <div className="space-y-4">

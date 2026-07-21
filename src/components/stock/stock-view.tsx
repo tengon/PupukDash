@@ -238,7 +238,7 @@ export function StockView() {
                     </TableRow>
                   ) : (
                     filtered.map((stock, idx) => (
-                      <TableRow key={stock.id} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
+                      <TableRow key={stock.id}>
                         <TableCell className="text-sm">{stock.warehouse.name}</TableCell>
                         <TableCell className="text-sm font-medium">{stock.product.name}</TableCell>
                         <TableCell className="text-sm text-right font-mono">{formatNumber(stock.quantity)}</TableCell>

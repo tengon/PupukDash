@@ -217,7 +217,7 @@ export function ProductsView() {
                     </TableRow>
                   ) : (
                     filtered.map((product, idx) => (
-                      <TableRow key={product.id} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
+                      <TableRow key={product.id}>
                         <TableCell className="text-sm font-medium">{product.name}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getTypeBadgeColor(product.type)}`}>

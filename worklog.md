@@ -83,3 +83,70 @@ Stage Summary:
 - Loading skeletons and error states
 - Toast notifications for all CRUD operations
 - Status badge system with Indonesian labels and colors
+
+---
+Task ID: 4
+Agent: Main Agent (with sub-agents)
+Task: Bug fix, styling improvements, and new features
+
+Work Log:
+- **BUG FIX**: Fixed product list not showing in order creation dialog
+  - Root cause: Products API (`/api/products`) did not include `isActive` field in response mapping
+  - Orders view filtered `p.isActive` which was `undefined` (falsy), excluding all products
+  - Fix 1: Added `isActive` to products API response mapping
+  - Fix 2: Changed filter from `p.isActive` to `p.isActive !== false` for safety
+  - Fix 3: Increased SelectContent z-index to z-[9999] to ensure dropdown appears above Dialog overlay
+- **STYLING IMPROVEMENTS** (via frontend-styling-expert sub-agent):
+  - Global CSS: Added noise texture overlay, smooth transitions, green text selection, improved scrollbar, focus-visible ring, pulse animation
+  - Progress bars: Added emerald gradient fill
+  - Dashboard: Colored left-border accents on stats cards, hover gradient effects, pulse animation on stock alerts, medal-style ranking for top farmers
+  - Page: Thin 2px green gradient bar at top, gradient header border, smoother tab transitions
+  - Sidebar: Gradient background, green left-border active indicator, smooth hover transitions, menu group separators
+  - Tables: Global zebra striping, green-tinted hover, refined header styling with uppercase tracking
+  - Dialogs: Green top border accent, improved spacing, deeper shadow
+- **NEW FEATURES** (via full-stack-developer sub-agent):
+  - Export CSV: Created `/src/lib/export.ts` utility with UTF-8 BOM support. Added export buttons to Orders and Farmers views
+  - Dashboard Quick Info: 3 mini-cards showing Total Stok Tersedia (37,610 kg), Rata-rata Harga Subsidi/kg (Rp1,850), Distribusi Bulan Ini (4)
+  - Print Order Detail: "Cetak" button in order detail dialog opens print-friendly window with auto-print
+  - Keyboard Shortcuts: `N` = create new order, `/` = focus search. Visual `<kbd>` hints in header
+  - WIB Clock: Real-time Indonesian time display in header (updates every 10s)
+  - Zustand store extended with `shortcutAction`, `triggerShortcut`, `clearShortcut` for keyboard shortcut communication
+
+Stage Summary:
+- Critical bug fixed: Product dropdown in order creation now shows all 5 products
+- Select dropdown z-index fixed for all Dialog-embedded Selects (products, farmers, warehouses, orders, distributions, stock)
+- Lint passes with zero errors
+- All 7 APIs return 200
+- Page size: ~49KB, loads in <300ms (cached)
+- 5 new features added enhancing productivity and UX
+
+---
+## Project Current Status
+
+### Assessment
+SiPUPUK is a fully functional, production-ready web application for Indonesia's subsidized fertilizer sales management. All 7 modules (Dashboard, Products, Farmers, Warehouses, Stock, Distributions, Orders) have complete CRUD operations, the UI is polished with a green agricultural theme, and the application includes advanced features like CSV export, print support, keyboard shortcuts, and real-time clock.
+
+### Completed Modifications
+- Fixed product list bug in order creation dialog (isActive field missing from API)
+- Fixed Select dropdown z-index inside Dialogs (z-[9999])
+- Comprehensive styling overhaul: gradients, animations, hover effects, zebra tables, colored accents
+- 5 new features: CSV export, dashboard quick info, print orders, keyboard shortcuts, WIB clock
+
+### Verification Results
+- ESLint: 0 errors
+- All APIs return 200 with correct data
+- Dashboard renders with all stats, charts, tables, and new quick info cards
+- Product dropdown in order creation verified via agent-browser (5 products visible)
+- Farmer and warehouse dropdowns in dialogs verified working
+
+### Unresolved Issues / Risks
+- Dev server auto-restart loop needed due to sandbox process management (not a code issue)
+- No authentication/authorization system (all users have full access)
+- No dark mode toggle button in UI (dark mode CSS exists but no switch)
+- Mobile sidebar navigation may need testing on actual devices
+- Priority recommendations for next phase:
+  1. Add authentication system (NextAuth.js)
+  2. Add data visualization charts (replace Progress bars with recharts if memory allows)
+  3. Add notification system for stock alerts
+  4. Add pagination to all table views
+  5. Add data validation improvements (e.g., max order quantity vs available stock)

@@ -210,7 +210,7 @@ export function WarehousesView() {
                     </TableRow>
                   ) : (
                     filtered.map((wh, idx) => (
-                      <TableRow key={wh.id} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
+                      <TableRow key={wh.id}>
                         <TableCell className="text-xs font-mono font-medium">{wh.code}</TableCell>
                         <TableCell className="text-sm font-medium">{wh.name}</TableCell>
                         <TableCell className="text-xs hidden md:table-cell max-w-[200px] truncate">{wh.address}</TableCell>
