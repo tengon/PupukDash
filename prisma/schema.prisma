@@ -125,3 +125,17 @@ model ActivityLog {
   userId    String?
   createdAt DateTime @default(now())
 }
+
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  password      String
+  name          String
+  role          String   @default("OPERATOR") // ADMIN, OPERATOR, VIEWER
+  ppstCode      String?
+  ppstName      String?
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

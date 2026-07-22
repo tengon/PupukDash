@@ -1,10 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hashPassword } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const force = searchParams.get('force') === 'true'
+
+    // Ensure default users always exist
+    const existingUsers = await db.user.count()
+    if (existingUsers === 0) {
+      await db.user.create({
+        data: {
+          username: 'admin',
+          password: await hashPassword('admin123'),
+          name: 'Administrator PPST',
+          role: 'ADMIN',
+          ppstCode: 'PPST-KDS-001',
+          ppstName: 'PD. Pupuk Subur Jaya',
+        },
+      })
+      await db.user.create({
+        data: {
+          username: 'operator',
+          password: await hashPassword('operator123'),
+          name: 'Budi Santoso',
+          role: 'OPERATOR',
+          ppstCode: 'PPST-KDS-001',
+          ppstName: 'PD. Pupuk Subur Jaya',
+        },
+      })
+      await db.user.create({
+        data: {
+          username: 'pemantau',
+          password: await hashPassword('pemantau123'),
+          name: 'Dinas Pertanian',
+          role: 'VIEWER',
+          ppstCode: null,
+          ppstName: null,
+        },
+      })
+    }
 
     // Check if data already exists
     const existingProducts = await db.fertilizerProduct.count()
