@@ -56,10 +56,24 @@ export async function GET() {
     for (const s of allStocks) { productTypeMap.set(s.product.type, (productTypeMap.get(s.product.type) || 0) + s.quantity) }
     const productDistribution = Array.from(productTypeMap.entries()).map(([name, value]) => ({ name, value }))
 
-    const topFarmers = recentOrders
-      .filter((o) => o.status !== 'CANCELLED')
+    // Top farmers by total purchase amount (all time, deduplicated by farmerId)
+    const allOrdersForTop = await db.order.findMany({
+      where: { status: { not: 'CANCELLED' } },
+      include: { farmer: { select: { name: true } } },
+    })
+    const topFarmerMap = new Map<string, { id: string; name: string; totalOrders: number; totalAmount: number }>()
+    for (const o of allOrdersForTop) {
+      const existing = topFarmerMap.get(o.farmerId)
+      if (existing) {
+        existing.totalOrders++
+        existing.totalAmount += o.totalAmount
+      } else {
+        topFarmerMap.set(o.farmerId, { id: o.farmerId, name: o.farmer.name, totalOrders: 1, totalAmount: o.totalAmount })
+      }
+    }
+    const topFarmers = Array.from(topFarmerMap.values())
+      .sort((a, b) => b.totalAmount - a.totalAmount || b.totalOrders - a.totalOrders)
       .slice(0, 5)
-      .map((o) => ({ id: o.farmerId, name: o.farmer.name, totalOrders: 1, totalAmount: o.totalAmount }))
 
     // Top farmer this month by order count
     const nowDash = new Date()
