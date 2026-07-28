@@ -465,7 +465,7 @@ export function WarehousesView({ hideAddButton = false }: { hideAddButton?: bool
               >
                 <option value="">Pilih Kecamatan</option>
                 {districts?.map((d) => (
-                  <option key={d} value={d.name}>{d.name}</option>
+                  <option key={d.id} value={d.name}>{d.name}</option>
                 ))}
               </select>
             </div>

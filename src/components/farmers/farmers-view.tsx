@@ -409,7 +409,7 @@ export function FarmersView() {
               <Label htmlFor="district">Kecamatan *</Label>
               <select id="district" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} disabled={!form.regency} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50">
                 <option value="">Pilih Kecamatan</option>
-                {districts?.map((d) => <option key={d} value={d.name}>{d.name}</option>)}
+                {districts?.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
               </select>
             </div>
             <div className="grid gap-2"><Label htmlFor="address">Alamat Lengkap</Label><Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Alamat lengkap (Nama jalan, RT/RW)" /></div>
