@@ -54,7 +54,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchData = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
