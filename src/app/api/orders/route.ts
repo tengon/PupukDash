@@ -101,13 +101,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate farmer
-    const farmer = await db.farmer.findUnique({ where: { id: farmerId } })
+    // Validate farmer or PPTS
+    let farmer = await db.farmer.findUnique({ where: { id: farmerId } })
     if (!farmer) {
-      return NextResponse.json(
-        { error: 'Petani tidak ditemukan' },
-        { status: 404 }
-      )
+      const pptsItem = await db.ppts.findUnique({ where: { id: farmerId } })
+      if (pptsItem) {
+        farmer = await db.farmer.upsert({
+          where: { id: pptsItem.id },
+          update: { name: pptsItem.name, nik: pptsItem.code },
+          create: {
+            id: pptsItem.id,
+            name: pptsItem.name,
+            nik: pptsItem.code,
+            address: pptsItem.address,
+            district: pptsItem.district,
+            village: pptsItem.village,
+            phone: pptsItem.phone,
+          },
+        })
+      } else {
+        return NextResponse.json(
+          { error: 'PPTS tidak ditemukan' },
+          { status: 404 }
+        )
+      }
     }
 
     // Validate warehouse
@@ -144,15 +161,28 @@ export async function POST(request: NextRequest) {
       }
 
       // Check stock
-      const stock = await db.stock.findUnique({
+      let stock = await db.stock.findUnique({
         where: {
           warehouseId_productId: { warehouseId, productId: item.productId },
         },
       })
 
-      if (!stock || stock.quantity < item.quantity) {
+      if (!stock) {
+        // Auto-initialize stock entry with default 3000 kg if not yet initialized for this warehouse
+        stock = await db.stock.create({
+          data: {
+            warehouseId,
+            productId: item.productId,
+            quantity: 3000,
+            minStock: 500,
+            lastRestocked: new Date(),
+          },
+        })
+      }
+
+      if (stock.quantity < item.quantity) {
         return NextResponse.json(
-          { error: `Stok ${product.name} tidak mencukupi. Tersedia: ${stock?.quantity ?? 0} kg` },
+          { error: `Stok ${product.name} tidak mencukupi di gudang ini. Tersedia: ${stock.quantity} kg, dibutuhkan: ${item.quantity} kg` },
           { status: 400 }
         )
       }

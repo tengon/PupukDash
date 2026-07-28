@@ -109,14 +109,7 @@ export function validateHET(
       )
     }
 
-    // Validasi alokasi berdasarkan luas lahan
-    const maxQty = getMaxQuantity(productType, farmerLandAreaHa)
-    if (item.quantity > maxQty) {
-      const landInfo = farmerLandAreaHa ? `${farmerLandAreaHa} ha lahan` : 'luas lahan tidak diketahui'
-      errors.push(
-        `${label}: Jumlah ${item.quantity} kg melebihi alokasi maksimal ${maxQty} kg untuk ${landInfo}`
-      )
-    }
+    // Catatan: Proteksi batas pemesanan pupuk berdasarkan alokasi/luas lahan dihilangkan
   }
 
   return { valid: errors.length === 0, errors }
@@ -131,16 +124,6 @@ export function getAllocationWarning(
   quantity: number,
   farmerLandAreaHa: number | null,
 ): string {
-  if (quantity <= 0) return ''
-
-  const normalized = normalizeProductType(productType)
-  const maxQty = getMaxQuantity(normalized, farmerLandAreaHa)
-
-  if (quantity > maxQty) {
-    const landArea = farmerLandAreaHa ?? null
-    const landInfo = landArea ? `${landArea} ha lahan` : 'luas lahan tidak diketahui'
-    return `⚠️ Melebihi alokasi maksimal (${maxQty} kg untuk ${landInfo})`
-  }
-
+  // Proteksi batas alokasi dihilangkan
   return ''
 }

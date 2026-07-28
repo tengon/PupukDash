@@ -8,7 +8,7 @@ import {
   fetchWarehouses, fetchProducts,
   type Distribution,
 } from '@/lib/api'
-import { formatNumber, formatDate, getStatusLabel } from '@/lib/format'
+import { formatNumber, formatDate, getStatusLabel, getProductImage } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -355,7 +355,18 @@ export function DistributionsView() {
                               </div>
                             </TableCell>
                             <TableCell className="text-xs hidden md:table-cell">{dist.warehouse.name}</TableCell>
-                            <TableCell className="text-sm font-medium">{dist.productName}</TableCell>
+                            <TableCell className="text-sm font-medium">
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded border border-border bg-white dark:bg-zinc-900 p-0.5 flex items-center justify-center shrink-0 shadow-xs">
+                                  <img
+                                    src={getProductImage(dist.productName)}
+                                    alt={dist.productName}
+                                    className="h-full w-full object-contain"
+                                  />
+                                </div>
+                                <span>{dist.productName}</span>
+                              </div>
+                            </TableCell>
                             <TableCell className="text-sm text-right font-mono">{formatNumber(dist.quantity)}</TableCell>
                             <TableCell className="text-xs hidden lg:table-cell">
                               {(dist.targetVillage || dist.targetGroup) ? (

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import { fetchProducts, createProduct, updateProduct, deleteProduct, type Product } from '@/lib/api'
-import { formatRupiah, formatNumber, getTypeBadgeColor } from '@/lib/format'
+import { formatRupiah, formatNumber, getTypeBadgeColor, getProductImage } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -79,8 +79,11 @@ const TYPE_PILL_COLORS: Record<string, string> = {
 const emptyForm = {
   name: '',
   type: 'UREA',
-  pricePerKg: 0,
-  subsidyPrice: 0,
+  pricePerKg: 2250,
+  subsidyPrice: 2250,
+  pricePud: 1950,
+  pricePpts: 2100,
+  priceHet: 2250,
   description: '',
   isActive: true,
 }
@@ -153,11 +156,15 @@ export function ProductsView() {
   }
 
   const handleOpenEdit = (product: Product) => {
+    const isNpk = product.type === 'NPK'
     setForm({
       name: product.name,
       type: product.type,
-      pricePerKg: product.pricePerKg,
-      subsidyPrice: product.subsidyPrice,
+      pricePerKg: product.pricePerKg || (isNpk ? 2300 : 2250),
+      subsidyPrice: product.subsidyPrice || (isNpk ? 2300 : 2250),
+      pricePud: product.pricePud || (isNpk ? 2050 : 1950),
+      pricePpts: product.pricePpts || (isNpk ? 2150 : 2100),
+      priceHet: product.priceHet || (isNpk ? 2300 : 2250),
       description: product.description || '',
       isActive: product.isActive,
     })
@@ -243,10 +250,11 @@ export function ProductsView() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs">Nama</TableHead>
+                    <TableHead className="text-xs">Nama Produk</TableHead>
                     <TableHead className="text-xs">Tipe</TableHead>
-                    <TableHead className="text-xs text-right">Harga Normal</TableHead>
-                    <TableHead className="text-xs text-right">Harga Subsidi</TableHead>
+                    <TableHead className="text-xs text-right cursor-help" title="Harga beli/bayar ke PI">Harga PUD (kg/Ton)</TableHead>
+                    <TableHead className="text-xs text-right cursor-help" title="Harga Jual Ke PPTS">Harga PPTS (kg/Ton)</TableHead>
+                    <TableHead className="text-xs text-right cursor-help" title="Harga Eceran Tertinggi PPTS ke Petani/Kelompok">Harga HET (kg/Ton)</TableHead>
                     <TableHead className="text-xs text-right">Stok Total</TableHead>
                     <TableHead className="text-xs">Status</TableHead>
                     <TableHead className="text-xs text-right">Aksi</TableHead>
@@ -255,69 +263,95 @@ export function ProductsView() {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
                         {search || typeFilter !== 'all' ? 'Tidak ada produk yang cocok' : 'Belum ada data produk'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map((product) => (
-                      <TableRow key={product.id} className={`border-l-2 ${TYPE_BORDER_COLORS[product.type] || 'border-l-gray-300'} hover:border-l-primary/30`}>
-                        <TableCell className="text-sm font-medium">
-                          <div className="flex flex-col">
-                            <span className="text-xs leading-tight">{TYPE_ICONS[product.type] || ''}</span>
-                            <span className="font-semibold text-sm">{product.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-semibold ${TYPE_PILL_COLORS[product.type] || getTypeBadgeColor(product.type)}`}>
-                            {TYPE_ICONS[product.type] || ''} {product.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-right">{formatRupiah(product.pricePerKg)}/kg</TableCell>
-                        <TableCell className="text-sm text-right text-primary font-medium">{formatRupiah(product.subsidyPrice)}/kg</TableCell>
-                        <TableCell className="text-sm text-right">
-                          <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${(product.totalStock ?? 0) > 2000 ? 'bg-green-500' : (product.totalStock ?? 0) >= 500 ? 'bg-yellow-500' : 'bg-red-500'}`} />
-                              <span className="font-mono">{formatNumber(product.totalStock ?? 0)} kg</span>
+                    filtered.map((product) => {
+                      const isNpk = product.type === 'NPK'
+                      const pud = product.pricePud || (isNpk ? 2050 : 1950)
+                      const ppts = product.pricePpts || (isNpk ? 2150 : 2100)
+                      const het = product.priceHet || (isNpk ? 2300 : 2250)
+
+                      return (
+                        <TableRow key={product.id} className={`border-l-2 ${TYPE_BORDER_COLORS[product.type] || 'border-l-gray-300'} hover:border-l-primary/30`}>
+                          <TableCell className="text-sm font-medium">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-xl border border-border bg-white dark:bg-zinc-900 p-1 flex items-center justify-center shrink-0 shadow-sm transition-transform hover:scale-105">
+                                <img
+                                  src={getProductImage(product.type, product.imageUrl)}
+                                  alt={product.name}
+                                  className="h-full w-full object-contain"
+                                />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-sm text-foreground">{product.name}</span>
+                                {product.description && (
+                                  <span className="text-[11px] text-muted-foreground line-clamp-1">{product.description}</span>
+                                )}
+                              </div>
                             </div>
-                            <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${(product.totalStock ?? 0) > 1000 ? 'bg-green-500' : (product.totalStock ?? 0) >= 500 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                style={{ width: `${Math.min((product.totalStock ?? 0) / 20, 100)}%` }}
-                              />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-semibold ${TYPE_PILL_COLORS[product.type] || getTypeBadgeColor(product.type)}`}>
+                              {TYPE_ICONS[product.type] || ''} {product.type}
+                            </Badge>
+                          </TableCell>
+                          {/* Harga PUD */}
+                          <TableCell className="text-sm text-right font-mono">
+                            <div>Rp {pud.toLocaleString('id-ID')}/kg</div>
+                            <div className="text-[10px] text-muted-foreground">({formatRupiah(pud * 1000)}/Ton)</div>
+                          </TableCell>
+                          {/* Harga PPTS */}
+                          <TableCell className="text-sm text-right font-mono">
+                            <div>Rp {ppts.toLocaleString('id-ID')}/kg</div>
+                            <div className="text-[10px] text-muted-foreground">({formatRupiah(ppts * 1000)}/Ton)</div>
+                          </TableCell>
+                          {/* Harga HET */}
+                          <TableCell className="text-sm text-right font-mono text-emerald-700 dark:text-emerald-300 font-bold">
+                            <div>Rp {het.toLocaleString('id-ID')}/kg</div>
+                            <div className="text-[10px] font-normal text-muted-foreground">({formatRupiah(het * 1000)}/Ton)</div>
+                          </TableCell>
+                          <TableCell className="text-sm text-right">
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${(product.totalStock ?? 0) > 2000 ? 'bg-green-500' : (product.totalStock ?? 0) >= 500 ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                                <span className="font-mono">{formatNumber(Math.round(((product.totalStock ?? 0) / 1000) * 10) / 10)} Ton</span>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground font-mono">({formatNumber(product.totalStock ?? 0)} kg)</span>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={product.isActive ? 'default' : 'secondary'} className="text-[10px]">
-                            {product.isActive ? 'Aktif' : 'Tidak Aktif'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <TooltipProvider>
-                          <div className="flex items-center justify-end gap-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(product)}>
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Edit Produk</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(product.id); setDeleteOpen(true) }}>
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Hapus Produk</TooltipContent>
-                            </Tooltip>
-                          </div>
-                          </TooltipProvider>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={product.isActive ? 'default' : 'secondary'} className="text-[10px]">
+                              {product.isActive ? 'Aktif' : 'Tidak Aktif'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <TooltipProvider>
+                            <div className="flex items-center justify-end gap-1">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(product)}>
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Edit Produk</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { setDeletingId(product.id); setDeleteOpen(true) }}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Hapus Produk</TooltipContent>
+                              </Tooltip>
+                            </div>
+                            </TooltipProvider>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -328,48 +362,134 @@ export function ProductsView() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit Produk' : 'Tambah Produk Baru'}</DialogTitle>
+            <DialogTitle>{editingId ? 'Edit Produk Pupuk' : 'Tambah Produk Pupuk Baru'}</DialogTitle>
             <DialogDescription>
-              {editingId ? 'Perbarui informasi produk pupuk' : 'Isi data produk pupuk baru'}
+              Isi data dan daftar acuan harga resmi (PUD, PPTS, & HET) dalam Kg dan Ton.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Nama Produk *</Label>
-              <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Pupuk Urea 50kg" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="type">Tipe Pupuk</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PRODUCT_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
-                <Label htmlFor="price">Harga Normal (Rp/kg)</Label>
-                <Input id="price" type="number" value={form.pricePerKg || ''} onChange={(e) => setForm({ ...form, pricePerKg: parseFloat(e.target.value) || 0 })} placeholder="Harga jual normal per kilogram" />
+                <Label htmlFor="name">Nama Produk *</Label>
+                <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Pupuk Urea 50kg" />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="subsidy">Harga Subsidi (Rp/kg)</Label>
-                <Input id="subsidy" type="number" value={form.subsidyPrice || ''} onChange={(e) => setForm({ ...form, subsidyPrice: parseFloat(e.target.value) || 0 })} placeholder="Harga setelah subsidi per kilogram" />
+                <Label htmlFor="type">Tipe Pupuk</Label>
+                <Select
+                  value={form.type}
+                  onValueChange={(v) => {
+                    const isNpk = v === 'NPK'
+                    setForm({
+                      ...form,
+                      type: v,
+                      pricePud: isNpk ? 2050 : 1950,
+                      pricePpts: isNpk ? 2150 : 2100,
+                      priceHet: isNpk ? 2300 : 2250,
+                    })
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+
+            {/* 3 Price Fields Row (PUD, PPTS, HET) */}
+            <div className="p-3 bg-muted/30 rounded-xl border border-border/50 space-y-3">
+              <p className="text-xs font-bold text-foreground">Daftar Acuan Harga Resmi (Kg & Ton):</p>
+              <div className="grid grid-cols-3 gap-2.5">
+                {/* Harga PUD */}
+                <div className="grid gap-1.5 bg-background p-2 rounded-lg border border-border/40">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label htmlFor="pricePud" title="Harga beli/bayar ke PI" className="text-[11px] font-semibold text-muted-foreground cursor-help underline decoration-dotted underline-offset-2 w-fit">
+                        Harga PUD (Rp/kg)
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs font-medium">Harga beli/bayar ke PI</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Input
+                    id="pricePud"
+                    type="number"
+                    value={form.pricePud || ''}
+                    onChange={(e) => setForm({ ...form, pricePud: parseFloat(e.target.value) || 0 })}
+                    placeholder="Rp/kg"
+                    className="h-8 text-xs font-mono"
+                  />
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    = {formatRupiah((form.pricePud || 0) * 1000)}/Ton
+                  </span>
+                </div>
+
+                {/* Harga PPTS */}
+                <div className="grid gap-1.5 bg-background p-2 rounded-lg border border-border/40">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label htmlFor="pricePpts" title="Harga Jual Ke PPTS" className="text-[11px] font-semibold text-muted-foreground cursor-help underline decoration-dotted underline-offset-2 w-fit">
+                        Harga PPTS (Rp/kg)
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs font-medium">Harga Jual Ke PPTS</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Input
+                    id="pricePpts"
+                    type="number"
+                    value={form.pricePpts || ''}
+                    onChange={(e) => setForm({ ...form, pricePpts: parseFloat(e.target.value) || 0 })}
+                    placeholder="Rp/kg"
+                    className="h-8 text-xs font-mono"
+                  />
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    = {formatRupiah((form.pricePpts || 0) * 1000)}/Ton
+                  </span>
+                </div>
+
+                {/* Harga HET */}
+                <div className="grid gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-300 dark:border-emerald-700">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label htmlFor="priceHet" title="Harga Eceran Tertinggi PPTS ke Petani/Kelompok" className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 cursor-help underline decoration-dotted underline-offset-2 w-fit">
+                        Harga HET (Rp/kg)
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[220px]">
+                      <p className="text-xs font-medium">Harga Eceran Tertinggi PPTS ke Petani/Kelompok</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Input
+                    id="priceHet"
+                    type="number"
+                    value={form.priceHet || ''}
+                    onChange={(e) => setForm({ ...form, priceHet: parseFloat(e.target.value) || 0, pricePerKg: parseFloat(e.target.value) || 0, subsidyPrice: parseFloat(e.target.value) || 0 })}
+                    placeholder="Rp/kg"
+                    className="h-8 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300"
+                  />
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 font-mono">
+                    = {formatRupiah((form.priceHet || 0) * 1000)}/Ton
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="desc">Deskripsi</Label>
-              <Textarea id="desc" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Deskripsi singkat produk pupuk ini, misalnya kegunaan dan komposisi" rows={3} />
+              <Label htmlFor="desc">Deskripsi Produk</Label>
+              <Textarea id="desc" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Deskripsi singkat produk pupuk ini, misalnya kegunaan dan komposisi" rows={2} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
             <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending} className="btn-gradient">
-              {createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+              {createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : 'Simpan Produk'}
             </Button>
           </DialogFooter>
         </DialogContent>

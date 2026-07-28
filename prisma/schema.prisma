@@ -14,11 +14,13 @@ model FertilizerProduct {
   pricePerKg    Float
   description   String?
   subsidyPrice  Float
+  imageUrl      String?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   stock         Stock[]
   orderItems    OrderItem[]
+  purchases     Purchase[]
 }
 
 model Farmer {
@@ -55,6 +57,7 @@ model Warehouse {
   stock         Stock[]
   distributions Distribution[]
   orders        Order[]
+  purchases     Purchase[]
 }
 
 model Stock {
@@ -138,4 +141,48 @@ model User {
   lastLoginAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Ppts {
+  id            String   @id @default(cuid())
+  code          String   @unique // No ID PPTS
+  name          String   // Nama PPTS
+  address       String   // Alamat
+  district      String   // Kecamatan
+  village       String?  // Desa / Kelurahan
+  regency       String?  @default("Kudus") // Kota / Kabupaten
+  province      String?  @default("Jawa Tengah") // Propinsi
+  ownerName     String?  // Nama Pemilik
+  phone         String?  // No Telepon
+  spjbNumber    String?  // Nomor Dokument SPJB
+  spjbDate      String?  // Tanggal Buat SPJB
+  spjbValidFrom String?  // Mulai Berlaku
+  spjbValidUntil String? // Berlaku Hingga
+  alokasiUrea   Float?   // Alokasi SPJB Urea (Ton)
+  alokasiNpk    Float?   // Alokasi SPJB NPK (Ton)
+  realisasiUrea Float?   @default(0) // Realisasi Tebusan Urea (Ton)
+  realisasiNpk  Float?   @default(0) // Realisasi Tebusan NPK (Ton)
+  sisaUrea      Float?   // Sisa Alokasi Urea (Ton)
+  sisaNpk       Float?   // Sisa Alokasi NPK (Ton)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Purchase {
+  id              String            @id @default(cuid())
+  purchaseNo      String            @unique
+  supplierName    String            @default("PT Pupuk Indonesia (Persero)")
+  warehouseId     String
+  productId       String
+  quantity        Float
+  pricePerKg      Float
+  totalAmount     Float
+  status          String            @default("RECEIVED") // PENDING, RECEIVED, CANCELLED
+  notes           String?
+  purchasedAt     DateTime          @default(now())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  warehouse       Warehouse         @relation(fields: [warehouseId], references: [id])
+  product         FertilizerProduct @relation(fields: [productId], references: [id])
 }

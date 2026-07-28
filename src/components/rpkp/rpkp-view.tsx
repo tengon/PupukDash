@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import { fetchRPKP, type RPKPData } from '@/lib/api'
-import { formatNumber, formatRupiah, getTypeBadgeColor } from '@/lib/format'
+import { formatNumber, formatRupiah, getTypeBadgeColor, getProductImage } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -240,13 +240,21 @@ export function RPKPView() {
                       {data.products.map((product) => (
                         <TableRow key={product.productType}>
                           <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={getTypeBadgeColor(product.productType)}
-                            >
-                              {PRODUCT_ICONS[product.productType] || '\u{1F4E6}'}{' '}
-                              {product.productType}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded border border-border bg-white dark:bg-zinc-900 p-0.5 flex items-center justify-center shrink-0 shadow-xs">
+                                <img
+                                  src={getProductImage(product.productType)}
+                                  alt={product.productType}
+                                  className="h-full w-full object-contain"
+                                />
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className={getTypeBadgeColor(product.productType)}
+                              >
+                                {product.productType}
+                              </Badge>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right font-medium">
                             {formatNumber(product.allocationPerHa)}

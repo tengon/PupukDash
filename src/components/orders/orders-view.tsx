@@ -4,11 +4,11 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import {
-  fetchOrders, fetchFarmers, fetchWarehouses, fetchProducts,
+  fetchOrders, fetchFarmers, fetchWarehouses, fetchProducts, fetchPptsList,
   createOrder, updateOrder,
-  type OrderWithDetails, type Farmer, type Warehouse, type Product,
+  type OrderWithDetails, type Farmer, type Warehouse, type Product, type Ppts,
 } from '@/lib/api'
-import { formatRupiah, formatNumber, formatDate, getStatusColor, getStatusLabel, getTypeBadgeColor } from '@/lib/format'
+import { formatRupiah, formatNumber, formatDate, getStatusColor, getStatusLabel, getTypeBadgeColor, getProductImage } from '@/lib/format'
 import { exportToCSV } from '@/lib/export'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -112,28 +112,25 @@ function OrderStatusTimeline({ status }: { status: string }) {
             <div key={step} className="flex items-center flex-1 last:flex-none">
               <div className="flex flex-col items-center">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
-                    isCompleted
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${isCompleted
                       ? 'bg-green-500 border-green-500 text-white'
                       : isCurrent
                         ? 'bg-green-100 border-green-500 text-green-700 dark:bg-green-900/40 dark:text-green-400 shadow-[0_0_8px_rgba(34,197,94,0.4)]'
                         : 'bg-muted border-muted-foreground/30 text-muted-foreground/50'
-                  }`}
+                    }`}
                 >
                   <StepIcon className="h-4 w-4" />
                 </div>
-                <span className={`text-[10px] mt-1 font-medium ${
-                  isCompleted || isCurrent ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'
-                }`}>
+                <span className={`text-[10px] mt-1 font-medium ${isCompleted || isCurrent ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'
+                  }`}>
                   {STEP_LABELS[step]}
                 </span>
               </div>
               {idx < STATUS_STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 mb-4 rounded-full transition-all ${
-                  idx < currentIdx
+                <div className={`flex-1 h-0.5 mx-2 mb-4 rounded-full transition-all ${idx < currentIdx
                     ? 'bg-green-500'
                     : 'bg-muted-foreground/20'
-                }`} />
+                  }`} />
               )}
             </div>
           )
@@ -161,6 +158,7 @@ export function OrdersView() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [districtFilter, setDistrictFilter] = useState('all')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [showDateFilter, setShowDateFilter] = useState(false)
@@ -172,6 +170,7 @@ export function OrdersView() {
   const [page, setPage] = useState(1)
   const [prefillFarmer, setPrefillFarmer] = useState<string | undefined>(undefined)
 
+  const [formDistrict, setFormDistrict] = useState('all')
   const [formFarmer, setFormFarmer] = useState('')
   const [formWarehouse, setFormWarehouse] = useState('')
   const [formItems, setFormItems] = useState<OrderItemForm[]>([])
@@ -193,6 +192,11 @@ export function OrdersView() {
   const { data: farmers } = useQuery({
     queryKey: ['farmers', refreshKey],
     queryFn: fetchFarmers,
+  })
+
+  const { data: pptsList } = useQuery({
+    queryKey: ['ppts', refreshKey],
+    queryFn: () => fetchPptsList(),
   })
 
   const { data: warehouses } = useQuery({
@@ -230,6 +234,7 @@ export function OrdersView() {
   })
 
   const resetCreateForm = () => {
+    setFormDistrict('all')
     setFormFarmer(prefillFarmer || '')
     setFormWarehouse('')
     setFormItems([])
@@ -262,7 +267,7 @@ export function OrdersView() {
 
   const updateItem = (index: number, field: keyof OrderItemForm, value: string | number) => {
     const updated = [...formItems]
-    ;(updated[index] as unknown as Record<string, string | number>)[field] = value
+      ; (updated[index] as unknown as Record<string, string | number>)[field] = value
 
     if (field === 'productId' && typeof value === 'string') {
       const product = (products || []).find((p) => p.id === value)
@@ -299,7 +304,7 @@ export function OrdersView() {
 
   const handleCreate = () => {
     if (!formFarmer || !formWarehouse || formItems.length === 0) {
-      toast({ title: 'Validasi', description: 'Lengkapi petani, gudang, dan minimal 1 item', variant: 'destructive' })
+      toast({ title: 'Validasi', description: 'Lengkapi PPTS, gudang, dan minimal 1 item', variant: 'destructive' })
       return
     }
     const validItems = formItems.filter((i) => i.productId && i.quantity > 0)
@@ -308,17 +313,6 @@ export function OrdersView() {
       return
     }
 
-    // Validasi HET sebelum mengirim
-    const selectedFarmerForHET = formFarmer ? (farmers || []).find((f) => f.id === formFarmer) : null
-    const hetResult = validateHET(validItems, selectedFarmerForHET?.landAreaHa ?? null)
-    if (!hetResult.valid) {
-      toast({
-        title: 'Validasi HET Gagal',
-        description: hetResult.errors.join('\n'),
-        variant: 'destructive',
-      })
-      return
-    }
 
     createMutation.mutate({
       farmerId: formFarmer,
@@ -342,13 +336,57 @@ export function OrdersView() {
     }
   }
 
-  const filteredFarmers = useMemo(() => {
-    if (!farmers) return []
-    if (!farmerSearch) return farmers
-    return farmers.filter(
-      (f) => f.name.toLowerCase().includes(farmerSearch.toLowerCase()) || f.nik.includes(farmerSearch)
-    )
-  }, [farmers, farmerSearch])
+  const pptsOptions = useMemo(() => {
+    const list: Array<{ id: string; name: string; code: string; district?: string | null }> = []
+
+    if (pptsList && pptsList.length > 0) {
+      pptsList.forEach((p) => {
+        list.push({
+          id: p.id,
+          name: p.name,
+          code: p.code || p.ownerName || '-',
+          district: p.district,
+        })
+      })
+    }
+
+    if (farmers && farmers.length > 0) {
+      farmers.forEach((f) => {
+        if (!list.some((item) => item.id === f.id)) {
+          list.push({
+            id: f.id,
+            name: f.name,
+            code: f.nik,
+            district: f.district,
+          })
+        }
+      })
+    }
+
+    return list
+  }, [pptsList, farmers])
+
+  const districtsList = useMemo(() => {
+    const set = new Set<string>()
+    pptsOptions.forEach((p) => {
+      if (p.district) set.add(p.district)
+    })
+    return Array.from(set).sort()
+  }, [pptsOptions])
+
+  const filteredPPTS = useMemo(() => {
+    let list = pptsOptions
+    if (formDistrict && formDistrict !== 'all') {
+      list = list.filter((p) => p.district === formDistrict)
+    }
+    if (farmerSearch) {
+      const s = farmerSearch.toLowerCase()
+      list = list.filter(
+        (p) => p.name.toLowerCase().includes(s) || p.code.toLowerCase().includes(s) || (p.district && p.district.toLowerCase().includes(s))
+      )
+    }
+    return list
+  }, [pptsOptions, formDistrict, farmerSearch])
 
   // Handle keyboard shortcut from page.tsx
   const prevShortcutRef = useRef<string | null>(null)
@@ -394,12 +432,23 @@ export function OrdersView() {
   }
 
   // Client-side search filter (API handles status + date)
-  const filtered = orders.filter((o) => {
-    const matchSearch = !search ||
-      o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
-      o.farmer.name.toLowerCase().includes(search.toLowerCase())
-    return matchSearch
-  })
+  const filtered = useMemo(() => {
+    return orders.filter((o) => {
+      if (districtFilter !== 'all') {
+        const matchesFarmerDistrict = (o.farmer as { district?: string | null })?.district === districtFilter
+        const matchesWarehouseDistrict = (o.warehouse as { regency?: string | null; district?: string | null })?.district === districtFilter
+        if (!matchesFarmerDistrict && !matchesWarehouseDistrict) return false
+      }
+      if (!search) return true
+      const s = search.toLowerCase()
+      return (
+        o.orderNumber.toLowerCase().includes(s) ||
+        o.farmer.name.toLowerCase().includes(s) ||
+        o.farmer.nik.toLowerCase().includes(s) ||
+        o.warehouse.name.toLowerCase().includes(s)
+      )
+    })
+  }, [orders, districtFilter, search])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
   const safePage = Math.min(page, totalPages)
@@ -481,6 +530,15 @@ export function OrdersView() {
                 </TabsList>
               </Tabs>
               <div className="flex items-center gap-2 sm:ml-auto">
+                <Select value={districtFilter} onValueChange={(v) => { setDistrictFilter(v); setPage(1) }}>
+                  <SelectTrigger className="h-8 text-xs w-32 sm:w-36"><SelectValue placeholder="Kecamatan" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Kec.</SelectItem>
+                    {districtsList.map((d) => (
+                      <SelectItem key={d} value={d}>Kec. {d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   variant={showDateFilter ? 'default' : 'outline'}
                   size="sm"
@@ -546,7 +604,7 @@ export function OrdersView() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-xs">No. Pesanan</TableHead>
-                      <TableHead className="text-xs">Petani</TableHead>
+                      <TableHead className="text-xs">PPTS</TableHead>
                       <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
                       <TableHead className="text-xs text-right">Total (Rp)</TableHead>
                       <TableHead className="text-xs text-right hidden sm:table-cell">Subsidi (Rp)</TableHead>
@@ -657,31 +715,45 @@ export function OrdersView() {
             <DialogDescription>Isi data pesanan pembelian pupuk bersubsidi</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label>Petani *</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+              <div className="grid gap-2 sm:col-span-3 min-w-0">
+                <Label>Kecamatan</Label>
+                <Select value={formDistrict} onValueChange={(v) => { setFormDistrict(v); setFormFarmer('') }}>
+                  <SelectTrigger className="w-full min-w-0 truncate"><SelectValue placeholder="Semua Kecamatan" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Kecamatan</SelectItem>
+                    {districtsList.map((d) => (
+                      <SelectItem key={d} value={d}>Kec. {d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2 sm:col-span-5 min-w-0">
+                <Label>PPTS *</Label>
                 <Select value={formFarmer} onValueChange={setFormFarmer}>
-                  <SelectTrigger><SelectValue placeholder="Pilih petani" /></SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 truncate">
+                    <SelectValue placeholder="Pilih PPTS" />
+                  </SelectTrigger>
                   <SelectContent>
                     <div className="p-2">
                       <Input
-                        placeholder="Cari nama atau NIK..."
+                        placeholder="Cari nama atau NIK PPTS..."
                         value={farmerSearch}
                         onChange={(e) => setFarmerSearch(e.target.value)}
                         className="h-8 text-xs mb-1"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
-                    {filteredFarmers.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>{f.name} — {f.nik}</SelectItem>
+                    {filteredPPTS.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name} — {p.code}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2 sm:col-span-4 min-w-0">
                 <Label>Gudang *</Label>
                 <Select value={formWarehouse} onValueChange={setFormWarehouse}>
-                  <SelectTrigger><SelectValue placeholder="Pilih gudang" /></SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 truncate"><SelectValue placeholder="Pilih gudang" /></SelectTrigger>
                   <SelectContent>
                     {(warehouses || []).map((w) => (
                       <SelectItem key={w.id} value={w.id}>{w.name} ({w.code})</SelectItem>
@@ -709,73 +781,58 @@ export function OrdersView() {
               ) : (
                 <ScrollArea className="max-h-60">
                   <div className="space-y-3 pr-3">
-                    {formItems.map((item, idx) => {
-                      const hetPrice = item.productType ? getHETPrice(item.productType) : null
-                      return (
+                    {formItems.map((item, idx) => (
                       <div key={idx} className={`grid grid-cols-12 gap-2 items-start p-3 rounded-lg ${idx % 2 === 0 ? 'bg-muted/50' : 'bg-muted/20'}`}>
-                        <div className="col-span-12 sm:col-span-5">
-                          <Label className="text-[10px] text-muted-foreground">Produk</Label>
-                          <Select value={item.productId} onValueChange={(v) => updateItem(idx, 'productId', v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pilih" /></SelectTrigger>
-                            <SelectContent>
-                              {(products || []).filter(p => p.isActive !== false).map((p) => (
-                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {item.productId && (
-                            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                              {hetPrice !== null && (
-                                <span className="inline-flex items-center gap-1 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-medium">
-                                  <Weight className="h-2.5 w-2.5" />
-                                  HET: {formatRupiah(hetPrice)}/kg
-                                </span>
-                              )}
-                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded font-medium">
-                                <Banknote className="h-2.5 w-2.5" />
-                                Subsidi: {item.subsidyPrice ? formatRupiah(item.subsidyPrice) : '-'}
-                              </span>
-                              {item.pricePerKg > item.subsidyPrice && item.subsidyPrice > 0 && (
-                                <span className="inline-flex items-center gap-1 text-[10px] text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded font-medium">
-                                  <Calculator className="h-2.5 w-2.5" />
-                                  Hemat: {formatRupiah(item.pricePerKg - item.subsidyPrice)}/kg
-                                </span>
-                              )}
+                        <div className="col-span-12 sm:col-span-4">
+                            <Label className="text-[10px] text-muted-foreground">Produk</Label>
+                            <Select value={item.productId} onValueChange={(v) => updateItem(idx, 'productId', v)}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pilih" /></SelectTrigger>
+                              <SelectContent>
+                                {(products || []).filter(p => p.isActive !== false).map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="col-span-4 sm:col-span-3">
+                            <Label className="text-[10px] text-muted-foreground">Qty (kg)</Label>
+                            <Input
+                              type="text"
+                              inputMode="numeric"
+                              placeholder="0"
+                              className="h-8 text-xs font-mono"
+                              value={item.quantity ? formatNumber(item.quantity) : ''}
+                              onChange={(e) => {
+                                const rawVal = e.target.value.replace(/\./g, '').replace(/,/g, '').replace(/\D/g, '')
+                                const val = parseInt(rawVal, 10) || 0
+                                updateItem(idx, 'quantity', Math.min(val, 1000000000))
+                              }}
+                            />
+                            {item.quantity > 0 && (
+                              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 font-mono font-medium truncate">
+                                = {(item.quantity / 1000).toLocaleString('id-ID', { maximumFractionDigits: 3 })} Ton</p>
+                            )}
+                          </div>
+                          <div className="col-span-3 sm:col-span-2">
+                            <Label className="text-[10px] text-muted-foreground">Harga/kg</Label>
+                            <div className="h-8 flex items-center text-xs font-mono">
+                              {item.pricePerKg ? formatRupiah(item.pricePerKg) : '-'}
                             </div>
-                          )}
-                        </div>
-                        <div className="col-span-4 sm:col-span-2">
-                          <Label className="text-[10px] text-muted-foreground">Qty (kg)</Label>
-                          <Input
-                            type="number"
-                            className="h-8 text-xs"
-                            value={item.quantity || ''}
-                            onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                          />
-                          {item.hetWarning && (
-                            <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 leading-tight animate-pulse-gentle font-medium">{item.hetWarning}</p>
-                          )}
-                        </div>
-                        <div className="col-span-3 sm:col-span-2">
-                          <Label className="text-[10px] text-muted-foreground">Harga/kg</Label>
-                          <div className="h-8 flex items-center text-xs font-mono">
-                            {item.pricePerKg ? formatRupiah(item.pricePerKg) : '-'}
+                          </div>
+                          <div className="col-span-3 sm:col-span-2">
+                            <Label className="text-[10px] text-muted-foreground">Subtotal</Label>
+                            <div className="h-8 flex items-center text-xs font-mono font-medium">
+                              {item.subtotal ? formatRupiah(item.subtotal) : 'Rp 0'}
+                            </div>
+                          </div>
+                          <div className="col-span-2 sm:col-span-1 flex justify-end mt-4 sm:mt-5">
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
+                              <Minus className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="col-span-3 sm:col-span-2">
-                          <Label className="text-[10px] text-muted-foreground">Subtotal</Label>
-                          <div className="h-8 flex items-center text-xs font-mono font-medium">
-                            {item.subtotal ? formatRupiah(item.subtotal) : 'Rp 0'}
-                          </div>
-                        </div>
-                        <div className="col-span-2 sm:col-span-1 flex justify-end mt-4 sm:mt-5">
-                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
-                            <Minus className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                      )
-                    })}
+                      ))}
                   </div>
                 </ScrollArea>
               )}
@@ -821,7 +878,9 @@ export function OrdersView() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] text-muted-foreground">Total Berat</p>
-                    <p className="text-sm font-bold">{formatNumber(formItems.reduce((s, i) => s + i.quantity, 0))} kg</p>
+                    <p className="text-sm font-bold">
+                      {((formItems.reduce((s, i) => s + i.quantity, 0)) / 1000).toLocaleString('id-ID', { maximumFractionDigits: 3 })} Ton ({formatNumber(formItems.reduce((s, i) => s + i.quantity, 0))} kg)
+                    </p>
                   </div>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
@@ -885,7 +944,7 @@ export function OrdersView() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Petani:</span> <span className="font-medium">{detailOrder.farmer.name}</span></div>
+                <div><span className="text-muted-foreground">PPTS:</span> <span className="font-medium">{detailOrder.farmer.name}</span></div>
                 <div><span className="text-muted-foreground">Gudang:</span> <span className="font-medium">{detailOrder.warehouse.name}</span></div>
                 <div><span className="text-muted-foreground">Tanggal:</span> {formatDate(detailOrder.createdAt)}</div>
                 <div>
@@ -912,7 +971,14 @@ export function OrdersView() {
                       <TableRow key={item.id}>
                         <TableCell className="text-sm py-2">
                           <div className="flex items-center gap-2">
-                            {item.productName}
+                            <div className="h-6 w-6 rounded border border-border bg-white dark:bg-zinc-900 p-0.5 flex items-center justify-center shrink-0 shadow-xs">
+                              <img
+                                src={getProductImage(item.productName, (item.product as { imageUrl?: string | null })?.imageUrl)}
+                                alt={item.productName}
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                            <span className="font-medium">{item.productName}</span>
                             <Badge variant="outline" className={`text-[9px] px-1 py-0 ${getTypeBadgeColor(item.product?.type || '')}`}>
                               {item.product?.type}
                             </Badge>
@@ -1002,7 +1068,7 @@ export function OrdersView() {
                   <div className="text-sm font-medium">{getStatusLabel(nextStatus)}</div>
                   <div className="text-[10px] text-muted-foreground">
                     {nextStatus === 'CONFIRMED' && 'Konfirmasi pesanan oleh gudang'}
-                    {nextStatus === 'PICKED_UP' && 'Pupuk sudah diambil oleh petani'}
+                    {nextStatus === 'PICKED_UP' && 'Pupuk sudah diambil oleh PPTS'}
                     {nextStatus === 'CANCELLED' && 'Batalkan pesanan ini'}
                   </div>
                 </div>

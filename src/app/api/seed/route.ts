@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
         await tx.farmer.deleteMany()
         await tx.warehouse.deleteMany()
         await tx.fertilizerProduct.deleteMany()
+        await tx.ppts.deleteMany()
       })
     }
 
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
           pricePerKg: 2500,
           subsidyPrice: 2250,
           description: 'Pupuk Urea bersubsidi untuk tanaman padi dan jagung',
+          imageUrl: '/images/urea-sub-psp.png',
         },
       }),
       db.fertilizerProduct.create({
@@ -82,6 +84,7 @@ export async function POST(request: NextRequest) {
           pricePerKg: 3600,
           subsidyPrice: 2300,
           description: 'Pupuk NPK Phonska bersubsidi untuk berbagai tanaman',
+          imageUrl: '/images/npk-phonska-sub.png',
         },
       }),
       db.fertilizerProduct.create({
@@ -91,6 +94,7 @@ export async function POST(request: NextRequest) {
           pricePerKg: 2800,
           subsidyPrice: 2000,
           description: 'Pupuk SP-36 bersubsidi sumber fosfor',
+          imageUrl: '/images/sp36.png',
         },
       }),
       db.fertilizerProduct.create({
@@ -100,6 +104,7 @@ export async function POST(request: NextRequest) {
           pricePerKg: 2600,
           subsidyPrice: 1700,
           description: 'Pupuk ZA bersubsidi sumber nitrogen dan belerang',
+          imageUrl: '/images/za.png',
         },
       }),
       db.fertilizerProduct.create({
@@ -109,6 +114,7 @@ export async function POST(request: NextRequest) {
           pricePerKg: 1500,
           subsidyPrice: 1000,
           description: 'Pupuk organik bersubsidi untuk perbaikan tanah',
+          imageUrl: '/images/organik.png',
         },
       }),
     ])
@@ -149,6 +155,70 @@ export async function POST(request: NextRequest) {
           province: 'Jawa Tengah',
           managerName: 'Siti Rahayu',
           managerPhone: '081456789012',
+        },
+      }),
+    ])
+
+    // Seed PPTS (Pos Penyalur Pupuk Terdaftar & Bersubsidi)
+    await Promise.all([
+      db.ppts.create({
+        data: {
+          code: 'PPTS-KDS-001',
+          name: 'UD. Tani Subur Jaya',
+          address: 'Jl. Raya Kudus-Pati KM 4',
+          district: 'Kota Kudus',
+          village: 'Demaan',
+          regency: 'Kudus',
+          ownerName: 'Sutrisno',
+          phone: '081234567890',
+        },
+      }),
+      db.ppts.create({
+        data: {
+          code: 'PPTS-KDS-002',
+          name: 'Kios Pupuk Sumber Rejeki',
+          address: 'Jl. Sunan Kudus No. 45',
+          district: 'Jati',
+          village: 'Getas Peftaten',
+          regency: 'Kudus',
+          ownerName: 'Budi Santoso',
+          phone: '081398765432',
+        },
+      }),
+      db.ppts.create({
+        data: {
+          code: 'PPTS-KDS-003',
+          name: 'UD. Ferti Tani Mandiri',
+          address: 'Jl. Raya Undaan Lor No. 12',
+          district: 'Undaan',
+          village: 'Undaan Lor',
+          regency: 'Kudus',
+          ownerName: 'H. Ahmad Fauzi',
+          phone: '081567890123',
+        },
+      }),
+      db.ppts.create({
+        data: {
+          code: 'PPTS-KDS-004',
+          name: 'Kios Tani Berkah Sejahtera',
+          address: 'Jl. Mejobo KM 2',
+          district: 'Mejobo',
+          village: 'Jokosari',
+          regency: 'Kudus',
+          ownerName: 'Sugeng Riyadi',
+          phone: '081789012345',
+        },
+      }),
+      db.ppts.create({
+        data: {
+          code: 'PPTS-KDS-005',
+          name: 'UD. Agraria Makmur',
+          address: 'Jl. Lingkar Utara Bae',
+          district: 'Bae',
+          village: 'Bae',
+          regency: 'Kudus',
+          ownerName: 'Drs. Mulyono',
+          phone: '081901234567',
         },
       }),
     ])
@@ -376,6 +446,33 @@ export async function POST(request: NextRequest) {
     console.error('Seed error:', error)
     return NextResponse.json(
       { error: 'Gagal menyematkan data: ' + (error instanceof Error ? error.message : String(error)) },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE() {
+  try {
+    await db.$transaction(async (tx) => {
+      await tx.orderItem.deleteMany()
+      await tx.order.deleteMany()
+      await tx.distribution.deleteMany()
+      await tx.stock.deleteMany()
+      await tx.farmer.deleteMany()
+      await tx.fertilizerProduct.deleteMany()
+      await tx.warehouse.deleteMany()
+      await tx.ppts.deleteMany()
+      await tx.activityLog.deleteMany()
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Seluruh isi database berhasil dikosongkan.',
+    })
+  } catch (error) {
+    console.error('Clear database error:', error)
+    return NextResponse.json(
+      { error: 'Gagal mengosongkan database: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     )
   }

@@ -9,32 +9,36 @@ import { Badge } from '@/components/ui/badge'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
 import { ProductsView } from '@/components/products/products-view'
 import { FarmersView } from '@/components/farmers/farmers-view'
+import { PptsView } from '@/components/ppts/ppts-view'
 import { WarehousesView } from '@/components/warehouses/warehouses-view'
 import { StockView } from '@/components/stock/stock-view'
 import { DistributionsView } from '@/components/distributions/distributions-view'
 import { OrdersView } from '@/components/orders/orders-view'
+import { PurchasesView } from '@/components/purchases/purchases-view'
 import { RPKPView } from '@/components/rpkp/rpkp-view'
 import { ReportsView } from '@/components/reports/reports-view'
 import { ActivityLogView } from '@/components/activity/activity-log-view'
 import { CommandPalette } from '@/components/command-palette'
-import { seedData, fetchFarmers, fetchStock, fetchOrders } from '@/lib/api'
-import { Leaf, Database, Clock, Users, Package, ShoppingCart, Sparkles } from 'lucide-react'
+import { seedData, clearData } from '@/lib/api'
+import { Leaf, Database, Clock, Trash2 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/notification-bell'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useQuery } from '@tanstack/react-query'
-import { formatNumber } from '@/lib/format'
+import { useQueryClient } from '@tanstack/react-query'
 
 const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   dashboard: { title: 'Dashboard', description: 'Ringkasan data penjualan pupuk bersubsidi' },
   products: { title: 'Produk Pupuk', description: 'Kelola data produk pupuk bersubsidi' },
   farmers: { title: 'Data Petani', description: 'Kelola data petani penerima pupuk bersubsidi' },
+  ppts: { title: 'PPTS (Kios Pengecer)', description: 'Kelola data Pos Penyalur Pupuk Terdaftar & Bersubsidi' },
   warehouses: { title: 'Gudang', description: 'Kelola data gudang penyimpanan pupuk' },
+  'monitoring-warehouses': { title: 'Gudang', description: 'Monitoring data gudang penyimpanan pupuk' },
   stock: { title: 'Stok Gudang', description: 'Monitor dan kelola stok pupuk di setiap gudang' },
   distributions: { title: 'Distribusi', description: 'Kelola distribusi pupuk ke kelompok tani' },
-  orders: { title: 'Penjualan', description: 'Kelola pesanan penjualan pupuk bersubsidi' },
+  orders: { title: 'Penjualan (ke PPTS)', description: 'Kelola pesanan penjualan pupuk ke Kios PPTS' },
+  purchases: { title: 'Pembelian (dari Supplier)', description: 'Pencatatan pasokan pupuk masuk dari PT Pupuk Indonesia / Produsen' },
   rpkp: { title: 'RPKP', description: 'Rencana Kebutuhan Pupuk — Perencanaan alokasi tahunan' },
   reports: { title: 'Laporan', description: 'Laporan bulanan penjualan pupuk bersubsidi' },
   activity: { title: 'Aktivitas', description: 'Riwayat aktivitas sistem penjualan pupuk' },
@@ -51,6 +55,7 @@ function useWIBClock() {
           timeZone: 'Asia/Jakarta',
           hour: '2-digit',
           minute: '2-digit',
+          second: '2-digit',
           hour12: false,
         }) + ' WIB',
       )
@@ -70,41 +75,35 @@ export default function HomePage() {
   const wibTime = useWIBClock()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Quick stats data
-  const { data: farmersData } = useQuery({
-    queryKey: ['farmers', refreshKey],
-    queryFn: fetchFarmers,
-  })
-  const { data: stockData } = useQuery({
-    queryKey: ['stock', refreshKey],
-    queryFn: fetchStock,
-  })
-  const { data: ordersData } = useQuery({
-    queryKey: ['orders', refreshKey],
-    queryFn: fetchOrders,
-  })
-
-  const activeFarmerCount = (farmersData || []).filter(f => f.isActive).length
-  const totalStockKg = (stockData || []).reduce((sum, s) => sum + s.quantity, 0)
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
-  const ordersThisMonth = (ordersData?.orders || []).filter(o => {
-    const d = new Date(o.createdAt)
-    return d >= startOfMonth && d <= endOfMonth
-  }).length
-
   const pageInfo = PAGE_TITLES[activeTab] || PAGE_TITLES.dashboard
+
+  const queryClient = useQueryClient()
+  const [isClearing, setIsClearing] = useState(false)
 
   const handleSeed = async () => {
     setIsSeeding(true)
     try {
       const result = await seedData()
       toast({ title: 'Berhasil', description: result.message })
+      queryClient.invalidateQueries()
     } catch {
       toast({ title: 'Info', description: 'Data sample sudah ada atau gagal memuat', variant: 'destructive' })
     } finally {
       setIsSeeding(false)
+    }
+  }
+
+  const handleClear = async () => {
+    if (!confirm('Apakah Anda yakin ingin mengosongkan seluruh isi database?')) return
+    setIsClearing(true)
+    try {
+      const result = await clearData()
+      toast({ title: 'Database Dikondisikan', description: result.message })
+      queryClient.invalidateQueries()
+    } catch {
+      toast({ title: 'Gagal', description: 'Gagal mengosongkan database', variant: 'destructive' })
+    } finally {
+      setIsClearing(false)
     }
   }
 
@@ -162,103 +161,65 @@ export default function HomePage() {
   }, [handleKeyDown])
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       {/* Thin green accent bar at the very top */}
       <div className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-green-500 to-teal-400 z-[100]" />
       <AppSidebar />
       <SidebarInset className="flex flex-col min-h-screen">
         {/* Header */}
-        <header className="flex h-14 shrink-0 items-center gap-2 px-4 glass sticky top-0 z-10 header-gradient" style={{ borderBottom: '1px solid transparent', backgroundImage: 'linear-gradient(to bottom, var(--background), var(--background)), linear-gradient(to right, oklch(0.65 0.15 150 / 0.2), oklch(0.55 0.10 145 / 0.15), oklch(0.65 0.12 160 / 0.2))', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderBottomWidth: '1px', borderBottomStyle: 'solid', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex flex-1 items-center gap-2">
+        <header className="flex h-14 shrink-0 items-center gap-1.5 px-3 sm:gap-2 sm:px-4 glass sticky top-0 z-10 header-gradient" style={{ borderBottom: '1px solid transparent', backgroundImage: 'linear-gradient(to bottom, var(--background), var(--background)), linear-gradient(to right, oklch(0.65 0.15 150 / 0.2), oklch(0.55 0.10 145 / 0.15), oklch(0.65 0.12 160 / 0.2))', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderBottomWidth: '1px', borderBottomStyle: 'solid', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <Leaf className="h-4 w-4 text-primary hidden sm:block" />
-            <div>
-              <h1 className="text-sm font-semibold leading-tight">{pageInfo.title}</h1>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold leading-tight">{pageInfo.title}</h1>
               <p className="text-[11px] text-muted-foreground hidden sm:block">{pageInfo.description}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <NotificationBell />
+            
             {/* WIB Clock */}
             {wibTime && (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
+              <div className="hidden sm:flex items-center gap-1.5 text-[18px] text-muted-foreground mr-1">
                 <Clock className="h-3.5 w-3.5" />
                 <span className="font-mono tabular-nums">{wibTime}</span>
               </div>
             )}
-            <NotificationBell />
-            <ThemeToggle />
-            {/* Keyboard shortcut hints */}
-            <div className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground">
-              <kbd className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded border border-border bg-muted/50 font-mono text-[10px]">N</kbd>
-              <span>Pesanan</span>
-              <kbd className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded border border-border bg-muted/50 font-mono text-[10px] ml-1">/</kbd>
-              <span>Cari</span>
-              <kbd className="inline-flex items-center justify-center h-5 min-w-[28px] px-1 rounded border border-border bg-muted/50 font-mono text-[10px] ml-1">⌘K</kbd>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-[10px] h-7 gap-1.5 opacity-70 hover:opacity-100"
-              onClick={handleSeed}
-              disabled={isSeeding}
-            >
-              <Database className="h-3.5 w-3.5" />
-              {isSeeding ? 'Memuat...' : 'Muat Data Sample'}
-            </Button>
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-              AD
-            </div>
           </div>
         </header>
 
-        {/* Quick Stats Bar */}
-        <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b overflow-x-auto">
-          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 border-l-2 border-l-emerald-500 px-3 py-1 shrink-0">
-            <Users className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 animate-count-up">{formatNumber(activeFarmerCount)}</span>
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400">Petani Aktif</span>
-            <Sparkles className="h-2.5 w-2.5 text-emerald-400 dark:text-emerald-500" />
-          </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 border-l-2 border-l-teal-500 px-3 py-1 shrink-0">
-            <Package className="h-3 w-3 text-teal-600 dark:text-teal-400" />
-            <span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 animate-count-up">{formatNumber(totalStockKg)}</span>
-            <span className="text-[10px] text-teal-600 dark:text-teal-400">kg Stok</span>
-          </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 border-l-2 border-l-amber-500 px-3 py-1 shrink-0">
-            <ShoppingCart className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 animate-count-up">{formatNumber(ordersThisMonth)}</span>
-            <span className="text-[10px] text-amber-600 dark:text-amber-400">Pesanan Bulan Ini</span>
-          </div>
-        </div>
-
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            >
-              {activeTab === 'dashboard' && <DashboardView />}
-              {activeTab === 'products' && <ProductsView />}
-              {activeTab === 'farmers' && <FarmersView />}
-              {activeTab === 'warehouses' && <WarehousesView />}
-              {activeTab === 'stock' && <StockView />}
-              {activeTab === 'distributions' && <DistributionsView />}
-              {activeTab === 'orders' && <OrdersView />}
-              {activeTab === 'rpkp' && <RPKPView />}
-              {activeTab === 'reports' && <ReportsView />}
-              {activeTab === 'activity' && <ActivityLogView />}
-            </motion.div>
-          </AnimatePresence>
+        <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
+          <div className="max-w-7xl mx-auto w-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              >
+                {activeTab === 'dashboard' && <DashboardView />}
+                {activeTab === 'products' && <ProductsView />}
+                {activeTab === 'farmers' && <FarmersView />}
+                {activeTab === 'ppts' && <PptsView />}
+                {activeTab === 'warehouses' && <WarehousesView hideAddButton={false} />}
+                {activeTab === 'monitoring-warehouses' && <WarehousesView hideAddButton={true} />}
+                {activeTab === 'stock' && <StockView />}
+                {activeTab === 'distributions' && <DistributionsView />}
+                {activeTab === 'orders' && <OrdersView />}
+                {activeTab === 'purchases' && <PurchasesView />}
+                {activeTab === 'rpkp' && <RPKPView />}
+                {activeTab === 'reports' && <ReportsView />}
+                {activeTab === 'activity' && <ActivityLogView />}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </main>
 
         {/* Footer */}
         <footer className="border-t-2 footer-gradient-border bg-card/50 px-4 py-2 mt-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-1 text-[11px] text-muted-foreground">
+          <div className="max-w-7xl mx-auto w-full flex flex-col sm:flex-row items-center justify-between gap-1 text-[11px] text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Leaf className="h-3 w-3 text-primary transition-transform duration-500 hover:rotate-12" />
               <span className="font-medium text-foreground/80">SiPUPUK</span>
@@ -266,9 +227,8 @@ export default function HomePage() {
               <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1 font-mono">v1.2.0</Badge>
             </div>
             <div className="flex items-center gap-2">
-              <span>Dibangun dengan <span className="font-medium text-foreground/70">Next.js</span></span>
               <span className="text-border">|</span>
-              <span>© {new Date().getFullYear()} Kementerian Pertanian RI</span>
+              <span>© {new Date().getFullYear()} tengon</span>
             </div>
           </div>
         </footer>

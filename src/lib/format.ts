@@ -157,3 +157,22 @@ export function getActivityActionLabel(action: string): string {
   }
   return labels[action] || action
 }
+
+export const PRODUCT_IMAGE_MAP: Record<string, string> = {
+  UREA: '/images/urea-sub-psp.png',
+  NPK: '/images/npk-phonska-sub.png',
+  'SP-36': '/images/sp36.png',
+  SP36: '/images/sp36.png',
+  ZA: '/images/za.png',
+  ORGANIK: '/images/organik.png',
+}
+
+export function getProductImage(typeOrName?: string | null, customUrl?: string | null): string {
+  if (customUrl) return customUrl
+  if (!typeOrName) return '/images/urea-sub-psp.png'
+  const upper = typeOrName.toUpperCase()
+  for (const [key, path] of Object.entries(PRODUCT_IMAGE_MAP)) {
+    if (upper.includes(key)) return path
+  }
+  return '/images/urea-sub-psp.png'
+}

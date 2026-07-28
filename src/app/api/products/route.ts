@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
       pricePerKg: p.pricePerKg,
       subsidyPrice: p.subsidyPrice,
       description: p.description,
+      imageUrl: p.imageUrl,
       isActive: p.isActive,
       totalStock: p.stock.reduce((sum, s) => sum + s.quantity, 0),
       stockByWarehouse: p.stock.map((s) => ({
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, type, pricePerKg, subsidyPrice, description } = body
+    const { name, type, pricePerKg, subsidyPrice, description, imageUrl } = body
 
     if (!name || !type || pricePerKg === undefined || subsidyPrice === undefined) {
       return NextResponse.json(
@@ -91,6 +92,7 @@ export async function POST(request: NextRequest) {
         pricePerKg,
         subsidyPrice,
         description: description || null,
+        imageUrl: imageUrl || null,
       },
     })
 

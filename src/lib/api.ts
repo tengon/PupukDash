@@ -24,7 +24,11 @@ export interface Product {
   type: string
   pricePerKg: number
   subsidyPrice: number
+  pricePud?: number
+  pricePpts?: number
+  priceHet?: number
   description: string | null
+  imageUrl?: string | null
   isActive: boolean
   totalStock?: number
   stockByWarehouse?: { warehouseName: string; warehouseCode: string; quantity: number }[]
@@ -135,8 +139,8 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
     ...options,
   })
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Terjadi kesalahan' }))
-    throw new Error(error.message || `HTTP ${res.status}`)
+    const errorData = await res.json().catch(() => ({ error: 'Terjadi kesalahan sistem' }))
+    throw new Error(errorData.error || errorData.message || `HTTP ${res.status}`)
   }
   return res.json()
 }
@@ -296,6 +300,7 @@ export interface SearchResult {
   farmers: Array<{ id: string; name: string; nik: string; subtitle: string }>
   orders: Array<{ id: string; orderNumber: string; subtitle: string; status: string }>
   warehouses: Array<{ id: string; name: string; code: string; subtitle: string }>
+  ppts: Array<{ id: string; name: string; code: string; subtitle: string }>
 }
 
 export const fetchSearch = (query: string) =>
@@ -445,5 +450,80 @@ export interface AppNotification {
 export const fetchNotifications = () =>
   apiFetch<{ notifications: AppNotification[] }>('/api/notifications')
 
-// Seed
+// Seed & Clear
 export const seedData = () => apiFetch<{ message: string }>('/api/seed', { method: 'POST' })
+export const clearData = () => apiFetch<{ message: string }>('/api/seed', { method: 'DELETE' })
+
+// PPTS
+export interface Ppts {
+  id: string
+  code: string
+  name: string
+  address: string
+  district: string
+  village: string | null
+  regency: string | null
+  province: string | null
+  ownerName: string | null
+  phone: string | null
+  spjbNumber: string | null
+  spjbDate: string | null
+  spjbValidFrom: string | null
+  spjbValidUntil: string | null
+  alokasiUrea: number | null
+  alokasiNpk: number | null
+  realisasiUrea?: number | null
+  realisasiNpk?: number | null
+  sisaUrea?: number | null
+  sisaNpk?: number | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export const fetchPptsList = (params?: { search?: string; district?: string }) => {
+  const query = new URLSearchParams()
+  if (params?.search) query.append('search', params.search)
+  if (params?.district && params.district !== 'all') query.append('district', params.district)
+  const queryString = query.toString()
+  return apiFetch<Ppts[]>(`/api/ppts${queryString ? `?${queryString}` : ''}`)
+}
+
+export const createPpts = (data: Partial<Ppts>) =>
+  apiFetch<Ppts>('/api/ppts', { method: 'POST', body: JSON.stringify(data) })
+
+export const updatePpts = ({ id, data }: { id: string; data: Partial<Ppts> }) =>
+  apiFetch<Ppts>(`/api/ppts/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+
+export const deletePpts = (id: string) =>
+  apiFetch<{ success: boolean }>(`/api/ppts/${id}`, { method: 'DELETE' })
+
+// Purchases (Pembelian dari Supplier)
+export interface Purchase {
+  id: string
+  purchaseNo: string
+  supplierName: string
+  warehouseId: string
+  productId: string
+  quantity: number
+  pricePerKg: number
+  totalAmount: number
+  status: string
+  notes: string | null
+  purchasedAt: string
+  createdAt: string
+  updatedAt: string
+  warehouse: { id: string; name: string; code: string }
+  product: { id: string; name: string; type: string; pricePerKg: number; subsidyPrice: number; imageUrl?: string | null }
+}
+
+export const fetchPurchases = (params?: { search?: string; warehouseId?: string }) => {
+  const query = new URLSearchParams()
+  if (params?.search) query.append('search', params.search)
+  if (params?.warehouseId && params.warehouseId !== 'all') query.append('warehouseId', params.warehouseId)
+  const qs = query.toString()
+  return apiFetch<Purchase[]>(`/api/purchases${qs ? `?${qs}` : ''}`)
+}
+
+export const createPurchase = (data: Partial<Purchase>) =>
+  apiFetch<Purchase>('/api/purchases', { method: 'POST', body: JSON.stringify(data) })

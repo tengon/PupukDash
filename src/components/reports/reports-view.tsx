@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   fetchMonthlyReport,
+  fetchPptsList,
   type MonthlyReportData,
+  type Ppts,
 } from '@/lib/api'
 import {
   formatRupiah,
@@ -12,9 +14,10 @@ import {
   getTypeBadgeColor,
 } from '@/lib/format'
 import { exportToCSV } from '@/lib/export'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
@@ -43,6 +46,8 @@ import {
   Users,
   Calculator,
   AlertCircle,
+  Store,
+  Search,
 } from 'lucide-react'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -220,6 +225,163 @@ function SummaryCard({
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
+
+type AllocationMetric = {
+  alokasi: number
+  realisasi: number
+  sisa: number
+}
+
+type AllocationChartRow = {
+  id: string
+  label: string
+  subtitle?: string
+  urea: AllocationMetric
+  npk: AllocationMetric
+}
+
+function getPptsAllocationMetrics(item: Ppts) {
+  const alokasiUrea = item.alokasiUrea || 0
+  const realisasiUrea = item.realisasiUrea || 0
+  const sisaUrea = Math.max(0, item.sisaUrea ?? (alokasiUrea - realisasiUrea))
+
+  const alokasiNpk = item.alokasiNpk || 0
+  const realisasiNpk = item.realisasiNpk || 0
+  const sisaNpk = Math.max(0, item.sisaNpk ?? (alokasiNpk - realisasiNpk))
+
+  return {
+    urea: { alokasi: alokasiUrea, realisasi: realisasiUrea, sisa: sisaUrea },
+    npk: { alokasi: alokasiNpk, realisasi: realisasiNpk, sisa: sisaNpk },
+  }
+}
+
+function getMaxAllocationValue(rows: AllocationChartRow[]) {
+  const values = rows.flatMap((row) => [
+    row.urea.alokasi,
+    row.urea.realisasi,
+    row.urea.sisa,
+    row.npk.alokasi,
+    row.npk.realisasi,
+    row.npk.sisa,
+  ])
+  return Math.max(1, ...values)
+}
+
+function formatTon(value: number) {
+  return value.toLocaleString('id-ID', { maximumFractionDigits: 1 })
+}
+
+function AllocationMetricBars({
+  product,
+  metric,
+  maxValue,
+  productClassName,
+}: {
+  product: 'UREA' | 'NPK'
+  metric: AllocationMetric
+  maxValue: number
+  productClassName: string
+}) {
+  const bars = [
+    { label: 'Alokasi', value: metric.alokasi, className: 'bg-emerald-500' },
+    { label: 'Realisasi', value: metric.realisasi, className: 'bg-blue-500' },
+    { label: 'Sisa', value: metric.sisa, className: 'bg-amber-500' },
+  ]
+
+  return (
+    <div className="rounded-md border bg-background/80 p-2.5">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <Badge variant="outline" className={`h-5 px-2 text-[10px] font-bold ${productClassName}`}>
+          {product}
+        </Badge>
+        <span className="text-[10px] text-muted-foreground">Ton</span>
+      </div>
+      <div className="space-y-1.5">
+        {bars.map((bar) => {
+          const width = Math.max(2, (bar.value / maxValue) * 100)
+          return (
+            <div key={`${product}-${bar.label}`} className="grid grid-cols-[4.5rem_minmax(0,1fr)_4rem] items-center gap-2">
+              <span className="text-[10px] text-muted-foreground">{bar.label}</span>
+              <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={`h-full rounded-full ${bar.className}`}
+                  style={{ width: `${width}%` }}
+                />
+              </div>
+              <span className="text-right font-mono text-[10px] font-semibold tabular-nums">
+                {formatTon(bar.value)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function AllocationBarChart({
+  title,
+  description,
+  rows,
+  emptyMessage,
+}: {
+  title: string
+  description: string
+  rows: AllocationChartRow[]
+  emptyMessage: string
+}) {
+  const maxValue = getMaxAllocationValue(rows)
+
+  return (
+    <Card style={{ boxShadow: 'var(--shadow-sm)' }}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+        <CardDescription className="text-xs">{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {rows.length === 0 ? (
+          <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+            {emptyMessage}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" />Alokasi</span>
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500" />Realisasi</span>
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500" />Sisa</span>
+            </div>
+            <div className="max-h-[560px] space-y-2 overflow-y-auto pr-1">
+              {rows.map((row) => (
+                <div key={row.id} className="rounded-lg border bg-card/70 p-3">
+                  <div className="mb-2 min-w-0">
+                    <p className="truncate text-xs font-bold text-foreground">{row.label}</p>
+                    {row.subtitle && (
+                      <p className="truncate text-[10px] text-muted-foreground">{row.subtitle}</p>
+                    )}
+                  </div>
+                  <div className="grid gap-2 lg:grid-cols-2">
+                    <AllocationMetricBars
+                      product="UREA"
+                      metric={row.urea}
+                      maxValue={maxValue}
+                      productClassName="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                    />
+                    <AllocationMetricBars
+                      product="NPK"
+                      metric={row.npk}
+                      maxValue={maxValue}
+                      productClassName="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 export function ReportsView() {
   const [selectedMonth, setSelectedMonth] = useState(getDefaultMonth)
@@ -496,7 +658,7 @@ export function ReportsView() {
             <SummaryCard
               icon={Package}
               label="Total Berat Terjual"
-              value={`${formatNumber(report.summary.totalKgSold)} kg`}
+              value={`${formatNumber(Math.round(report.summary.totalKgSold / 1000))} Ton (${formatNumber(report.summary.totalKgSold)} kg)`}
               borderColor="border-l-emerald-500"
             />
             <SummaryCard
@@ -520,7 +682,7 @@ export function ReportsView() {
             <SummaryCard
               icon={Calculator}
               label="Rata-rata/Pesanan"
-              value={`${formatNumber(avgKgPerOrder)} kg`}
+              value={`${formatNumber(Math.round((avgKgPerOrder / 1000) * 10) / 10)} Ton (${formatNumber(avgKgPerOrder)} kg)`}
               borderColor="border-l-teal-600"
             />
           </div>
@@ -532,12 +694,18 @@ export function ReportsView() {
           <div className="print:block hidden" />
 
           {/* Tabbed Tables */}
-          <Tabs defaultValue="product" className="print-page-break">
+          <Tabs defaultValue="ppts-stock" className="print-page-break">
             <TabsList>
+              <TabsTrigger value="ppts-stock" className="font-semibold text-emerald-700 dark:text-emerald-300">Stok & Alokasi PPTS (WCM)</TabsTrigger>
               <TabsTrigger value="product">Per Produk</TabsTrigger>
               <TabsTrigger value="warehouse">Per Gudang</TabsTrigger>
               <TabsTrigger value="farmer">Top Petani</TabsTrigger>
             </TabsList>
+
+            {/* ─── Tab: Stok & Alokasi PPTS ────────────────────────────────────── */}
+            <TabsContent value="ppts-stock">
+              <PptsStockTab />
+            </TabsContent>
 
             {/* ─── Tab: Per Produk ────────────────────────────────────────────── */}
             <TabsContent value="product" className="mt-3">
@@ -732,5 +900,343 @@ export function ReportsView() {
         </div>
       )}
     </motion.div>
+  )
+}
+
+// ─── PptsStockTab Component ──────────────────────────────────────────────────
+
+function PptsStockTab() {
+  const { data: pptsList } = useQuery({
+    queryKey: ['ppts-report-list'],
+    queryFn: async () => {
+      let list = await fetchPptsList()
+      if (!list || list.length === 0) {
+        await fetch('/api/ppts/seed', { method: 'POST' }).catch(() => {})
+        list = await fetchPptsList()
+      }
+      return list
+    },
+  })
+
+  const [search, setSearch] = useState('')
+  const [districtFilter, setDistrictFilter] = useState('all')
+
+  const activeItems = useMemo(() => {
+    return (pptsList || []).filter((p) => p.isActive)
+  }, [pptsList])
+
+  const filteredItems = useMemo(() => {
+    return activeItems.filter((item) => {
+      const matchDistrict = districtFilter === 'all' || item.district === districtFilter
+      const matchSearch =
+        !search ||
+        item.name.toLowerCase().includes(search.toLowerCase()) ||
+        item.code.toLowerCase().includes(search.toLowerCase()) ||
+        (item.spjbNumber && item.spjbNumber.toLowerCase().includes(search.toLowerCase())) ||
+        (item.district && item.district.toLowerCase().includes(search.toLowerCase()))
+      return matchDistrict && matchSearch
+    })
+  }, [activeItems, districtFilter, search])
+
+  // Summary Metrics
+  const totalAlokasiUrea = useMemo(() => activeItems.reduce((sum, i) => sum + (i.alokasiUrea || 0), 0), [activeItems])
+  const totalRealisasiUrea = useMemo(() => activeItems.reduce((sum, i) => sum + (i.realisasiUrea || 0), 0), [activeItems])
+  const totalSisaUrea = useMemo(() => activeItems.reduce((sum, i) => sum + (i.sisaUrea ?? ((i.alokasiUrea || 0) - (i.realisasiUrea || 0))), 0), [activeItems])
+
+  const totalAlokasiNpk = useMemo(() => activeItems.reduce((sum, i) => sum + (i.alokasiNpk || 0), 0), [activeItems])
+  const totalRealisasiNpk = useMemo(() => activeItems.reduce((sum, i) => sum + (i.realisasiNpk || 0), 0), [activeItems])
+  const totalSisaNpk = useMemo(() => activeItems.reduce((sum, i) => sum + (i.sisaNpk ?? ((i.alokasiNpk || 0) - (i.realisasiNpk || 0))), 0), [activeItems])
+
+  const totalAlokasi = totalAlokasiUrea + totalAlokasiNpk
+  const totalRealisasi = totalRealisasiUrea + totalRealisasiNpk
+  const totalSisa = totalSisaUrea + totalSisaNpk
+
+  const districtsList = useMemo(() => {
+    const set = new Set<string>()
+    activeItems.forEach((item) => {
+      if (item.district) set.add(item.district)
+    })
+    return Array.from(set)
+  }, [activeItems])
+
+  const pptsAllocationRows = useMemo<AllocationChartRow[]>(() => {
+    return filteredItems
+      .map((item) => {
+        const metrics = getPptsAllocationMetrics(item)
+        return {
+          id: item.id,
+          label: item.name,
+          subtitle: `${item.code} - Kec. ${item.district}`,
+          ...metrics,
+        }
+      })
+      .sort((a, b) => (b.urea.alokasi + b.npk.alokasi) - (a.urea.alokasi + a.npk.alokasi))
+  }, [filteredItems])
+
+  const districtAllocationRows = useMemo<AllocationChartRow[]>(() => {
+    const map = new Map<string, AllocationChartRow>()
+
+    filteredItems.forEach((item) => {
+      const district = item.district || 'Tanpa Kecamatan'
+      const metrics = getPptsAllocationMetrics(item)
+
+      if (!map.has(district)) {
+        map.set(district, {
+          id: district,
+          label: `Kec. ${district}`,
+          subtitle: '0 PPTS',
+          urea: { alokasi: 0, realisasi: 0, sisa: 0 },
+          npk: { alokasi: 0, realisasi: 0, sisa: 0 },
+        })
+      }
+
+      const row = map.get(district)!
+      row.urea.alokasi += metrics.urea.alokasi
+      row.urea.realisasi += metrics.urea.realisasi
+      row.urea.sisa += metrics.urea.sisa
+      row.npk.alokasi += metrics.npk.alokasi
+      row.npk.realisasi += metrics.npk.realisasi
+      row.npk.sisa += metrics.npk.sisa
+
+      const count = filteredItems.filter((p) => (p.district || 'Tanpa Kecamatan') === district).length
+      row.subtitle = `${count} PPTS`
+    })
+
+    return Array.from(map.values())
+      .sort((a, b) => (b.urea.alokasi + b.npk.alokasi) - (a.urea.alokasi + a.npk.alokasi))
+  }, [filteredItems])
+
+  return (
+    <div className="space-y-4 mt-3">
+      {/* KPI Cards Header */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-950/20">
+          <CardContent className="p-3.5">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Alokasi Kontrak (SPJB)</p>
+            <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 font-mono mt-1">
+              {totalAlokasi.toLocaleString('id-ID')} Ton
+            </p>
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">
+              ({formatNumber(totalAlokasi * 1000)} kg)
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
+          <CardContent className="p-3.5">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Realisasi / Tebusan</p>
+            <p className="text-xl font-bold text-blue-700 dark:text-blue-300 font-mono mt-1">
+              {totalRealisasi.toLocaleString('id-ID')} Ton
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+              <div className="rounded-md bg-amber-50 px-2 py-1 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                <span className="block text-muted-foreground">UREA</span>
+                <span className="font-mono font-bold">{formatTon(totalRealisasiUrea)} Ton</span>
+              </div>
+              <div className="rounded-md bg-rose-50 px-2 py-1 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                <span className="block text-muted-foreground">NPK</span>
+                <span className="font-mono font-bold">{formatTon(totalRealisasiNpk)} Ton</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">
+              ({formatNumber(totalRealisasi * 1000)} kg) · {totalAlokasi > 0 ? Math.round((totalRealisasi / totalAlokasi) * 100) : 0}% Tertebus
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
+          <CardContent className="p-3.5">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Sisa Alokasi</p>
+            <p className="text-xl font-bold text-amber-700 dark:text-amber-300 font-mono mt-1">
+              {totalSisa.toLocaleString('id-ID')} Ton
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+              <div className="rounded-md bg-amber-50 px-2 py-1 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                <span className="block text-muted-foreground">UREA</span>
+                <span className="font-mono font-bold">{formatTon(totalSisaUrea)} Ton</span>
+              </div>
+              <div className="rounded-md bg-rose-50 px-2 py-1 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                <span className="block text-muted-foreground">NPK</span>
+                <span className="font-mono font-bold">{formatTon(totalSisaNpk)} Ton</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">
+              ({formatNumber(totalSisa * 1000)} kg)
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-teal-500 bg-gradient-to-br from-teal-50/50 to-transparent dark:from-teal-950/20">
+          <CardContent className="p-3.5">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Kios PPTS Active</p>
+            <p className="text-xl font-bold text-teal-700 dark:text-teal-300 font-mono mt-1">
+              {activeItems.length} Kios
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Tersebar di {districtsList.length} Kecamatan
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <AllocationBarChart
+          title="Alokasi-Realisasi-Sisa per PPTS"
+          description="Bar graph UREA dan NPK berdasarkan data PPTS yang sedang difilter. Satuan: Ton."
+          rows={pptsAllocationRows}
+          emptyMessage="Tidak ada data PPTS untuk divisualisasikan"
+        />
+        <AllocationBarChart
+          title="Alokasi-Realisasi-Sisa per Kecamatan"
+          description="Agregasi alokasi, realisasi tebusan, dan sisa alokasi UREA/NPK per kecamatan. Satuan: Ton."
+          rows={districtAllocationRows}
+          emptyMessage="Tidak ada data kecamatan untuk divisualisasikan"
+        />
+      </div>
+
+      {/* Main Table Card */}
+      <Card style={{ boxShadow: 'var(--shadow-sm)' }}>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Store className="h-5 w-5 text-emerald-600" />
+                Daftar Stok & Alokasi SPJB PPTS (Official WCM Data)
+                <Badge variant="secondary" className="text-[10px] font-normal">
+                  {filteredItems.length} Data PPTS
+                </Badge>
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Data kuota alokasi pupuk bersubsidi (Urea & NPK), realisasi tebusan, dan sisa alokasi resmi dari WCM Pupuk Indonesia
+              </CardDescription>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Select value={districtFilter} onValueChange={setDistrictFilter}>
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectValue placeholder="Kecamatan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kecamatan</SelectItem>
+                  {districtsList.map((d) => (
+                    <SelectItem key={d} value={d}>Kec. {d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari SPJB / PPTS / Kode..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8 h-8 text-xs w-48 sm:w-60"
+                />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table className="border-collapse">
+              <TableHeader>
+                <TableRow className="bg-muted/60">
+                  <TableHead className="text-xs font-bold text-foreground">Nama PPTS</TableHead>
+                  <TableHead className="text-xs font-bold text-foreground">Kode</TableHead>
+                  <TableHead className="text-xs font-bold text-foreground">Kecamatan</TableHead>
+                  <TableHead className="text-xs font-bold text-foreground">Produk</TableHead>
+                  <TableHead className="text-xs font-bold text-foreground text-right">Alokasi (Ton)</TableHead>
+                  <TableHead className="text-xs font-bold text-foreground text-right">Realisasi (Ton)</TableHead>
+                  <TableHead className="text-xs font-bold text-foreground text-right">Sisa Alokasi (Ton)</TableHead>
+                  <TableHead className="text-xs font-bold text-foreground text-center">% Serapan</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-sm">
+                      Tidak ada data PPTS yang cocok
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredItems.map((item, index) => {
+                    const alokUrea = item.alokasiUrea || 0
+                    const realUrea = item.realisasiUrea || 0
+                    const sisaUrea = item.sisaUrea ?? (alokUrea - realUrea)
+                    const pctUrea = alokUrea > 0 ? Math.round((realUrea / alokUrea) * 100) : 0
+
+                    const alokNpk = item.alokasiNpk || 0
+                    const realNpk = item.realisasiNpk || 0
+                    const sisaNpk = item.sisaNpk ?? (alokNpk - realNpk)
+                    const pctNpk = alokNpk > 0 ? Math.round((realNpk / alokNpk) * 100) : 0
+
+                    const bgClass = index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
+
+                    return (
+                      <React.Fragment key={item.id}>
+                        {/* Row 1: UREA */}
+                        <TableRow className={`${bgClass} border-t border-border/80 hover:bg-muted/40 transition-colors`}>
+                          <TableCell rowSpan={2} className="align-middle font-bold text-xs text-foreground border-r border-border/30">
+                            <div>{item.name}</div>
+                            {item.spjbNumber && (
+                              <div className="text-[10px] font-mono text-primary font-normal mt-0.5">{item.spjbNumber}</div>
+                            )}
+                          </TableCell>
+                          <TableCell rowSpan={2} className="align-middle font-mono text-xs text-muted-foreground border-r border-border/30">
+                            {item.code}
+                          </TableCell>
+                          <TableCell rowSpan={2} className="align-middle border-r border-border/30">
+                            <Badge variant="outline" className="text-[10px] font-semibold bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300">
+                              Kec. {item.district}
+                            </Badge>
+                          </TableCell>
+
+                          {/* UREA Data */}
+                          <TableCell className="font-bold text-xs text-amber-700 dark:text-amber-400">
+                            UREA
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-semibold text-amber-700 dark:text-amber-400">
+                            {alokUrea.toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            {realUrea.toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-bold text-amber-800 dark:text-amber-300">
+                            {sisaUrea.toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className="text-center font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                            {pctUrea}%
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Row 2: NPK */}
+                        <TableRow className={`${bgClass} border-b border-border/80 hover:bg-muted/40 transition-colors`}>
+                          <TableCell className="font-bold text-xs text-rose-700 dark:text-rose-400">
+                            NPK
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-semibold text-rose-700 dark:text-rose-400">
+                            {alokNpk.toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            {realNpk.toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-bold text-rose-800 dark:text-rose-300">
+                            {sisaNpk.toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className="text-center font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                            {pctNpk}%
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

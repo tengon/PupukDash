@@ -24,6 +24,7 @@ import {
   BarChart3,
   ArrowRight,
   CornerDownLeft,
+  Store,
 } from 'lucide-react'
 
 const QUICK_ACTIONS = [
@@ -239,6 +240,26 @@ export function CommandPalette() {
                       <span className="truncate">{warehouse.name}</span>
                       <span className="text-xs text-muted-foreground truncate">
                         {warehouse.subtitle}
+                      </span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {results!.ppts && results!.ppts.length > 0 && (
+              <CommandGroup heading="PPTS (KIOS)">
+                {results!.ppts.map((item) => (
+                  <CommandItem
+                    key={item.id}
+                    value={`ppts-${item.id}-${item.name}`}
+                    onSelect={() => handleSelect('ppts')}
+                  >
+                    <Store className="mr-2 h-4 w-4 text-emerald-500" />
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <span className="truncate">{item.name}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {item.subtitle}
                       </span>
                     </div>
                   </CommandItem>

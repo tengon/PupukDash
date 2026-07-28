@@ -32,6 +32,7 @@ import { exportToCSV } from '@/lib/export'
 import { useToast } from '@/hooks/use-toast'
 import { parseFarmerCSV } from '@/lib/import'
 import { Progress } from '@/components/ui/progress'
+import { fetchProvinces, fetchRegencies, fetchDistricts } from '@/lib/wilayah'
 
 const ITEMS_PER_PAGE = 10
 
@@ -69,6 +70,28 @@ export function FarmersView() {
   const { data: farmers, isLoading } = useQuery({
     queryKey: ['farmers', refreshKey],
     queryFn: fetchFarmers,
+  })
+
+  // Wilayah API Queries
+  const { data: provinces } = useQuery({
+    queryKey: ['provinces'],
+    queryFn: fetchProvinces,
+  })
+
+  const selectedProvinceId = provinces?.find(p => p.name.toUpperCase() === form.province.toUpperCase())?.id || ''
+  
+  const { data: regencies } = useQuery({
+    queryKey: ['regencies', selectedProvinceId],
+    queryFn: () => fetchRegencies(selectedProvinceId),
+    enabled: !!selectedProvinceId,
+  })
+
+  const selectedRegencyId = regencies?.find(r => r.name.toUpperCase() === form.regency.toUpperCase())?.id || ''
+
+  const { data: districts } = useQuery({
+    queryKey: ['districts', selectedRegencyId],
+    queryFn: () => fetchDistricts(selectedRegencyId),
+    enabled: !!selectedRegencyId,
   })
 
   const { data: ordersData } = useQuery({
@@ -364,9 +387,33 @@ export function FarmersView() {
           <div className="grid grid-cols-2 gap-3"><div className="grid gap-2"><Label htmlFor="nik">NIK *</Label><Input id="nik" value={form.nik} onChange={(e) => { setForm({ ...form, nik: e.target.value.replace(/\D/g, '').slice(0, 16) }); if (nikError) validateNik(e.target.value.replace(/\D/g, '').slice(0, 16)) }} placeholder="16 digit NIK" maxLength={16} />{nikError && <p className="text-xs text-destructive">{nikError}</p>}</div><div className="grid gap-2"><Label htmlFor="fname">Nama Lengkap *</Label><Input id="fname" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama lengkap" /></div></div>
           <div className="grid grid-cols-2 gap-3"><div className="grid gap-2"><Label htmlFor="phone">No. HP</Label><Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08xxxxxxxxxx" /></div><div className="grid gap-2"><Label htmlFor="landArea">Luas Lahan (Ha)</Label><Input id="landArea" type="number" value={form.landAreaHa || ''} onChange={(e) => setForm({ ...form, landAreaHa: parseFloat(e.target.value) || 0 })} /></div></div>
           <div className="grid grid-cols-2 gap-3"><div className="grid gap-2"><Label htmlFor="farmerGroup">Kelompok Tani</Label><Input id="farmerGroup" value={form.farmerGroup} onChange={(e) => setForm({ ...form, farmerGroup: e.target.value })} placeholder="Nama kelompok tani" /></div><div className="grid gap-2"><Label htmlFor="village">Desa</Label><Input id="village" value={form.village} onChange={(e) => setForm({ ...form, village: e.target.value })} /></div></div>
-          <div className="grid grid-cols-2 gap-3"><div className="grid gap-2"><Label htmlFor="district">Kecamatan</Label><Input id="district" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} /></div><div className="grid gap-2"><Label htmlFor="regency">Kabupaten</Label><Input id="regency" value={form.regency} onChange={(e) => setForm({ ...form, regency: e.target.value })} /></div></div>
-          <div className="grid gap-2"><Label htmlFor="address">Alamat</Label><Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Alamat lengkap" /></div>
-          <div className="grid gap-2"><Label htmlFor="province">Provinsi</Label><Input id="province" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} /></div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="province">Provinsi *</Label>
+              <select id="province" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value, regency: '', district: '' })} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                <option value="">Pilih Provinsi</option>
+                {provinces?.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="regency">Kabupaten / Kota *</Label>
+              <select id="regency" value={form.regency} onChange={(e) => setForm({ ...form, regency: e.target.value, district: '' })} disabled={!form.province} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50">
+                <option value="">Pilih Kabupaten/Kota</option>
+                {regencies?.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="district">Kecamatan *</Label>
+              <select id="district" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} disabled={!form.regency} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50">
+                <option value="">Pilih Kecamatan</option>
+                {districts?.map((d) => <option key={d} value={d.name}>{d.name}</option>)}
+              </select>
+            </div>
+            <div className="grid gap-2"><Label htmlFor="address">Alamat Lengkap</Label><Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Alamat lengkap (Nama jalan, RT/RW)" /></div>
+          </div>
         </div>
         <DialogFooter><Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button><Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>{createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : 'Simpan'}</Button></DialogFooter>
       </DialogContent></Dialog>

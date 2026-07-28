@@ -8,7 +8,7 @@ import {
   fetchWarehouses, fetchProducts,
   type StockWithProductAndWarehouse,
 } from '@/lib/api'
-import { formatNumber, getTypeBadgeColor } from '@/lib/format'
+import { formatNumber, getTypeBadgeColor, getProductImage } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -165,8 +165,12 @@ function StockCard({ stock, onEdit, onDelete, onRestock }: {
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0 ring-1 ring-black/5 dark:ring-white/5">
-              <Package className="h-4 w-4 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-border p-1 shrink-0 shadow-sm">
+              <img
+                src={getProductImage(stock.product.name, (stock.product as { imageUrl?: string | null }).imageUrl)}
+                alt={stock.product.name}
+                className="h-full w-full object-contain"
+              />
             </div>
             <div className="min-w-0">
               <span className="text-[10px] text-muted-foreground/70 font-medium leading-none block mb-0.5">{stock.warehouse.name}</span>

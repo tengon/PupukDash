@@ -50,6 +50,8 @@ import { motion } from 'framer-motion'
 import { Plus, Search, Pencil, Trash2, Warehouse as WarehouseIcon, Package, AlertTriangle, Phone, MapPin, Map } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
+import { fetchProvinces, fetchRegencies, fetchDistricts } from '@/lib/wilayah'
+
 const ITEMS_PER_PAGE = 10
 
 const emptyForm = {
@@ -64,7 +66,7 @@ const emptyForm = {
   isActive: true,
 }
 
-export function WarehousesView() {
+export function WarehousesView({ hideAddButton = false }: { hideAddButton?: boolean }) {
   const { refreshKey, triggerRefresh } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -81,6 +83,28 @@ export function WarehousesView() {
   const { data: warehouses, isLoading } = useQuery({
     queryKey: ['warehouses', refreshKey],
     queryFn: fetchWarehouses,
+  })
+
+  // Wilayah API Queries
+  const { data: provinces } = useQuery({
+    queryKey: ['provinces'],
+    queryFn: fetchProvinces,
+  })
+
+  const selectedProvinceId = provinces?.find(p => p.name.toUpperCase() === form.province.toUpperCase())?.id || ''
+  
+  const { data: regencies } = useQuery({
+    queryKey: ['regencies', selectedProvinceId],
+    queryFn: () => fetchRegencies(selectedProvinceId),
+    enabled: !!selectedProvinceId,
+  })
+
+  const selectedRegencyId = regencies?.find(r => r.name.toUpperCase() === form.regency.toUpperCase())?.id || ''
+
+  const { data: districts } = useQuery({
+    queryKey: ['districts', selectedRegencyId],
+    queryFn: () => fetchDistricts(selectedRegencyId),
+    enabled: !!selectedRegencyId,
   })
 
   const { data: stockDetail, isLoading: stockDetailLoading } = useQuery({
@@ -140,7 +164,7 @@ export function WarehousesView() {
       address: wh.address,
       district: wh.district || '',
       regency: wh.regency || '',
-      province: wh.province,
+      province: wh.province || '',
       managerName: wh.managerName || '',
       managerPhone: wh.managerPhone || '',
       isActive: wh.isActive,
@@ -234,10 +258,12 @@ export function WarehousesView() {
                   className="pl-9 h-9 w-full sm:w-60"
                 />
               </div>
-              <Button onClick={handleOpenAdd} size="sm" className="shrink-0">
-                <Plus className="h-4 w-4 mr-1" />
-                Tambah Gudang
-              </Button>
+              {!hideAddButton && (
+                <Button onClick={handleOpenAdd} size="sm" className="shrink-0">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Tambah Gudang
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -393,19 +419,55 @@ export function WarehousesView() {
               <Label htmlFor="waddress">Alamat *</Label>
               <Input id="waddress" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Alamat lengkap gudang" />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="wdistrict">Kecamatan</Label>
-                <Input id="wdistrict" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="wregency">Kabupaten</Label>
-                <Input id="wregency" value={form.regency} onChange={(e) => setForm({ ...form, regency: e.target.value })} />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="wprovince">Provinsi *</Label>
-                <Input id="wprovince" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} />
+                <select
+                  id="wprovince"
+                  value={form.province}
+                  onChange={(e) => {
+                    setForm({ ...form, province: e.target.value, regency: '', district: '' })
+                  }}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Pilih Provinsi</option>
+                  {provinces?.map((p) => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="wregency">Kabupaten / Kota</Label>
+                <select
+                  id="wregency"
+                  value={form.regency}
+                  onChange={(e) => {
+                    setForm({ ...form, regency: e.target.value, district: '' })
+                  }}
+                  disabled={!form.province}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                >
+                  <option value="">Pilih Kabupaten/Kota</option>
+                  {regencies?.map((r) => (
+                    <option key={r.id} value={r.name}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="wdistrict">Kecamatan</Label>
+              <select
+                id="wdistrict"
+                value={form.district}
+                onChange={(e) => setForm({ ...form, district: e.target.value })}
+                disabled={!form.regency}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+              >
+                <option value="">Pilih Kecamatan</option>
+                {districts?.map((d) => (
+                  <option key={d} value={d.name}>{d.name}</option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">

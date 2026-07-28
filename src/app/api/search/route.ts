@@ -90,6 +90,25 @@ export async function GET(request: NextRequest) {
       take: 5,
     })
 
+    const ppts = await db.ppts.findMany({
+      where: {
+        OR: [
+          { name: { contains: q } },
+          { code: { contains: q } },
+          { district: { contains: q } },
+          { address: { contains: q } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        district: true,
+        address: true,
+      },
+      take: 5,
+    })
+
     return NextResponse.json({
       products: products.map((p) => ({
         id: p.id,
@@ -114,6 +133,12 @@ export async function GET(request: NextRequest) {
         name: w.name,
         code: w.code,
         subtitle: `${w.code} — ${w.regency || ''}, ${w.province}`.replace(/^ — ,/, '').replace(/, $/, ''),
+      })),
+      ppts: ppts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        code: p.code,
+        subtitle: `${p.code} — Kec. ${p.district}`,
       })),
     })
   } catch (error) {

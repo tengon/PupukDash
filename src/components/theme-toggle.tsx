@@ -4,10 +4,16 @@ import { Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { useSyncExternalStore } from 'react'
+import { cn } from '@/lib/utils'
 
 const emptySubscribe = () => () => {}
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  className?: string
+  size?: 'default' | 'sm' | 'lg' | 'icon'
+}
+
+export function ThemeToggle({ className, size = 'icon' }: ThemeToggleProps) {
   const { theme, setTheme, resolvedTheme } = useTheme()
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
@@ -26,7 +32,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+      <Button variant="ghost" size={size} className={cn("h-8 w-8", className)} disabled>
         <Sun className="h-4 w-4" />
         <span className="sr-only">Toggle tema</span>
       </Button>
@@ -36,8 +42,8 @@ export function ThemeToggle() {
   return (
     <Button
       variant="ghost"
-      size="icon"
-      className="h-8 w-8"
+      size={size}
+      className={cn("h-8 w-8", className)}
       onClick={handleToggle}
       title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
     >
