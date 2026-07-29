@@ -527,3 +527,9 @@ export const fetchPurchases = (params?: { search?: string; warehouseId?: string 
 
 export const createPurchase = (data: Partial<Purchase>) =>
   apiFetch<Purchase>('/api/purchases', { method: 'POST', body: JSON.stringify(data) })
+
+export const updatePurchase = (id: string, data: Partial<Purchase>) =>
+  apiFetch<Purchase>(`/api/purchases/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+
+export const deletePurchase = (id: string) =>
+  apiFetch<{ message: string }>(`/api/purchases/${id}`, { method: 'DELETE' })

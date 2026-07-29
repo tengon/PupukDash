@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import { fetchDashboard, fetchStock, fetchProducts, fetchDistributions, fetchPptsList, type DashboardData } from '@/lib/api'
-import { formatRupiah, formatNumber, getStatusColor, getStatusLabel, getStockStatusColor, getStockStatusLabel, getProductImage } from '@/lib/format'
+import { formatRupiah, formatNumber, getStatusColor, getStatusLabel, getStockStatusColor, getStockStatusLabel, getProductImage, getProductPriceDetails } from '@/lib/format'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -51,7 +51,26 @@ function WelcomeSection() {
     queryKey: ['ppts', refreshKey],
     queryFn: () => fetchPptsList(),
   })
-  
+
+  const { data: products } = useQuery({
+    queryKey: ['products', refreshKey],
+    queryFn: fetchProducts,
+  })
+
+  const ureaProduct = products?.find((p) => p.type.toUpperCase() === 'UREA')
+  const npkProduct = products?.find((p) => p.type.toUpperCase() === 'NPK')
+
+  const ureaDetails = ureaProduct ? getProductPriceDetails(ureaProduct) : { het: 2250, pud: 1950, ppts: 2100 }
+  const npkDetails = npkProduct ? getProductPriceDetails(npkProduct) : { het: 2300, pud: 2050, ppts: 2150 }
+
+  const ureaHet = ureaDetails.het
+  const ureaPud = ureaDetails.pud
+  const ureaPpts = ureaDetails.ppts
+
+  const npkHet = npkDetails.het
+  const npkPud = npkDetails.pud
+  const npkPpts = npkDetails.ppts
+
   const totalUrea = pptsList?.reduce((sum, item) => sum + (item.alokasiUrea || 0), 0) || 0
   const totalNpk = pptsList?.reduce((sum, item) => sum + (item.alokasiNpk || 0), 0) || 0
 
@@ -154,20 +173,20 @@ function WelcomeSection() {
                 {/* PUD */}
                 <div className="bg-background/80 p-2 rounded-md border border-amber-200/40 dark:border-amber-800/30">
                   <p className="text-[10px] text-muted-foreground font-semibold">Harga PUD</p>
-                  <p className="font-bold text-amber-700 dark:text-amber-400 font-mono mt-0.5">Rp 1.950/kg</p>
-                  <p className="text-[9px] text-muted-foreground font-mono">Rp 1.950.000/Ton</p>
+                  <p className="font-bold text-amber-700 dark:text-amber-400 font-mono mt-0.5">Rp {ureaPud.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</p>
+                  <p className="text-[9px] text-muted-foreground font-mono">{formatRupiah(ureaPud * 1000)}/Ton</p>
                 </div>
                 {/* PPTS */}
                 <div className="bg-background/80 p-2 rounded-md border border-amber-200/40 dark:border-amber-800/30">
                   <p className="text-[10px] text-muted-foreground font-semibold">Harga PPTS</p>
-                  <p className="font-bold text-amber-700 dark:text-amber-400 font-mono mt-0.5">Rp 2.100/kg</p>
-                  <p className="text-[9px] text-muted-foreground font-mono">Rp 2.100.000/Ton</p>
+                  <p className="font-bold text-amber-700 dark:text-amber-400 font-mono mt-0.5">Rp {ureaPpts.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</p>
+                  <p className="text-[9px] text-muted-foreground font-mono">{formatRupiah(ureaPpts * 1000)}/Ton</p>
                 </div>
                 {/* HET */}
                 <div className="bg-amber-100/80 dark:bg-amber-900/40 p-2 rounded-md border border-amber-300 dark:border-amber-700">
                   <p className="text-[10px] text-amber-900 dark:text-amber-200 font-extrabold">HET Petani</p>
-                  <p className="font-extrabold text-amber-800 dark:text-amber-300 font-mono mt-0.5">Rp 2.250/kg</p>
-                  <p className="text-[9px] text-amber-700 dark:text-amber-400 font-mono">Rp 2.250.000/Ton</p>
+                  <p className="font-extrabold text-amber-800 dark:text-amber-300 font-mono mt-0.5">Rp {ureaHet.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</p>
+                  <p className="text-[9px] text-amber-700 dark:text-amber-400 font-mono">{formatRupiah(ureaHet * 1000)}/Ton</p>
                 </div>
               </div>
               <div className="bg-amber-100/50 dark:bg-amber-900/30 p-2 rounded-md border border-amber-200/50 flex flex-col sm:flex-row gap-3 items-stretch mt-2">
@@ -257,20 +276,20 @@ function WelcomeSection() {
                 {/* PUD */}
                 <div className="bg-background/80 p-2 rounded-md border border-rose-200/40 dark:border-rose-800/30">
                   <p className="text-[10px] text-muted-foreground font-semibold">Harga PUD</p>
-                  <p className="font-bold text-rose-700 dark:text-rose-400 font-mono mt-0.5">Rp 2.050/kg</p>
-                  <p className="text-[9px] text-muted-foreground font-mono">Rp 2.050.000/Ton</p>
+                  <p className="font-bold text-rose-700 dark:text-rose-400 font-mono mt-0.5">Rp {npkPud.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</p>
+                  <p className="text-[9px] text-muted-foreground font-mono">{formatRupiah(npkPud * 1000)}/Ton</p>
                 </div>
                 {/* PPTS */}
                 <div className="bg-background/80 p-2 rounded-md border border-rose-200/40 dark:border-rose-800/30">
                   <p className="text-[10px] text-muted-foreground font-semibold">Harga PPTS</p>
-                  <p className="font-bold text-rose-700 dark:text-rose-400 font-mono mt-0.5">Rp 2.150/kg</p>
-                  <p className="text-[9px] text-muted-foreground font-mono">Rp 2.150.000/Ton</p>
+                  <p className="font-bold text-rose-700 dark:text-rose-400 font-mono mt-0.5">Rp {npkPpts.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</p>
+                  <p className="text-[9px] text-muted-foreground font-mono">{formatRupiah(npkPpts * 1000)}/Ton</p>
                 </div>
                 {/* HET */}
                 <div className="bg-rose-100/80 dark:bg-rose-900/40 p-2 rounded-md border border-rose-300 dark:border-rose-700">
                   <p className="text-[10px] text-rose-900 dark:text-rose-200 font-extrabold">HET Petani</p>
-                  <p className="font-extrabold text-rose-800 dark:text-rose-300 font-mono mt-0.5">Rp 2.300/kg</p>
-                  <p className="text-[9px] text-rose-700 dark:text-rose-400 font-mono">Rp 2.300.000/Ton</p>
+                  <p className="font-extrabold text-rose-800 dark:text-rose-300 font-mono mt-0.5">Rp {npkHet.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</p>
+                  <p className="text-[9px] text-rose-700 dark:text-rose-400 font-mono">{formatRupiah(npkHet * 1000)}/Ton</p>
                 </div>
               </div>
               <div className="bg-rose-100/50 dark:bg-rose-900/30 p-2 rounded-md border border-rose-200/50 flex flex-col sm:flex-row gap-3 items-stretch mt-2">
@@ -1373,12 +1392,12 @@ function DistrictPurchasesChart() {
             </div>
           </div>
 
-          {/* District Breakdown List: UREA on top, NPK on bottom per district */}
+          {/* District Breakdown List: UREA on left, NPK on right per district */}
           <div className="space-y-3 pt-3 border-t border-border/50">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold text-foreground flex items-center gap-2">
                 <span>Rincian Serapan per Kecamatan ({districtStats.length} Kecamatan)</span>
-                <Badge variant="outline" className="text-[10px]">UREA (Atas) & NPK (Bawah)</Badge>
+                <Badge variant="outline" className="text-[10px]">UREA (Kiri) & NPK (Kanan)</Badge>
               </p>
               <span className="text-[11px] text-muted-foreground font-mono">
                 Satuan: <strong>Ton & (Kg)</strong>
@@ -1395,7 +1414,7 @@ function DistrictPurchasesChart() {
                 return (
                   <div
                     key={item.district}
-                    className={`space-y-2 bg-muted/30 p-3 rounded-xl border transition-all ${
+                    className={`space-y-3 bg-muted/30 p-3 rounded-xl border transition-all ${
                       isHovered
                         ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 shadow-xs'
                         : 'border-border/40 hover:border-emerald-500/40'
@@ -1424,47 +1443,93 @@ function DistrictPurchasesChart() {
                       </div>
                     </div>
 
-                    {/* BAR 1: UREA (ATAS) */}
-                    <div className="space-y-1 bg-amber-50/40 dark:bg-amber-950/20 p-2 rounded-lg border border-amber-200/50 dark:border-amber-800/40">
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
-                          <Wheat className="h-3.5 w-3.5 text-amber-600" /> 🌾 UREA (Atas)
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* PIE 1: UREA */}
+                      <div className="flex flex-col items-center justify-center bg-amber-50/40 dark:bg-amber-950/20 py-2.5 px-2 rounded-xl border border-amber-200/50 dark:border-amber-800/40 text-center gap-2 hover:bg-amber-100/50 transition-colors shadow-sm relative overflow-hidden group">
+                        <span className="flex items-center justify-center gap-1.5 font-bold text-[11px] text-amber-700 dark:text-amber-400 z-10">
+                          <Wheat className="h-3.5 w-3.5 text-amber-600" /> UREA
                         </span>
-                        <span className="font-mono font-bold text-amber-700 dark:text-amber-400">
-                          Tebusan: {item.pembelianUrea.toLocaleString('id-ID')} / {item.targetUrea.toLocaleString('id-ID')} Ton ({uPct}%)
-                          <span className="text-[10px] font-normal text-muted-foreground ml-1.5">
-                            (Sisa: {item.sisaUrea.toLocaleString('id-ID')} T / {(item.sisaUrea * 1000).toLocaleString('id-ID')} Kg)
-                          </span>
-                        </span>
-                      </div>
-                      <div className="h-2 w-full bg-amber-200/70 dark:bg-amber-950/60 rounded-full overflow-hidden flex">
-                        <div
-                          className="bg-amber-500 h-full transition-all duration-500"
-                          style={{ width: `${uPct}%` }}
-                          title={`Urea Tebusan: ${item.pembelianUrea} Ton (${uPct}%)`}
-                        />
-                      </div>
-                    </div>
+                        
+                        {/* Donut Chart */}
+                        <div className="relative h-14 w-14 my-0.5 z-10" title={`Urea Tebusan: ${item.pembelianUrea} Ton (${uPct}%)`}>
+                          <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90 drop-shadow-sm">
+                            {/* Background Circle */}
+                            <path
+                              className="text-amber-200/80 dark:text-amber-900/50"
+                              strokeWidth="3.5"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            {/* Value Circle */}
+                            <path
+                              className="text-amber-500 transition-all duration-1000 ease-out"
+                              strokeDasharray={`${uPct}, 100`}
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 leading-none">{uPct}%</span>
+                          </div>
+                        </div>
 
-                    {/* BAR 2: NPK (BAWAH) */}
-                    <div className="space-y-1 bg-rose-50/40 dark:bg-rose-950/20 p-2 rounded-lg border border-rose-200/50 dark:border-rose-800/40">
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-400">
-                          <Sprout className="h-3.5 w-3.5 text-rose-600" /> 🌱 NPK (Bawah)
-                        </span>
-                        <span className="font-mono font-bold text-rose-700 dark:text-rose-400">
-                          Tebusan: {item.pembelianNpk.toLocaleString('id-ID')} / {item.targetNpk.toLocaleString('id-ID')} Ton ({nPct}%)
-                          <span className="text-[10px] font-normal text-muted-foreground ml-1.5">
-                            (Sisa: {item.sisaNpk.toLocaleString('id-ID')} T / {(item.sisaNpk * 1000).toLocaleString('id-ID')} Kg)
+                        <div className="flex flex-col text-[10px] text-muted-foreground w-full z-10">
+                          <span className="font-mono font-bold text-amber-700 dark:text-amber-400 text-[11px] mb-1">
+                            {item.pembelianUrea.toLocaleString('id-ID')} / {item.targetUrea.toLocaleString('id-ID')} T
                           </span>
-                        </span>
+                          <span className="border-t border-amber-200/50 dark:border-amber-800/40 pt-1.5 leading-tight">
+                            Sisa: {item.sisaUrea.toLocaleString('id-ID')} T<br/>
+                            <span className="text-[9px] opacity-75">({(item.sisaUrea * 1000).toLocaleString('id-ID')} Kg)</span>
+                          </span>
+                        </div>
                       </div>
-                      <div className="h-2 w-full bg-rose-200/70 dark:bg-rose-950/60 rounded-full overflow-hidden flex">
-                        <div
-                          className="bg-rose-500 h-full transition-all duration-500"
-                          style={{ width: `${nPct}%` }}
-                          title={`NPK Tebusan: ${item.pembelianNpk} Ton (${nPct}%)`}
-                        />
+
+                      {/* PIE 2: NPK */}
+                      <div className="flex flex-col items-center justify-center bg-rose-50/40 dark:bg-rose-950/20 py-2.5 px-2 rounded-xl border border-rose-200/50 dark:border-rose-800/40 text-center gap-2 hover:bg-rose-100/50 transition-colors shadow-sm relative overflow-hidden group">
+                        <span className="flex items-center justify-center gap-1.5 font-bold text-[11px] text-rose-700 dark:text-rose-400 z-10">
+                          <Sprout className="h-3.5 w-3.5 text-rose-600" /> NPK
+                        </span>
+                        
+                        {/* Donut Chart */}
+                        <div className="relative h-14 w-14 my-0.5 z-10" title={`NPK Tebusan: ${item.pembelianNpk} Ton (${nPct}%)`}>
+                          <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90 drop-shadow-sm">
+                            {/* Background Circle */}
+                            <path
+                              className="text-rose-200/80 dark:text-rose-900/50"
+                              strokeWidth="3.5"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            {/* Value Circle */}
+                            <path
+                              className="text-rose-500 transition-all duration-1000 ease-out"
+                              strokeDasharray={`${nPct}, 100`}
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 leading-none">{nPct}%</span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col text-[10px] text-muted-foreground w-full z-10">
+                          <span className="font-mono font-bold text-rose-700 dark:text-rose-400 text-[11px] mb-1">
+                            {item.pembelianNpk.toLocaleString('id-ID')} / {item.targetNpk.toLocaleString('id-ID')} T
+                          </span>
+                          <span className="border-t border-rose-200/50 dark:border-rose-800/40 pt-1.5 leading-tight">
+                            Sisa: {item.sisaNpk.toLocaleString('id-ID')} T<br/>
+                            <span className="text-[9px] opacity-75">({(item.sisaNpk * 1000).toLocaleString('id-ID')} Kg)</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

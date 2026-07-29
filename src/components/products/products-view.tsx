@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import { fetchProducts, createProduct, updateProduct, deleteProduct, type Product } from '@/lib/api'
-import { formatRupiah, formatNumber, getTypeBadgeColor, getProductImage } from '@/lib/format'
+import { formatRupiah, formatNumber, getTypeBadgeColor, getProductImage, getProductPriceDetails, encodeProductDescription } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -76,6 +76,13 @@ const TYPE_PILL_COLORS: Record<string, string> = {
   ORGANIK: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700',
 }
 
+const parseLocalNum = (val: string) => {
+  if (!val) return 0
+  const noDots = val.replace(/\./g, '')
+  const standard = noDots.replace(/,/g, '.')
+  return parseFloat(standard) || 0
+}
+
 const emptyForm = {
   name: '',
   type: 'UREA',
@@ -99,6 +106,11 @@ export function ProductsView() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
+  
+  // Local string states for inputs to handle Indonesian decimal formatting natively
+  const [pudInput, setPudInput] = useState('')
+  const [pptsInput, setPptsInput] = useState('')
+  const [hetInput, setHetInput] = useState('')
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', refreshKey],
@@ -151,23 +163,29 @@ export function ProductsView() {
 
   const handleOpenAdd = () => {
     setForm(emptyForm)
+    setPudInput(String(emptyForm.pricePud))
+    setPptsInput(String(emptyForm.pricePpts))
+    setHetInput(String(emptyForm.priceHet))
     setEditingId(null)
     setDialogOpen(true)
   }
 
   const handleOpenEdit = (product: Product) => {
-    const isNpk = product.type === 'NPK'
+    const { het, pud, ppts, cleanDescription } = getProductPriceDetails(product)
     setForm({
       name: product.name,
       type: product.type,
-      pricePerKg: product.pricePerKg || (isNpk ? 2300 : 2250),
-      subsidyPrice: product.subsidyPrice || (isNpk ? 2300 : 2250),
-      pricePud: product.pricePud || (isNpk ? 2050 : 1950),
-      pricePpts: product.pricePpts || (isNpk ? 2150 : 2100),
-      priceHet: product.priceHet || (isNpk ? 2300 : 2250),
-      description: product.description || '',
+      pricePerKg: het,
+      subsidyPrice: het,
+      pricePud: pud,
+      pricePpts: ppts,
+      priceHet: het,
+      description: cleanDescription,
       isActive: product.isActive,
     })
+    setPudInput(String(pud))
+    setPptsInput(String(ppts))
+    setHetInput(String(het))
     setEditingId(product.id)
     setDialogOpen(true)
   }
@@ -177,10 +195,22 @@ export function ProductsView() {
       toast({ title: 'Validasi', description: 'Nama produk wajib diisi', variant: 'destructive' })
       return
     }
+    const encodedDesc = encodeProductDescription(
+      form.pricePud,
+      form.pricePpts,
+      form.priceHet,
+      form.description
+    )
+    const payload = {
+      ...form,
+      pricePerKg: form.priceHet,
+      subsidyPrice: form.priceHet,
+      description: encodedDesc,
+    }
     if (editingId) {
-      updateMutation.mutate({ id: editingId, data: form })
+      updateMutation.mutate({ id: editingId, data: payload })
     } else {
-      createMutation.mutate(form as Parameters<typeof createProduct>[0])
+      createMutation.mutate(payload as Parameters<typeof createProduct>[0])
     }
   }
 
@@ -269,10 +299,7 @@ export function ProductsView() {
                     </TableRow>
                   ) : (
                     filtered.map((product) => {
-                      const isNpk = product.type === 'NPK'
-                      const pud = product.pricePud || (isNpk ? 2050 : 1950)
-                      const ppts = product.pricePpts || (isNpk ? 2150 : 2100)
-                      const het = product.priceHet || (isNpk ? 2300 : 2250)
+                      const { het, pud, ppts, cleanDescription } = getProductPriceDetails(product)
 
                       return (
                         <TableRow key={product.id} className={`border-l-2 ${TYPE_BORDER_COLORS[product.type] || 'border-l-gray-300'} hover:border-l-primary/30`}>
@@ -287,8 +314,8 @@ export function ProductsView() {
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-semibold text-sm text-foreground">{product.name}</span>
-                                {product.description && (
-                                  <span className="text-[11px] text-muted-foreground line-clamp-1">{product.description}</span>
+                                {cleanDescription && (
+                                  <span className="text-[11px] text-muted-foreground line-clamp-1">{cleanDescription}</span>
                                 )}
                               </div>
                             </div>
@@ -300,17 +327,17 @@ export function ProductsView() {
                           </TableCell>
                           {/* Harga PUD */}
                           <TableCell className="text-sm text-right font-mono">
-                            <div>Rp {pud.toLocaleString('id-ID')}/kg</div>
+                            <div>Rp {pud.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</div>
                             <div className="text-[10px] text-muted-foreground">({formatRupiah(pud * 1000)}/Ton)</div>
                           </TableCell>
                           {/* Harga PPTS */}
                           <TableCell className="text-sm text-right font-mono">
-                            <div>Rp {ppts.toLocaleString('id-ID')}/kg</div>
+                            <div>Rp {ppts.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</div>
                             <div className="text-[10px] text-muted-foreground">({formatRupiah(ppts * 1000)}/Ton)</div>
                           </TableCell>
                           {/* Harga HET */}
                           <TableCell className="text-sm text-right font-mono text-emerald-700 dark:text-emerald-300 font-bold">
-                            <div>Rp {het.toLocaleString('id-ID')}/kg</div>
+                            <div>Rp {het.toLocaleString('id-ID', { maximumFractionDigits: 3 })}/kg</div>
                             <div className="text-[10px] font-normal text-muted-foreground">({formatRupiah(het * 1000)}/Ton)</div>
                           </TableCell>
                           <TableCell className="text-sm text-right">
@@ -381,13 +408,21 @@ export function ProductsView() {
                   value={form.type}
                   onValueChange={(v) => {
                     const isNpk = v === 'NPK'
+                    const het = isNpk ? 2300 : 2250
+                    const ppts = isNpk ? 2150 : 2100
+                    const pud = isNpk ? 2050 : 1950
                     setForm({
                       ...form,
                       type: v,
-                      pricePud: isNpk ? 2050 : 1950,
-                      pricePpts: isNpk ? 2150 : 2100,
-                      priceHet: isNpk ? 2300 : 2250,
+                      pricePud: pud,
+                      pricePpts: ppts,
+                      priceHet: het,
+                      pricePerKg: het,
+                      subsidyPrice: het,
                     })
+                    setPudInput(String(pud))
+                    setPptsInput(String(ppts))
+                    setHetInput(String(het))
                   }}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -418,9 +453,12 @@ export function ProductsView() {
                   </Tooltip>
                   <Input
                     id="pricePud"
-                    type="number"
-                    value={form.pricePud || ''}
-                    onChange={(e) => setForm({ ...form, pricePud: parseFloat(e.target.value) || 0 })}
+                    type="text"
+                    value={pudInput}
+                    onChange={(e) => {
+                      setPudInput(e.target.value)
+                      setForm({ ...form, pricePud: parseLocalNum(e.target.value) })
+                    }}
                     placeholder="Rp/kg"
                     className="h-8 text-xs font-mono"
                   />
@@ -443,9 +481,12 @@ export function ProductsView() {
                   </Tooltip>
                   <Input
                     id="pricePpts"
-                    type="number"
-                    value={form.pricePpts || ''}
-                    onChange={(e) => setForm({ ...form, pricePpts: parseFloat(e.target.value) || 0 })}
+                    type="text"
+                    value={pptsInput}
+                    onChange={(e) => {
+                      setPptsInput(e.target.value)
+                      setForm({ ...form, pricePpts: parseLocalNum(e.target.value) })
+                    }}
                     placeholder="Rp/kg"
                     className="h-8 text-xs font-mono"
                   />
@@ -468,9 +509,13 @@ export function ProductsView() {
                   </Tooltip>
                   <Input
                     id="priceHet"
-                    type="number"
-                    value={form.priceHet || ''}
-                    onChange={(e) => setForm({ ...form, priceHet: parseFloat(e.target.value) || 0, pricePerKg: parseFloat(e.target.value) || 0, subsidyPrice: parseFloat(e.target.value) || 0 })}
+                    type="text"
+                    value={hetInput}
+                    onChange={(e) => {
+                      setHetInput(e.target.value)
+                      const parsed = parseLocalNum(e.target.value)
+                      setForm({ ...form, priceHet: parsed, pricePerKg: parsed, subsidyPrice: parsed })
+                    }}
                     placeholder="Rp/kg"
                     className="h-8 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300"
                   />

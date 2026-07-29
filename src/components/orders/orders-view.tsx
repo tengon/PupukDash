@@ -8,7 +8,7 @@ import {
   createOrder, updateOrder,
   type OrderWithDetails, type Farmer, type Warehouse, type Product, type Ppts,
 } from '@/lib/api'
-import { formatRupiah, formatNumber, formatDate, getStatusColor, getStatusLabel, getTypeBadgeColor, getProductImage } from '@/lib/format'
+import { formatRupiah, formatNumber, formatDate, getStatusColor, getStatusLabel, getTypeBadgeColor, getProductImage, getProductPriceDetails } from '@/lib/format'
 import { exportToCSV } from '@/lib/export'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -272,10 +272,11 @@ export function OrdersView() {
     if (field === 'productId' && typeof value === 'string') {
       const product = (products || []).find((p) => p.id === value)
       if (product) {
+        const { ppts } = getProductPriceDetails(product)
         updated[index].productName = product.name
         updated[index].productType = product.type
-        updated[index].pricePerKg = product.pricePerKg
-        updated[index].subsidyPrice = product.subsidyPrice
+        updated[index].pricePerKg = ppts
+        updated[index].subsidyPrice = ppts
       }
     }
 
@@ -815,7 +816,7 @@ export function OrdersView() {
                             )}
                           </div>
                           <div className="col-span-3 sm:col-span-2">
-                            <Label className="text-[10px] text-muted-foreground">Harga/kg</Label>
+                            <Label className="text-[10px] text-muted-foreground">Harga PPTS/kg</Label>
                             <div className="h-8 flex items-center text-xs font-mono">
                               {item.pricePerKg ? formatRupiah(item.pricePerKg) : '-'}
                             </div>

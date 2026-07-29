@@ -27,6 +27,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
+import {
   Table,
   TableBody,
   TableCell,
@@ -271,6 +281,103 @@ function formatTon(value: number) {
   return value.toLocaleString('id-ID', { maximumFractionDigits: 1 })
 }
 
+function VisualAllocationChart({
+  title,
+  description,
+  rows,
+}: {
+  title: string
+  description: string
+  rows: AllocationChartRow[]
+}) {
+  const data = rows.map((r) => ({
+    name: r.label.replace('Kec. ', ''),
+    ureaRealisasi: r.urea.realisasi,
+    ureaSisa: r.urea.sisa,
+    npkRealisasi: r.npk.realisasi,
+    npkSisa: r.npk.sisa,
+  }))
+
+  const chartWidth = Math.max(600, data.length * 80)
+
+  if (rows.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+          <CardDescription className="text-xs">{description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+            Tidak ada data untuk divisualisasikan
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card style={{ boxShadow: 'var(--shadow-sm)' }}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+        <CardDescription className="text-xs">{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="w-full overflow-x-auto pb-4">
+          <div style={{ width: chartWidth, height: 400 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data}
+                margin={{ top: 20, right: 20, left: 0, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tickMargin={20}
+                  axisLine={{ stroke: '#e5e7eb' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(val) => val.toLocaleString('id-ID')}
+                />
+                <RechartsTooltip
+                  cursor={{ fill: '#f3f4f6', opacity: 0.4 }}
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    fontSize: '12px',
+                  }}
+                  formatter={(value: number, name: string) => [
+                    `${value.toLocaleString('id-ID')} Ton`,
+                    name,
+                  ]}
+                />
+                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '12px' }} />
+                
+                {/* UREA Stack */}
+                <Bar dataKey="ureaRealisasi" name="UREA Realisasi" stackId="a" fill="#f97316" barSize={32} />
+                <Bar dataKey="ureaSisa" name="UREA Sisa" stackId="a" fill="#fde047" radius={[4, 4, 0, 0]} barSize={32} />
+                
+                {/* NPK Stack */}
+                <Bar dataKey="npkRealisasi" name="NPK Realisasi" stackId="b" fill="#ef4444" barSize={32} />
+                <Bar dataKey="npkSisa" name="NPK Sisa" stackId="b" fill="#fca5a5" radius={[4, 4, 0, 0]} barSize={32} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 function AllocationMetricBars({
   product,
   metric,
@@ -282,11 +389,12 @@ function AllocationMetricBars({
   maxValue: number
   productClassName: string
 }) {
-  const bars = [
-    { label: 'Alokasi', value: metric.alokasi, className: 'bg-emerald-500' },
-    { label: 'Realisasi', value: metric.realisasi, className: 'bg-blue-500' },
-    { label: 'Sisa', value: metric.sisa, className: 'bg-amber-500' },
-  ]
+  const alokasiWidth = Math.max(1, (metric.alokasi / maxValue) * 100)
+  
+  // Calculate percentages so they fill the alokasi container properly
+  const total = metric.realisasi + metric.sisa || 1
+  const realisasiPct = metric.alokasi > 0 ? (metric.realisasi / metric.alokasi) * 100 : (metric.realisasi / total) * 100
+  const sisaPct = metric.alokasi > 0 ? (metric.sisa / metric.alokasi) * 100 : (metric.sisa / total) * 100
 
   return (
     <div className="rounded-md border bg-background/80 p-2.5">
@@ -294,26 +402,38 @@ function AllocationMetricBars({
         <Badge variant="outline" className={`h-5 px-2 text-[10px] font-bold ${productClassName}`}>
           {product}
         </Badge>
-        <span className="text-[10px] text-muted-foreground">Ton</span>
+        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 font-mono bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
+          Alokasi: {formatTon(metric.alokasi)} T
+        </span>
       </div>
-      <div className="space-y-1.5">
-        {bars.map((bar) => {
-          const width = Math.max(2, (bar.value / maxValue) * 100)
-          return (
-            <div key={`${product}-${bar.label}`} className="grid grid-cols-[4.5rem_minmax(0,1fr)_4rem] items-center gap-2">
-              <span className="text-[10px] text-muted-foreground">{bar.label}</span>
-              <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                <div
-                  className={`h-full rounded-full ${bar.className}`}
-                  style={{ width: `${width}%` }}
-                />
-              </div>
-              <span className="text-right font-mono text-[10px] font-semibold tabular-nums">
-                {formatTon(bar.value)}
-              </span>
-            </div>
-          )
-        })}
+      <div className="space-y-1.5 mt-2">
+        <div className="flex justify-between text-[10px] font-semibold px-0.5">
+          <span className="text-blue-600 dark:text-blue-400">Real: {formatTon(metric.realisasi)}</span>
+          <span className="text-amber-600 dark:text-amber-400">Sisa: {formatTon(metric.sisa)}</span>
+        </div>
+        
+        {/* Full width container representing maxValue */}
+        <div className="h-3.5 w-full bg-muted/50 rounded-full overflow-hidden">
+          {/* The Stacked Bar representing Alokasi */}
+          <div 
+            className="h-full flex overflow-hidden rounded-full bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/40"
+            style={{ width: `${alokasiWidth}%` }}
+            title={`Alokasi: ${formatTon(metric.alokasi)} T`}
+          >
+            {/* Realisasi Bar */}
+            <div 
+              className="h-full bg-blue-500 transition-all duration-500 hover:brightness-110"
+              style={{ width: `${realisasiPct}%` }}
+              title={`Realisasi: ${formatTon(metric.realisasi)} T`}
+            />
+            {/* Sisa Bar */}
+            <div 
+              className="h-full bg-amber-500 transition-all duration-500 hover:brightness-110"
+              style={{ width: `${sisaPct}%` }}
+              title={`Sisa: ${formatTon(metric.sisa)} T`}
+            />
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -346,7 +466,7 @@ function AllocationBarChart({
         ) : (
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" />Alokasi</span>
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full border border-emerald-500 bg-emerald-500/20" />Alokasi (Total)</span>
               <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500" />Realisasi</span>
               <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500" />Sisa</span>
             </div>
@@ -1079,19 +1199,26 @@ function PptsStockTab() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <AllocationBarChart
-          title="Alokasi-Realisasi-Sisa per PPTS"
-          description="Bar graph UREA dan NPK berdasarkan data PPTS yang sedang difilter. Satuan: Ton."
+      <div className="space-y-4">
+        <VisualAllocationChart
+          title="Grafik Alokasi, Realisasi & Sisa per PPTS"
+          description="Visualisasi grafik batang untuk UREA dan NPK berdasarkan data PPTS (seperti contoh gambar)."
           rows={pptsAllocationRows}
-          emptyMessage="Tidak ada data PPTS untuk divisualisasikan"
         />
-        <AllocationBarChart
-          title="Alokasi-Realisasi-Sisa per Kecamatan"
-          description="Agregasi alokasi, realisasi tebusan, dan sisa alokasi UREA/NPK per kecamatan. Satuan: Ton."
-          rows={districtAllocationRows}
-          emptyMessage="Tidak ada data kecamatan untuk divisualisasikan"
-        />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <AllocationBarChart
+            title="List Progress per PPTS"
+            description="Bar graph UREA dan NPK berdasarkan data PPTS yang sedang difilter. Satuan: Ton."
+            rows={pptsAllocationRows}
+            emptyMessage="Tidak ada data PPTS untuk divisualisasikan"
+          />
+          <AllocationBarChart
+            title="List Progress per Kecamatan"
+            description="Agregasi alokasi, realisasi tebusan, dan sisa alokasi UREA/NPK per kecamatan. Satuan: Ton."
+            rows={districtAllocationRows}
+            emptyMessage="Tidak ada data kecamatan untuk divisualisasikan"
+          />
+        </div>
       </div>
 
       {/* Main Table Card */}

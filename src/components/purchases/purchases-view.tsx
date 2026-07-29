@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
-import { fetchPurchases, createPurchase, fetchWarehouses, fetchProducts, type Purchase } from '@/lib/api'
-import { formatRupiah, formatNumber, formatDateTime, getProductImage, getTypeBadgeColor } from '@/lib/format'
+import { fetchPurchases, createPurchase, updatePurchase, deletePurchase, fetchWarehouses, fetchProducts, type Purchase } from '@/lib/api'
+import { formatRupiah, formatNumber, formatDateTime, getProductImage, getTypeBadgeColor, getProductPriceDetails } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -29,7 +39,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { motion } from 'framer-motion'
-import { Plus, Search, ShoppingBag, Building2, Warehouse, Package, Truck, Calendar, Banknote } from 'lucide-react'
+import { Plus, Search, ShoppingBag, Building2, Warehouse, Package, Truck, Calendar, Banknote, Pencil, Trash2 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 
 const DEFAULT_SUPPLIERS = [
@@ -47,6 +58,9 @@ export function PurchasesView() {
   const [search, setSearch] = useState('')
   const [warehouseFilter, setWarehouseFilter] = useState('all')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const [supplierName, setSupplierName] = useState(DEFAULT_SUPPLIERS[0])
   const [formWarehouse, setFormWarehouse] = useState('')
@@ -75,8 +89,10 @@ export function PurchasesView() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases'] })
       queryClient.invalidateQueries({ queryKey: ['stock'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       triggerRefresh()
       setDialogOpen(false)
+      setEditingId(null)
       setFormNotes('')
       toast({ title: 'Berhasil', description: 'Pembelian supplier berhasil dicatat & stok otomatis bertambah' })
     },
@@ -85,19 +101,77 @@ export function PurchasesView() {
     },
   })
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Purchase> }) => updatePurchase(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['stock'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      triggerRefresh()
+      setDialogOpen(false)
+      setEditingId(null)
+      setFormNotes('')
+      toast({ title: 'Berhasil', description: 'Pembelian supplier (PO) berhasil diperbarui & stok disesuaikan' })
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Gagal', description: err.message, variant: 'destructive' })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deletePurchase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['stock'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      triggerRefresh()
+      setDeleteOpen(false)
+      setDeletingId(null)
+      toast({ title: 'Berhasil', description: 'PO Pembelian berhasil dibatalkan/dihapus & stok gudang disesuaikan' })
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Gagal', description: err.message, variant: 'destructive' })
+    },
+  })
+
   const handleOpenAdd = () => {
+    setEditingId(null)
+    setSupplierName(DEFAULT_SUPPLIERS[0])
     if (warehouses && warehouses.length > 0) setFormWarehouse(warehouses[0].id)
     if (products && products.length > 0) {
       setFormProduct(products[0].id)
-      setFormPricePerKg(products[0].subsidyPrice || products[0].pricePerKg)
+      const { pud } = getProductPriceDetails(products[0])
+      setFormPricePerKg(pud)
     }
+    setFormQuantityTon(10)
+    setFormNotes('')
     setDialogOpen(true)
+  }
+
+  const handleOpenEdit = (item: Purchase) => {
+    setEditingId(item.id)
+    setSupplierName(item.supplierName || DEFAULT_SUPPLIERS[0])
+    setFormWarehouse(item.warehouseId)
+    setFormProduct(item.productId)
+    setFormQuantityTon(item.quantity / 1000)
+    setFormPricePerKg(item.pricePerKg)
+    setFormNotes(item.notes || '')
+    setDialogOpen(true)
+  }
+
+  const handleDelete = () => {
+    if (deletingId) {
+      deleteMutation.mutate(deletingId)
+    }
   }
 
   const handleProductChange = (productId: string) => {
     setFormProduct(productId)
     const p = (products || []).find((item) => item.id === productId)
-    if (p) setFormPricePerKg(p.subsidyPrice || p.pricePerKg)
+    if (p) {
+      const { pud } = getProductPriceDetails(p)
+      setFormPricePerKg(pud)
+    }
   }
 
   const handleSave = () => {
@@ -106,14 +180,20 @@ export function PurchasesView() {
       return
     }
 
-    createMutation.mutate({
+    const payload = {
       supplierName,
       warehouseId: formWarehouse,
       productId: formProduct,
       quantity: formQuantityTon * 1000,
       pricePerKg: formPricePerKg,
       notes: formNotes || undefined,
-    })
+    }
+
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, data: payload })
+    } else {
+      createMutation.mutate(payload)
+    }
   }
 
   const list = purchases || []
@@ -218,12 +298,13 @@ export function PurchasesView() {
                     <TableHead className="text-xs text-right">Harga/kg</TableHead>
                     <TableHead className="text-xs text-right">Total Nilai</TableHead>
                     <TableHead className="text-xs">Tanggal</TableHead>
+                    <TableHead className="text-xs text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {list.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-10 text-sm text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-10 text-sm text-muted-foreground">
                         {search ? 'Tidak ada data pembelian yang cocok' : 'Belum ada transaksi pembelian supplier'}
                       </TableCell>
                     </TableRow>
@@ -272,6 +353,28 @@ export function PurchasesView() {
                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDateTime(item.createdAt)}
                         </TableCell>
+                        <TableCell className="text-right">
+                          <TooltipProvider>
+                            <div className="flex items-center justify-end gap-1">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40" onClick={() => handleOpenEdit(item)}>
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Edit PO Pembelian</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-red-50 dark:hover:bg-red-950/40" onClick={() => { setDeletingId(item.id); setDeleteOpen(true) }}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Hapus / Batalkan PO</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TooltipProvider>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -282,13 +385,13 @@ export function PurchasesView() {
         </CardContent>
       </Card>
 
-      {/* Add Dialog */}
+      {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Catat Pembelian dari Supplier</DialogTitle>
+            <DialogTitle>{editingId ? 'Edit Transaksi Pembelian (PO)' : 'Catat Pembelian dari Supplier'}</DialogTitle>
             <DialogDescription>
-              Isi data pasokan pupuk masuk. Stok gudang akan otomatis ter-update secara otomatis.
+              {editingId ? 'Ubah rincian transaksi pembelian. Stok gudang akan otomatis disesuaikan.' : 'Isi data pasokan pupuk masuk. Stok gudang akan otomatis ter-update secara otomatis.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -357,11 +460,15 @@ export function PurchasesView() {
                 <Label className="text-xs font-semibold">Harga Beli / kg (Rp) *</Label>
                 <Input
                   type="number"
+                  step="any"
                   placeholder="Harga per kg"
                   value={formPricePerKg || ''}
                   onChange={(e) => setFormPricePerKg(parseFloat(e.target.value) || 0)}
                   className="h-9 text-xs font-mono"
                 />
+                <p className="text-[10px] text-blue-600 dark:text-blue-400 font-mono font-medium">
+                  Disinkronkan ke Harga PUD produk
+                </p>
               </div>
             </div>
 
@@ -387,12 +494,30 @@ export function PurchasesView() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
-            <Button onClick={handleSave} disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Menyimpan...' : 'Simpan & Tambah Stok'}
+            <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
+              {createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : (editingId ? 'Simpan Perubahan' : 'Simpan & Tambah Stok')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete / Cancel PO Confirmation Dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus / Batalkan Transaksi PO?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus transaksi pembelian dari supplier. Stok pupuk yang sebelumnya masuk ke gudang akan otomatis dikurangi kembali secara proposional.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
+              {deleteMutation.isPending ? 'Menghapus...' : 'Ya, Hapus / Batalkan PO'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   )
 }

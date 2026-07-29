@@ -3,7 +3,7 @@ export function formatRupiah(amount: number): string {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 3,
   }).format(amount)
 }
 
@@ -28,7 +28,60 @@ export function formatDateTime(date: Date | string): string {
 }
 
 export function formatNumber(num: number): string {
-  return new Intl.NumberFormat('id-ID').format(num)
+  return new Intl.NumberFormat('id-ID', {
+    maximumFractionDigits: 3,
+  }).format(num)
+}
+
+export interface ProductPriceDetails {
+  het: number
+  pud: number
+  ppts: number
+  cleanDescription: string
+}
+
+export function getProductPriceDetails(product: {
+  type: string
+  pricePerKg: number
+  pricePud?: number
+  pricePpts?: number
+  priceHet?: number
+  description?: string | null
+}): ProductPriceDetails {
+  const isNpk = product.type === 'NPK'
+  let het = product.pricePerKg || (isNpk ? 2300 : 2250)
+  let pud = isNpk ? het - 250 : het - 300
+  let ppts = het - 150
+  let cleanDescription = product.description || ''
+
+  if (product.description && product.description.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(product.description)
+      if (typeof parsed === 'object' && parsed !== null) {
+        if (typeof parsed.het === 'number') het = parsed.het
+        if (typeof parsed.pud === 'number') pud = parsed.pud
+        if (typeof parsed.ppts === 'number') ppts = parsed.ppts
+        if (typeof parsed.desc === 'string') cleanDescription = parsed.desc
+      }
+    } catch (e) {
+      // ignore
+    }
+  } else {
+    if (product.pricePud) pud = product.pricePud
+    if (product.pricePpts) ppts = product.pricePpts
+    if (product.priceHet) het = product.priceHet
+  }
+
+  return { het, pud, ppts, cleanDescription }
+}
+
+export function encodeProductDescription(pud: number, ppts: number, het: number, descText: string): string {
+  return JSON.stringify({
+    pud,
+    ppts,
+    het,
+    desc: descText || '',
+  })
 }
 
 export function getStatusColor(status: string): string {

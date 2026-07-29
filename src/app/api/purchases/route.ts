@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 function generatePurchaseNo() {
   const date = new Date()
   const year = date.getFullYear()
@@ -117,6 +119,34 @@ export async function POST(request: NextRequest) {
           },
         })
       }
+
+      // 3. Sync Product PUD price with this Purchase's pricePerKg
+      const currentDesc = product.description || ''
+      const isNpk = product.type === 'NPK'
+      let currentHet = product.pricePerKg || (isNpk ? 2300 : 2250)
+      let currentPpts = currentHet - 150
+      let cleanDesc = currentDesc
+
+      if (currentDesc.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(currentDesc)
+          if (typeof parsed.het === 'number') currentHet = parsed.het
+          if (typeof parsed.ppts === 'number') currentPpts = parsed.ppts
+          if (typeof parsed.desc === 'string') cleanDesc = parsed.desc
+        } catch (e) {}
+      }
+
+      const updatedDesc = JSON.stringify({
+        pud: pricePerKg,
+        ppts: currentPpts,
+        het: currentHet,
+        desc: cleanDesc,
+      })
+
+      await tx.fertilizerProduct.update({
+        where: { id: productId },
+        data: { description: updatedDesc },
+      })
 
       return purchase
     })
