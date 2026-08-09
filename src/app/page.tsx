@@ -24,13 +24,13 @@ import { ActivityLogView } from '@/components/activity/activity-log-view'
 import { LoginView } from '@/components/auth/login-view'
 import { CommandPalette } from '@/components/command-palette'
 import { seedData, clearData } from '@/lib/api'
-import { Leaf, Database, Clock, Trash2, LogOut } from 'lucide-react'
+import { Leaf, Database, Clock, Trash2, LogOut, RefreshCw } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/notification-bell'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, useQuery } from '@tanstack/react-query'
 
 const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   dashboard: { title: 'Dashboard', description: 'Ringkasan data penjualan pupuk bersubsidi' },
@@ -81,7 +81,26 @@ export default function HomePage() {
   const { toast } = useToast()
   const [isSeeding, setIsSeeding] = useState(false)
   const wibTime = useWIBClock()
-  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const { data: scraperStatus } = useQuery({
+    queryKey: ['scraper-sync-status'],
+    queryFn: async () => {
+      const res = await fetch('/api/scraper/sync')
+      if (!res.ok) return null
+      return res.json()
+    },
+    refetchInterval: 30000,
+  })
+
+  const lastUpdateText = useMemo(() => {
+    if (!scraperStatus?.lastSyncTime) return '06:00 WIB'
+    const t = scraperStatus.lastSyncTime
+    if (t.includes('WIB')) return t
+    try {
+      return new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+    } catch {
+      return t
+    }
+  }, [scraperStatus])
 
   const pageInfo = PAGE_TITLES[activeTab] || PAGE_TITLES.dashboard
 
@@ -191,11 +210,17 @@ export default function HomePage() {
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <NotificationBell />
             
-            {/* WIB Clock */}
+            {/* WIB Clock & Last Scraper Update Info */}
             {wibTime && (
-              <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
-                <Clock className="h-3.5 w-3.5" />
-                <span className="font-mono tabular-nums">{wibTime}</span>
+              <div className="hidden md:flex flex-col items-end text-right justify-center mr-1">
+                <div className="flex items-center gap-1.5 text-xs text-foreground font-semibold">
+                  <Clock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-mono tabular-nums">{wibTime}</span>
+                </div>
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground leading-tight mt-0.5">
+                  <RefreshCw className="h-2.5 w-2.5 text-emerald-500" />
+                  <span>Update: {lastUpdateText}</span>
+                </div>
               </div>
             )}
 
