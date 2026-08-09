@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
-import { fetchDashboard, fetchStock, fetchProducts, fetchDistributions, fetchPptsList, type DashboardData } from '@/lib/api'
+import { fetchDashboard, fetchStock, fetchProducts, fetchDistributions, fetchPptsList, fetchSpjbPpts, type DashboardData } from '@/lib/api'
 import { formatRupiah, formatNumber, getStatusColor, getStatusLabel, getStockStatusColor, getStockStatusLabel, getProductImage, getProductPriceDetails } from '@/lib/format'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -513,40 +513,65 @@ async function fetchAllWeather(): Promise<DistrictWeather[]> {
 }
 
 
+function parseTonValChart(val: any): number {
+  if (!val) return 0
+  const str = String(val).trim()
+  if (str.includes(',') && str.includes('.')) {
+    return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0
+  }
+  if (str.includes(',')) {
+    return parseFloat(str.replace(',', '.')) || 0
+  }
+  return parseFloat(str) || 0
+}
+
 function DistrictPurchasesChart() {
   const { refreshKey } = useAppStore()
-  const { data: pptsList } = useQuery({
-    queryKey: ['ppts', refreshKey],
-    queryFn: () => fetchPptsList(),
+
+  // ── Synchronized with official Monitoring PPTS (SPJB PPTS GOW CM) ──
+  const { data: spjbPptsData } = useQuery({
+    queryKey: ['spjb-ppts-gowcm', refreshKey],
+    queryFn: () => fetchSpjbPpts(),
   })
 
-  const { data: distributionsData } = useQuery({
-    queryKey: ['distributions', refreshKey],
-    queryFn: fetchDistributions,
-  })
-
-  // ── Build row data per PPTS (same shape as AllocationChartRow in reports) ──
+  // ── Build row data per PPTS (exact match with Monitoring PPTS) ──
   const rows = useMemo(() => {
-    if (!pptsList || pptsList.length === 0) return []
+    const list = spjbPptsData?.data || []
+    if (list.length === 0) return []
 
-    return pptsList.map((p, i) => {
-      const alokasiUrea = p.alokasiUrea || 0
-      const realisasiUrea = p.realisasiUrea || 0
-      const sisaUrea = Math.max(0, p.sisaUrea ?? (alokasiUrea - realisasiUrea))
+    return list.map((item, i) => {
+      const alokasiRows = item.detail?.alokasiTable?.rows || []
 
-      const alokasiNpk = p.alokasiNpk || 0
-      const realisasiNpk = p.realisasiNpk || 0
-      const sisaNpk = Math.max(0, p.sisaNpk ?? (alokasiNpk - realisasiNpk))
+      let alokasiUrea = 0
+      let realisasiUrea = 0
+      let alokasiNpk = 0
+      let realisasiNpk = 0
+
+      alokasiRows.forEach((row: any) => {
+        const prod = String(row[1] || row[0] || '').toUpperCase()
+        const alok = parseTonValChart(row[2])
+        const real = parseTonValChart(row[3])
+        if (prod.includes('UREA')) {
+          alokasiUrea += alok
+          realisasiUrea += real
+        } else if (prod.includes('NPK')) {
+          alokasiNpk += alok
+          realisasiNpk += real
+        }
+      })
+
+      const sisaUrea = Math.max(0, alokasiUrea - realisasiUrea)
+      const sisaNpk = Math.max(0, alokasiNpk - realisasiNpk)
 
       return {
-        id: p.id ?? String(i),
-        label: p.name || p.kode || `PPTS ${i + 1}`,
-        subtitle: p.district ? `Kec. ${p.district}` : undefined,
+        id: item.kodePpts || String(i),
+        label: item.namaPpts || `PPTS ${i + 1}`,
+        subtitle: item.kabupaten ? `Kios ${item.kodePpts} (${item.kabupaten})` : `Kios ${item.kodePpts}`,
         urea: { alokasi: alokasiUrea, realisasi: realisasiUrea, sisa: sisaUrea },
         npk: { alokasi: alokasiNpk, realisasi: realisasiNpk, sisa: sisaNpk },
       }
     })
-  }, [pptsList, distributionsData])
+  }, [spjbPptsData])
 
   const formatTon = (v: number) => v.toLocaleString('id-ID', { maximumFractionDigits: 1 })
 
