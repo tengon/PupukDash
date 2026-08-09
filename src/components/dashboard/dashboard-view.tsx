@@ -24,6 +24,7 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
+  LabelList,
 } from 'recharts'
 import { QuickRestockDialog } from '@/components/stock/quick-restock-dialog'
 
@@ -584,20 +585,29 @@ function DistrictPurchasesChart() {
     return Math.max(1, ...vals)
   }, [rows])
 
-  const barData = rows.map((r) => ({
-    name: r.label,
-    subtitle: r.subtitle,
-    ureaRealisasi: r.urea.realisasi,
-    ureaSisa: r.urea.sisa,
-    ureaAlokasi: r.urea.alokasi,
-    npkRealisasi: r.npk.realisasi,
-    npkSisa: r.npk.sisa,
-    npkAlokasi: r.npk.alokasi,
-    totalAlokasi: r.urea.alokasi + r.npk.alokasi,
-  }))
+  const barData = rows.map((r) => {
+    const ureaPct = r.urea.alokasi > 0 ? Math.round((r.urea.realisasi / r.urea.alokasi) * 100) : 0
+    const npkPct = r.npk.alokasi > 0 ? Math.round((r.npk.realisasi / r.npk.alokasi) * 100) : 0
+
+    return {
+      name: r.label,
+      subtitle: r.subtitle,
+      ureaRealisasi: r.urea.realisasi,
+      ureaSisa: r.urea.sisa,
+      ureaAlokasi: r.urea.alokasi,
+      ureaPct,
+      ureaPctLabel: r.urea.alokasi > 0 ? `${ureaPct}%` : '',
+      npkRealisasi: r.npk.realisasi,
+      npkSisa: r.npk.sisa,
+      npkAlokasi: r.npk.alokasi,
+      npkPct,
+      npkPctLabel: r.npk.alokasi > 0 ? `${npkPct}%` : '',
+      totalAlokasi: r.urea.alokasi + r.npk.alokasi,
+    }
+  })
   const chartWidth = Math.max(500, barData.length * 70)
 
-  // Custom Tooltip component for detailed breakdown including Alokasi
+  // Custom Tooltip component for detailed breakdown including Alokasi & %
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null
     const data = payload[0].payload
@@ -620,7 +630,7 @@ function DistrictPurchasesChart() {
         <div className="space-y-1 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2">
           <div className="flex justify-between items-center font-bold text-amber-700 dark:text-amber-300">
             <span>🌾 UREA Alokasi</span>
-            <span className="font-mono">{data.ureaAlokasi.toLocaleString('id-ID')} Ton</span>
+            <span className="font-mono">{data.ureaAlokasi.toLocaleString('id-ID')} Ton ({data.ureaPct}%)</span>
           </div>
           <div className="flex justify-between text-[11px] text-muted-foreground pt-0.5">
             <span>• Realisasi: <strong className="text-amber-600 dark:text-amber-400 font-mono">{data.ureaRealisasi.toLocaleString('id-ID')} T</strong></span>
@@ -632,7 +642,7 @@ function DistrictPurchasesChart() {
         <div className="space-y-1 bg-emerald-600/10 border border-emerald-600/20 rounded-lg p-2">
           <div className="flex justify-between items-center font-bold text-emerald-700 dark:text-emerald-300">
             <span>🌱 NPK Alokasi</span>
-            <span className="font-mono">{data.npkAlokasi.toLocaleString('id-ID')} Ton</span>
+            <span className="font-mono">{data.npkAlokasi.toLocaleString('id-ID')} Ton ({data.npkPct}%)</span>
           </div>
           <div className="flex justify-between text-[11px] text-muted-foreground pt-0.5">
             <span>• Realisasi: <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{data.npkRealisasi.toLocaleString('id-ID')} T</strong></span>
@@ -728,11 +738,15 @@ function DistrictPurchasesChart() {
 
                     {/* UREA Stack */}
                     <Bar dataKey="ureaRealisasi" name="🌾 UREA Realisasi" stackId="a" fill="url(#ureaRealGrad)" barSize={22} stroke="#b45309" strokeWidth={0.5} radius={[0, 0, 3, 3]} />
-                    <Bar dataKey="ureaSisa" name="🌾 UREA Sisa" stackId="a" fill="url(#ureaSisaGrad)" barSize={22} stroke="#d97706" strokeWidth={0.5} radius={[5, 5, 0, 0]} />
+                    <Bar dataKey="ureaSisa" name="🌾 UREA Sisa" stackId="a" fill="url(#ureaSisaGrad)" barSize={22} stroke="#d97706" strokeWidth={0.5} radius={[5, 5, 0, 0]}>
+                      <LabelList dataKey="ureaPctLabel" position="top" style={{ fontSize: '10px', fontWeight: 800, fill: '#d97706' }} />
+                    </Bar>
 
                     {/* NPK Stack */}
                     <Bar dataKey="npkRealisasi" name="🌱 NPK Realisasi" stackId="b" fill="url(#npkRealGrad)" barSize={22} stroke="#065f46" strokeWidth={0.5} radius={[0, 0, 3, 3]} />
-                    <Bar dataKey="npkSisa" name="🌱 NPK Sisa" stackId="b" fill="url(#npkSisaGrad)" barSize={22} stroke="#047857" strokeWidth={0.5} radius={[5, 5, 0, 0]} />
+                    <Bar dataKey="npkSisa" name="🌱 NPK Sisa" stackId="b" fill="url(#npkSisaGrad)" barSize={22} stroke="#047857" strokeWidth={0.5} radius={[5, 5, 0, 0]}>
+                      <LabelList dataKey="npkPctLabel" position="top" style={{ fontSize: '10px', fontWeight: 800, fill: '#047857' }} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
