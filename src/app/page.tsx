@@ -10,17 +10,21 @@ import { DashboardView } from '@/components/dashboard/dashboard-view'
 import { ProductsView } from '@/components/products/products-view'
 import { FarmersView } from '@/components/farmers/farmers-view'
 import { PptsView } from '@/components/ppts/ppts-view'
+import { MonitoringPptsView } from '@/components/ppts/monitoring-ppts-view'
+import { MonitoringPudView } from '@/components/pud/monitoring-pud-view'
 import { WarehousesView } from '@/components/warehouses/warehouses-view'
 import { StockView } from '@/components/stock/stock-view'
 import { DistributionsView } from '@/components/distributions/distributions-view'
 import { OrdersView } from '@/components/orders/orders-view'
 import { PurchasesView } from '@/components/purchases/purchases-view'
+import { StockConfirmationView } from '@/components/stock/stock-confirmation-view'
 import { RPKPView } from '@/components/rpkp/rpkp-view'
 import { ReportsView } from '@/components/reports/reports-view'
 import { ActivityLogView } from '@/components/activity/activity-log-view'
+import { LoginView } from '@/components/auth/login-view'
 import { CommandPalette } from '@/components/command-palette'
 import { seedData, clearData } from '@/lib/api'
-import { Leaf, Database, Clock, Trash2 } from 'lucide-react'
+import { Leaf, Database, Clock, Trash2, LogOut } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/notification-bell'
 import { useEffect, useState, useCallback, useRef } from 'react'
@@ -33,9 +37,13 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   products: { title: 'Produk Pupuk', description: 'Kelola data produk pupuk bersubsidi' },
   farmers: { title: 'Data Petani', description: 'Kelola data petani penerima pupuk bersubsidi' },
   ppts: { title: 'PPTS (Kios Pengecer)', description: 'Kelola data Pos Penyalur Pupuk Terdaftar & Bersubsidi' },
+  'monitoring-ppts': { title: 'Monitoring PPTS', description: 'Monitor alokasi SPJB dan realisasi tebusan pupuk bersubsidi per Kios PPTS' },
+  'monitoring-pud': { title: 'Monitoring PUD', description: 'Monitor SPJB Operasional Distributor PUD dan Alokasi Bulanan dari Produsen' },
   warehouses: { title: 'Gudang', description: 'Kelola data gudang penyimpanan pupuk' },
   'monitoring-warehouses': { title: 'Gudang', description: 'Monitoring data gudang penyimpanan pupuk' },
   stock: { title: 'Stok Gudang', description: 'Monitor dan kelola stok pupuk di setiap gudang' },
+  'stock-confirmation': { title: 'Konfirmasi Stok', description: 'Verifikasi dan berita acara penerimaan & penyaluran stok pupuk' },
+  'stock-confirmation-report': { title: 'Laporan Konfirmasi Stok', description: 'Rekapitulasi dan berita acara opname konfirmasi stok pupuk bersubsidi' },
   distributions: { title: 'Distribusi', description: 'Kelola distribusi pupuk ke kelompok tani' },
   orders: { title: 'Penjualan (ke PPTS)', description: 'Kelola pesanan penjualan pupuk ke Kios PPTS' },
   purchases: { title: 'Pembelian (dari Supplier)', description: 'Pencatatan pasokan pupuk masuk dari PT Pupuk Indonesia / Produsen' },
@@ -69,7 +77,7 @@ function useWIBClock() {
 }
 
 export default function HomePage() {
-  const { activeTab, triggerShortcut, refreshKey, setCommandPaletteOpen } = useAppStore()
+  const { activeTab, triggerShortcut, refreshKey, setCommandPaletteOpen, isAuthenticated, user, logout } = useAppStore()
   const { toast } = useToast()
   const [isSeeding, setIsSeeding] = useState(false)
   const wibTime = useWIBClock()
@@ -160,14 +168,19 @@ export default function HomePage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  if (!isAuthenticated) {
+    return <LoginView />
+  }
+
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={false}>
       {/* Thin green accent bar at the very top */}
       <div className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-green-500 to-teal-400 z-[100]" />
       <AppSidebar />
       <SidebarInset className="flex flex-col min-h-screen">
         {/* Header */}
         <header className="flex h-14 shrink-0 items-center gap-1.5 px-3 sm:gap-2 sm:px-4 glass sticky top-0 z-10 header-gradient" style={{ borderBottom: '1px solid transparent', backgroundImage: 'linear-gradient(to bottom, var(--background), var(--background)), linear-gradient(to right, oklch(0.65 0.15 150 / 0.2), oklch(0.55 0.10 145 / 0.15), oklch(0.65 0.12 160 / 0.2))', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderBottomWidth: '1px', borderBottomStyle: 'solid', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+          <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" />
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Leaf className="h-4 w-4 text-primary hidden sm:block" />
             <div className="min-w-0">
@@ -180,16 +193,59 @@ export default function HomePage() {
             
             {/* WIB Clock */}
             {wibTime && (
-              <div className="hidden sm:flex items-center gap-1.5 text-[18px] text-muted-foreground mr-1">
+              <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
                 <Clock className="h-3.5 w-3.5" />
                 <span className="font-mono tabular-nums">{wibTime}</span>
+              </div>
+            )}
+
+            {/* User Profile & Logout Button */}
+            {user && (
+              <div className="flex items-center gap-2 border-l border-border/50 pl-2">
+                <div className="hidden lg:flex flex-col text-right">
+                  <span className="text-xs font-bold leading-tight">{user.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{user.role}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                  onClick={logout}
+                  title="Keluar / Logout"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
             )}
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto relative">
+          {activeTab === 'dashboard' && (
+            <img
+              src="/images/sipupuk-icon.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none select-none absolute inset-0 h-full w-full object-contain opacity-[0.06] dark:opacity-[0.10] p-12"
+            />
+          )}
+          {activeTab === 'orders' && (
+            <img
+              src="/images/ppts.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none select-none absolute inset-0 h-full w-full object-contain opacity-[0.08] dark:opacity-[0.12]"
+            />
+          )}
+          {activeTab === 'purchases' && (
+            <img
+              src="/images/pud.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none select-none absolute inset-0 h-full w-full object-contain opacity-[0.08] dark:opacity-[0.12]"
+            />
+          )}
           <div className="max-w-7xl mx-auto w-full">
             <AnimatePresence mode="wait">
               <motion.div
@@ -203,9 +259,13 @@ export default function HomePage() {
                 {activeTab === 'products' && <ProductsView />}
                 {activeTab === 'farmers' && <FarmersView />}
                 {activeTab === 'ppts' && <PptsView />}
+                {activeTab === 'monitoring-ppts' && <MonitoringPptsView />}
+                {activeTab === 'monitoring-pud' && <MonitoringPudView />}
                 {activeTab === 'warehouses' && <WarehousesView hideAddButton={false} />}
                 {activeTab === 'monitoring-warehouses' && <WarehousesView hideAddButton={true} />}
                 {activeTab === 'stock' && <StockView />}
+                {activeTab === 'stock-confirmation' && <StockConfirmationView reportMode={false} />}
+                {activeTab === 'stock-confirmation-report' && <StockConfirmationView reportMode={true} />}
                 {activeTab === 'distributions' && <DistributionsView />}
                 {activeTab === 'orders' && <OrdersView />}
                 {activeTab === 'purchases' && <PurchasesView />}

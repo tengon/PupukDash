@@ -1,0 +1,1649 @@
+{
+  "scraped_at": "2026-08-09T14:24:46.273Z",
+  "source": "GOW CM - Alokasi >> SPJB PPTS",
+  "total": 18,
+  "last_sync_summary": {
+    "scraped_records": 18,
+    "added_new": 0,
+    "updated": 18,
+    "unchanged": 0
+  },
+  "data": [
+    {
+      "nomorSpjb": "03/SPJB/AM-PPTS/XII/25-rev",
+      "kodePpts": "RT0000088748",
+      "namaPpts": "MAJU RAHAYU",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/03*SPJB*AM-PPTS*XII*25-rev/RT0000088748",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/03*SPJB*AM-PPTS*XII*25-rev/RT0000088748",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "210",
+              "151",
+              "59",
+              "71.905%"
+            ],
+            [
+              "",
+              "NPK",
+              "170",
+              "155",
+              "15",
+              "91.176%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "03/SPJB/AM-PPTS/XII/25-rev",
+              "SPJB Awal",
+              "",
+              "2026-02-20 14:32:28.110",
+              "",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "03/SPJB/AM-PPTS/XII/25-rev",
+                "SPJB Awal",
+                "",
+                "2026-02-20 14:32:28.110",
+                "",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": []
+      },
+      "updated_at": "2026-08-09T14:24:46.272Z"
+    },
+    {
+      "nomorSpjb": "02/SPJB/AM-PPTS/XII/25.",
+      "kodePpts": "RT0000021104",
+      "namaPpts": "ENGGAL SEMI",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/02*SPJB*AM-PPTS*XII*25./RT0000021104",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/02*SPJB*AM-PPTS*XII*25./RT0000021104",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "198",
+              "122",
+              "76",
+              "61.616%"
+            ],
+            [
+              "",
+              "NPK",
+              "165",
+              "124",
+              "41",
+              "75.152%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "02/SPJB/AM-PPTS/XII/25.",
+              "SPJB Awal",
+              "",
+              "2026-02-20 14:29:20.487",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "02/SPJB/AM-PPTS/XII/25.",
+                "SPJB Awal",
+                "",
+                "2026-02-20 14:29:20.487",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_02/SPJB/AM-PPTS/XII/25._RT0000021104.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "11/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021083",
+      "namaPpts": "SURYA TANI",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/11*SPJB*AM-PPTS*XII*25/RT0000021083",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/11*SPJB*AM-PPTS*XII*25/RT0000021083",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "215",
+              "191",
+              "24",
+              "88.837%"
+            ],
+            [
+              "",
+              "NPK",
+              "210",
+              "118",
+              "92",
+              "56.190%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "11/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-20 10:57:58.343",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "11/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-20 10:57:58.343",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_11/SPJB/AM-PPTS/XII/25_RT0000021083.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "10/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021058",
+      "namaPpts": "BINA MAJU JAYA",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/10*SPJB*AM-PPTS*XII*25/RT0000021058",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/10*SPJB*AM-PPTS*XII*25/RT0000021058",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "224",
+              "178",
+              "46",
+              "79.464%"
+            ],
+            [
+              "",
+              "NPK",
+              "260",
+              "123",
+              "137",
+              "47.308%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "10/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-20 10:55:38.937",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "10/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-20 10:55:38.937",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_10/SPJB/AM-PPTS/XII/25_RT0000021058.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "09/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000085298",
+      "namaPpts": "AGRO LESTARI",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/09*SPJB*AM-PPTS*XII*25/RT0000085298",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/09*SPJB*AM-PPTS*XII*25/RT0000085298",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "256",
+              "106",
+              "150",
+              "41.406%"
+            ],
+            [
+              "",
+              "NPK",
+              "350",
+              "103",
+              "247",
+              "29.429%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "09/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-18 18:39:42.240",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "09/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-18 18:39:42.240",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_09/SPJB/AM-PPTS/XII/25_RT0000085298.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "18/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000094478",
+      "namaPpts": "KDMP Gedangan",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/18*SPJB*AM-PPTS*XII*25/RT0000094478",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/18*SPJB*AM-PPTS*XII*25/RT0000094478",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "73",
+              "28",
+              "45",
+              "38.356%"
+            ],
+            [
+              "",
+              "NPK",
+              "55",
+              "20",
+              "35",
+              "36.364%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "18/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-17 00:32:17.130",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "18/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-17 00:32:17.130",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_18/SPJB/AM-PPTS/XII/25_RT0000094478.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "17/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000094477",
+      "namaPpts": "KDMP Sraten",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/17*SPJB*AM-PPTS*XII*25/RT0000094477",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/17*SPJB*AM-PPTS*XII*25/RT0000094477",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "52",
+              "14",
+              "38",
+              "26.923%"
+            ],
+            [
+              "",
+              "NPK",
+              "35",
+              "13",
+              "22",
+              "37.143%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "17/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-17 00:29:46.130",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "17/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-17 00:29:46.130",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_17/SPJB/AM-PPTS/XII/25_RT0000094477.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "16/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021094",
+      "namaPpts": "USAHA TANI",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/16*SPJB*AM-PPTS*XII*25/RT0000021094",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/16*SPJB*AM-PPTS*XII*25/RT0000021094",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "205",
+              "73.5",
+              "131.5",
+              "35.854%"
+            ],
+            [
+              "",
+              "NPK",
+              "155",
+              "50",
+              "105",
+              "32.258%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "16/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-17 00:27:18.483",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "16/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-17 00:27:18.483",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_16/SPJB/AM-PPTS/XII/25_RT0000021094.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "15/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021093",
+      "namaPpts": "UMEGA",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/15*SPJB*AM-PPTS*XII*25/RT0000021093",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/15*SPJB*AM-PPTS*XII*25/RT0000021093",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "105",
+              "47",
+              "58",
+              "44.762%"
+            ],
+            [
+              "",
+              "NPK",
+              "75",
+              "41",
+              "34",
+              "54.667%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "15/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-17 00:24:55.627",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "15/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-17 00:24:55.627",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_15/SPJB/AM-PPTS/XII/25_RT0000021093.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "14/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021079",
+      "namaPpts": "SUKAMAJU",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/14*SPJB*AM-PPTS*XII*25/RT0000021079",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/14*SPJB*AM-PPTS*XII*25/RT0000021079",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "78",
+              "50",
+              "28",
+              "64.103%"
+            ],
+            [
+              "",
+              "NPK",
+              "60",
+              "24",
+              "36",
+              "40.000%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "14/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-17 00:21:28.293",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "14/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-17 00:21:28.293",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_14/SPJB/AM-PPTS/XII/25_RT0000021079.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "13/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021064",
+      "namaPpts": "KUD BINA DHARMA",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/13*SPJB*AM-PPTS*XII*25/RT0000021064",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/13*SPJB*AM-PPTS*XII*25/RT0000021064",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "83",
+              "43",
+              "40",
+              "51.807%"
+            ],
+            [
+              "",
+              "NPK",
+              "60",
+              "28",
+              "32",
+              "46.667%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "13/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-17 00:17:46.203",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "13/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-17 00:17:46.203",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_13/SPJB/AM-PPTS/XII/25_RT0000021064.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "12/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000091576",
+      "namaPpts": "DAYA AKSARA",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/12*SPJB*AM-PPTS*XII*25/RT0000091576",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/12*SPJB*AM-PPTS*XII*25/RT0000091576",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "90",
+              "28.5",
+              "61.5",
+              "31.667%"
+            ],
+            [
+              "",
+              "NPK",
+              "70",
+              "16.5",
+              "53.5",
+              "23.571%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "12/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-17 00:14:04.143",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "12/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-17 00:14:04.143",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_12/SPJB/AM-PPTS/XII/25_RT0000091576.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "08/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000089485",
+      "namaPpts": "WAHYU LESTARI",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/08*SPJB*AM-PPTS*XII*25/RT0000089485",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/08*SPJB*AM-PPTS*XII*25/RT0000089485",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "103",
+              "77",
+              "26",
+              "74.757%"
+            ],
+            [
+              "",
+              "NPK",
+              "60",
+              "40",
+              "20",
+              "66.667%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "08/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-16 23:58:12.233",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "08/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-16 23:58:12.233",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_08/SPJB/AM-PPTS/XII/25_RT0000089485.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "07/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000017846",
+      "namaPpts": "TOKO MARISA",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/07*SPJB*AM-PPTS*XII*25/RT0000017846",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/07*SPJB*AM-PPTS*XII*25/RT0000017846",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "490",
+              "284.5",
+              "205.5",
+              "58.061%"
+            ],
+            [
+              "",
+              "NPK",
+              "350",
+              "310",
+              "40",
+              "88.571%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "07/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-16 23:55:34.817",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "07/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-16 23:55:34.817",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_07/SPJB/AM-PPTS/XII/25_RT0000017846.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "06/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021111",
+      "namaPpts": "SINGOJOYO",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/06*SPJB*AM-PPTS*XII*25/RT0000021111",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/06*SPJB*AM-PPTS*XII*25/RT0000021111",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "137",
+              "88",
+              "49",
+              "64.234%"
+            ],
+            [
+              "",
+              "NPK",
+              "130",
+              "76",
+              "54",
+              "58.462%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "06/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-16 23:53:02.407",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "06/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-16 23:53:02.407",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_06/SPJB/AM-PPTS/XII/25_RT0000021111.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "05/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021109",
+      "namaPpts": "NGUDI MAKMUR",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/05*SPJB*AM-PPTS*XII*25/RT0000021109",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/05*SPJB*AM-PPTS*XII*25/RT0000021109",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "330",
+              "262.5",
+              "67.5",
+              "79.545%"
+            ],
+            [
+              "",
+              "NPK",
+              "275",
+              "275",
+              "0",
+              "100.000%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "05/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-16 23:49:31.430",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "05/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-16 23:49:31.430",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_05/SPJB/AM-PPTS/XII/25_RT0000021109.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "04/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000021108",
+      "namaPpts": "MEKAR",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/04*SPJB*AM-PPTS*XII*25/RT0000021108",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/04*SPJB*AM-PPTS*XII*25/RT0000021108",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "131",
+              "73.5",
+              "57.5",
+              "56.107%"
+            ],
+            [
+              "",
+              "NPK",
+              "125",
+              "84",
+              "41",
+              "67.200%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "04/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-16 23:45:33.080",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "04/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-16 23:45:33.080",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_04/SPJB/AM-PPTS/XII/25_RT0000021108.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    },
+    {
+      "nomorSpjb": "01/SPJB/AM-PPTS/XII/25",
+      "kodePpts": "RT0000088746",
+      "namaPpts": "Bina Tani",
+      "kodePud": "1000001601",
+      "namaPud": "CV. ANUGERAH MAKMUR",
+      "provinsi": "JAWA TENGAH",
+      "kabupaten": "KAB. SEMARANG",
+      "status": "Active",
+      "tanggalAwal": "01-01-2026",
+      "tanggalAkhir": "31-12-2026",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/01*SPJB*AM-PPTS*XII*25/RT0000088746",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX181A%2FDXYJOLPOJ8ahcWaiH%2BnBpfw9J6pXQ%3D/alokasi/contract-distributor-ppts/01*SPJB*AM-PPTS*XII*25/RT0000088746",
+      "detail": {
+        "header": {
+          "judul": "WCM",
+          "status": "Rejected"
+        },
+        "infoFields": {},
+        "alokasiTable": {
+          "headers": [
+            "#",
+            "Kacamatan",
+            "Alokasi SPJB",
+            "Realisasi",
+            "Sisa Alokasi SPJB",
+            "Progress"
+          ],
+          "rows": [
+            [
+              "",
+              "Urea",
+              "101",
+              "46",
+              "55",
+              "45.545%"
+            ],
+            [
+              "",
+              "NPK",
+              "70",
+              "45",
+              "25",
+              "64.286%"
+            ]
+          ],
+          "structured": []
+        },
+        "riwayatTable": {
+          "headers": [
+            "Nomor Dokument",
+            "Jenis Dokument",
+            "Alasan",
+            "Tanggal Buat",
+            "Evidence",
+            "Status",
+            "Aksi"
+          ],
+          "rows": [
+            [
+              "01/SPJB/AM-PPTS/XII/25",
+              "SPJB Awal",
+              "",
+              "2026-02-16 23:31:33.493",
+              "Lihat file",
+              "Active",
+              ""
+            ]
+          ],
+          "structured": [
+            {
+              "kecamatan": "SPJB Awal",
+              "data": [
+                "01/SPJB/AM-PPTS/XII/25",
+                "SPJB Awal",
+                "",
+                "2026-02-16 23:31:33.493",
+                "Lihat file",
+                "Active",
+                ""
+              ],
+              "subRows": []
+            }
+          ]
+        },
+        "pdfLinks": [
+          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_01/SPJB/AM-PPTS/XII/25_RT0000088746.pdf"
+        ]
+      },
+      "updated_at": "2026-08-09T14:24:46.273Z"
+    }
+  ]
+}

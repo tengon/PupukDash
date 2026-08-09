@@ -186,3 +186,15 @@ model Purchase {
   warehouse       Warehouse         @relation(fields: [warehouseId], references: [id])
   product         FertilizerProduct @relation(fields: [productId], references: [id])
 }
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("Administrator Distributor")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

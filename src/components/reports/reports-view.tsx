@@ -287,26 +287,74 @@ function VisualAllocationChart({
   rows,
 }: {
   title: string
-  description: string
+  description?: string
   rows: AllocationChartRow[]
 }) {
   const data = rows.map((r) => ({
-    name: r.label.replace('Kec. ', ''),
+    name:          r.label,
+    subtitle:      r.subtitle,
     ureaRealisasi: r.urea.realisasi,
-    ureaSisa: r.urea.sisa,
-    npkRealisasi: r.npk.realisasi,
-    npkSisa: r.npk.sisa,
+    ureaSisa:      r.urea.sisa,
+    ureaAlokasi:   r.urea.alokasi,
+    npkRealisasi:  r.npk.realisasi,
+    npkSisa:       r.npk.sisa,
+    npkAlokasi:    r.npk.alokasi,
+    totalAlokasi:  r.urea.alokasi + r.npk.alokasi,
   }))
 
-  const chartWidth = Math.max(600, data.length * 80)
+  const chartWidth = Math.max(500, data.length * 70)
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload || !payload.length) return null
+    const item = payload[0].payload
+    return (
+      <div className="bg-popover text-popover-foreground border border-border rounded-xl p-3 shadow-lg text-xs space-y-2 max-w-xs min-w-[220px]">
+        <div className="border-b border-border/60 pb-1.5">
+          <p className="font-bold text-sm text-foreground">{item.name}</p>
+          {item.subtitle && <p className="text-[10px] text-muted-foreground">{item.subtitle}</p>}
+        </div>
+
+        {/* Total Alokasi Summary */}
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 flex justify-between items-center">
+          <span className="font-semibold text-emerald-700 dark:text-emerald-400">Total Alokasi</span>
+          <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-300">
+            {item.totalAlokasi.toLocaleString('id-ID')} Ton
+          </span>
+        </div>
+
+        {/* UREA Breakdown */}
+        <div className="space-y-1 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2">
+          <div className="flex justify-between items-center font-bold text-amber-700 dark:text-amber-300">
+            <span>🌾 UREA Alokasi</span>
+            <span className="font-mono">{item.ureaAlokasi.toLocaleString('id-ID')} Ton</span>
+          </div>
+          <div className="flex justify-between text-[11px] text-muted-foreground pt-0.5">
+            <span>• Realisasi: <strong className="text-amber-600 dark:text-amber-400 font-mono">{item.ureaRealisasi.toLocaleString('id-ID')} T</strong></span>
+            <span>• Sisa: <strong className="text-amber-500 font-mono">{item.ureaSisa.toLocaleString('id-ID')} T</strong></span>
+          </div>
+        </div>
+
+        {/* NPK Breakdown */}
+        <div className="space-y-1 bg-emerald-600/10 border border-emerald-600/20 rounded-lg p-2">
+          <div className="flex justify-between items-center font-bold text-emerald-700 dark:text-emerald-300">
+            <span>🌱 NPK Alokasi</span>
+            <span className="font-mono">{item.npkAlokasi.toLocaleString('id-ID')} Ton</span>
+          </div>
+          <div className="flex justify-between text-[11px] text-muted-foreground pt-0.5">
+            <span>• Realisasi: <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{item.npkRealisasi.toLocaleString('id-ID')} T</strong></span>
+            <span>• Sisa: <strong className="text-emerald-500 font-mono">{item.npkSisa.toLocaleString('id-ID')} T</strong></span>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (rows.length === 0) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">{title}</CardTitle>
-          <CardDescription className="text-xs">{description}</CardDescription>
-        </CardHeader>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+      </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
             Tidak ada data untuk divisualisasikan
@@ -318,57 +366,69 @@ function VisualAllocationChart({
 
   return (
     <Card style={{ boxShadow: 'var(--shadow-sm)' }}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-1">
         <CardTitle className="text-sm font-semibold">{title}</CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="w-full overflow-x-auto pb-4">
-          <div style={{ width: chartWidth, height: 400 }}>
+        <div className="w-full overflow-x-auto">
+          <div style={{ width: chartWidth, height: 500 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
-                margin={{ top: 20, right: 20, left: 0, bottom: 60 }}
+                margin={{ top: 20, right: 10, left: 0, bottom: 20 }}
+                barCategoryGap={8}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <defs>
+                  <linearGradient id="ureaRealGradRep" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#d97706" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={1} />
+                  </linearGradient>
+                  <linearGradient id="ureaSisaGradRep" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#fef08a" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#fde047" stopOpacity={0.95} />
+                  </linearGradient>
+                  <linearGradient id="npkRealGradRep" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#047857" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={1} />
+                  </linearGradient>
+                  <linearGradient id="npkSisaGradRep" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#a7f3d0" stopOpacity={0.8} />
+                    <stop offset="100%" stopColor="#6ee7b7" stopOpacity={0.95} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border/40" />
                 <XAxis
                   dataKey="name"
-                  angle={-45}
+                  angle={-90}
                   textAnchor="end"
                   height={80}
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
-                  tickMargin={20}
-                  axisLine={{ stroke: '#e5e7eb' }}
+                  tick={{ fontSize: 11, fill: 'currentColor' }}
+                  className="text-muted-foreground"
+                  tickMargin={4}
+                  axisLine={{ stroke: '#9ca3af', strokeOpacity: 0.3 }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tick={{ fontSize: 11, fill: 'currentColor' }}
+                  className="text-muted-foreground"
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(val) => val.toLocaleString('id-ID')}
                 />
                 <RechartsTooltip
-                  cursor={{ fill: '#f3f4f6', opacity: 0.4 }}
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                    fontSize: '12px',
-                  }}
-                  formatter={(value: number, name: string) => [
-                    `${value.toLocaleString('id-ID')} Ton`,
-                    name,
-                  ]}
+                  cursor={{ fill: 'currentColor', opacity: 0.06 }}
+                  content={<CustomTooltip />}
                 />
-                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '12px' }} />
+                <Legend verticalAlign="top" height={40} wrapperStyle={{ fontSize: '12px', fontWeight: 600 }} />
                 
                 {/* UREA Stack */}
-                <Bar dataKey="ureaRealisasi" name="UREA Realisasi" stackId="a" fill="#f97316" barSize={32} />
-                <Bar dataKey="ureaSisa" name="UREA Sisa" stackId="a" fill="#fde047" radius={[4, 4, 0, 0]} barSize={32} />
+                <Bar dataKey="ureaRealisasi" name="🌾 UREA Realisasi" stackId="a" fill="url(#ureaRealGradRep)" barSize={22} stroke="#b45309" strokeWidth={0.5} radius={[0, 0, 3, 3]} />
+                <Bar dataKey="ureaSisa"      name="🌾 UREA Sisa"      stackId="a" fill="url(#ureaSisaGradRep)" barSize={22} stroke="#d97706" strokeWidth={0.5} radius={[5, 5, 0, 0]} />
                 
                 {/* NPK Stack */}
-                <Bar dataKey="npkRealisasi" name="NPK Realisasi" stackId="b" fill="#ef4444" barSize={32} />
-                <Bar dataKey="npkSisa" name="NPK Sisa" stackId="b" fill="#fca5a5" radius={[4, 4, 0, 0]} barSize={32} />
+                <Bar dataKey="npkRealisasi"  name="🌱 NPK Realisasi"  stackId="b" fill="url(#npkRealGradRep)" barSize={22} stroke="#065f46" strokeWidth={0.5} radius={[0, 0, 3, 3]} />
+                <Bar dataKey="npkSisa"       name="🌱 NPK Sisa"       stackId="b" fill="url(#npkSisaGradRep)" barSize={22} stroke="#047857" strokeWidth={0.5} radius={[5, 5, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -441,12 +501,10 @@ function AllocationMetricBars({
 
 function AllocationBarChart({
   title,
-  description,
   rows,
   emptyMessage,
 }: {
   title: string
-  description: string
   rows: AllocationChartRow[]
   emptyMessage: string
 }) {
@@ -456,7 +514,6 @@ function AllocationBarChart({
     <Card style={{ boxShadow: 'var(--shadow-sm)' }}>
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold">{title}</CardTitle>
-        <CardDescription className="text-xs">{description}</CardDescription>
       </CardHeader>
       <CardContent>
         {rows.length === 0 ? (
@@ -1127,12 +1184,12 @@ function PptsStockTab() {
   }, [filteredItems])
 
   return (
-    <div className="space-y-4 mt-3">
+    <div className="space-y-4 mt-2">
       {/* KPI Cards Header */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-950/20">
-          <CardContent className="p-3.5">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Alokasi Kontrak (SPJB)</p>
+        <Card className="h-[120px] border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-950/20">
+          <CardContent className="p-2">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Alokasi (SPJB)</p>
             <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 font-mono mt-1">
               {totalAlokasi.toLocaleString('id-ID')} Ton
             </p>
@@ -1142,9 +1199,9 @@ function PptsStockTab() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
-          <CardContent className="p-3.5">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Realisasi / Tebusan</p>
+        <Card className="h-[120px] border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
+          <CardContent className="p-2">
+            <p className="pt-0.1 text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Realisasi / Tebusan</p>
             <p className="text-xl font-bold text-blue-700 dark:text-blue-300 font-mono mt-1">
               {totalRealisasi.toLocaleString('id-ID')} Ton
             </p>
@@ -1158,14 +1215,14 @@ function PptsStockTab() {
                 <span className="font-mono font-bold">{formatTon(totalRealisasiNpk)} Ton</span>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground font-mono mt-0.5">
+            {/*<p className="text-xs text-muted-foreground font-mono mt-0.5">
               ({formatNumber(totalRealisasi * 1000)} kg) · {totalAlokasi > 0 ? Math.round((totalRealisasi / totalAlokasi) * 100) : 0}% Tertebus
-            </p>
+            </p>*/}
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
-          <CardContent className="p-3.5">
+        <Card className="h-[120px] border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
+          <CardContent className="p-2">
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Total Sisa Alokasi</p>
             <p className="text-xl font-bold text-amber-700 dark:text-amber-300 font-mono mt-1">
               {totalSisa.toLocaleString('id-ID')} Ton
@@ -1180,9 +1237,9 @@ function PptsStockTab() {
                 <span className="font-mono font-bold">{formatTon(totalSisaNpk)} Ton</span>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground font-mono mt-0.5">
+            {/*<p className="text-xs text-muted-foreground font-mono mt-0.5">
               ({formatNumber(totalSisa * 1000)} kg)
-            </p>
+            </p>*/}
           </CardContent>
         </Card>
 
@@ -1202,19 +1259,16 @@ function PptsStockTab() {
       <div className="space-y-4">
         <VisualAllocationChart
           title="Grafik Alokasi, Realisasi & Sisa per PPTS"
-          description="Visualisasi grafik batang untuk UREA dan NPK berdasarkan data PPTS (seperti contoh gambar)."
           rows={pptsAllocationRows}
         />
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <AllocationBarChart
             title="List Progress per PPTS"
-            description="Bar graph UREA dan NPK berdasarkan data PPTS yang sedang difilter. Satuan: Ton."
             rows={pptsAllocationRows}
             emptyMessage="Tidak ada data PPTS untuk divisualisasikan"
           />
           <AllocationBarChart
             title="List Progress per Kecamatan"
-            description="Agregasi alokasi, realisasi tebusan, dan sisa alokasi UREA/NPK per kecamatan. Satuan: Ton."
             rows={districtAllocationRows}
             emptyMessage="Tidak ada data kecamatan untuk divisualisasikan"
           />

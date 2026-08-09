@@ -15,6 +15,11 @@ interface AppState {
   /** Command palette open state */
   commandPaletteOpen: boolean
   setCommandPaletteOpen: (open: boolean) => void
+  /** User Authentication state */
+  isAuthenticated: boolean
+  user: { name: string; email: string; role: string; avatar?: string } | null
+  login: (credentials: { username: string; role?: string }) => void
+  logout: () => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -29,4 +34,20 @@ export const useAppStore = create<AppState>((set) => ({
   setPrefillFarmerId: (id) => set({ prefillFarmerId: id }),
   commandPaletteOpen: false,
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+  isAuthenticated: true, // Default logged-in for smooth dev, can be toggled
+  user: {
+    name: 'Budi Santoso',
+    email: 'admin@anugerahmakmur.co.id',
+    role: 'Administrator Distributor',
+  },
+  login: (credentials) =>
+    set({
+      isAuthenticated: true,
+      user: {
+        name: credentials.username || 'Admin Distributor',
+        email: `${(credentials.username || 'admin').toLowerCase().replace(/\s+/g, '')}@anugerahmakmur.co.id`,
+        role: credentials.role || 'Administrator Distributor',
+      },
+    }),
+  logout: () => set({ isAuthenticated: false, user: null }),
 }))

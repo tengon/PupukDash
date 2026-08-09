@@ -533,3 +533,168 @@ export const updatePurchase = (id: string, data: Partial<Purchase>) =>
 
 export const deletePurchase = (id: string) =>
   apiFetch<{ message: string }>(`/api/purchases/${id}`, { method: 'DELETE' })
+
+// Stok PPTS (Kios iPuber GOW CM)
+export interface PptsStockItem {
+  kodeKios: string
+  namaKios: string
+  kodeProduct: string
+  namaProduct: string
+  stokKg: string
+  syncnAt: string
+  added_at?: string
+  updated_at?: string
+}
+
+export interface PptsStockResponse {
+  success: boolean
+  scraped_at: string | null
+  total_records: number
+  total_kios: number
+  last_sync_summary?: {
+    scraped_records: number
+    added_new: number
+    updated: number
+    unchanged: number
+  } | null
+  data: PptsStockItem[]
+  message?: string
+}
+
+export const fetchPptsStock = (params?: { search?: string; product?: string }) => {
+  const query = new URLSearchParams()
+  if (params?.search) query.append('search', params.search)
+  if (params?.product && params.product !== 'ALL') query.append('product', params.product)
+  const qs = query.toString()
+  return apiFetch<PptsStockResponse>(`/api/stock/ppts${qs ? `?${qs}` : ''}`)
+}
+
+// SPJB PPTS (Monitoring SPJB Kontrak Kios)
+export interface SpjbPptsItem {
+  nomorSpjb: string
+  kodePpts: string
+  namaPpts: string
+  kodePud: string
+  namaPud: string
+  provinsi: string
+  kabupaten: string
+  status: string
+  tanggalAwal: string
+  tanggalAkhir: string
+  detail?: {
+    header?: { judul?: string; status?: string }
+    alokasiTable?: {
+      headers?: string[]
+      rows?: string[][]
+    }
+  }
+}
+
+export interface SpjbPptsResponse {
+  success: boolean
+  scraped_at: string | null
+  total: number
+  last_sync_summary?: {
+    scraped_records: number
+    added_new: number
+    updated: number
+    unchanged: number
+  } | null
+  data: SpjbPptsItem[]
+  message?: string
+}
+
+export const fetchSpjbPpts = (params?: { search?: string; status?: string }) => {
+  const query = new URLSearchParams()
+  if (params?.search) query.append('search', params.search)
+  if (params?.status && params.status !== 'ALL') query.append('status', params.status)
+  const qs = query.toString()
+  return apiFetch<SpjbPptsResponse>(`/api/gowcm/spjb-ppts${qs ? `?${qs}` : ''}`)
+}
+
+// SPJB Operasional (Monitoring SPJB Distributor PUD)
+export interface SpjbOperasionalItem {
+  nomorSpjb: string
+  tahun: string
+  distributor: string
+  produsen: string
+  tanggalBuat: string
+  tanggalGanti: string
+  status: string
+  detail?: {
+    header?: { judul?: string; status?: string }
+    alokasiTable?: {
+      headers?: string[]
+      rows?: string[][]
+    }
+  }
+}
+
+export interface SpjbOperasionalResponse {
+  success: boolean
+  scraped_at: string | null
+  total: number
+  last_sync_summary?: {
+    scraped_records: number
+    added_new: number
+    updated: number
+    unchanged: number
+  } | null
+  data: SpjbOperasionalItem[]
+  message?: string
+}
+
+export const fetchSpjbOperasional = (params?: { search?: string; produsen?: string }) => {
+  const query = new URLSearchParams()
+  if (params?.search) query.append('search', params.search)
+  if (params?.produsen && params.produsen !== 'ALL') query.append('produsen', params.produsen)
+  const qs = query.toString()
+  return apiFetch<SpjbOperasionalResponse>(`/api/gowcm/spjb-operasional${qs ? `?${qs}` : ''}`)
+}
+
+export interface GowcmPenyaluranItem {
+  nomorOrder: string
+  statusOrder: string
+  kodePengecer: string
+  namaPengecer: string
+  provinsi?: string
+  kabupatenKota?: string
+  kecamatan?: string
+  tanggalOrder?: string
+  durasiOrder?: string
+  pembayaran?: string
+  nilaiOrderRupiah?: string
+  totalQtyTon?: string
+  terakhirDiperbarui?: string
+  kodeDistributor?: string
+  namaDistributor?: string
+  detailPemenuhanCount?: number
+  detailPemenuhan?: Array<{
+    noPkp?: string
+    kodeSo?: string
+    produk?: string
+    qtyTon?: string
+    status?: string
+    tanggalPenyaluran?: string
+  }>
+}
+
+export interface GowcmPenyaluranResponse {
+  total: number
+  data: GowcmPenyaluranItem[]
+  summary?: any
+  updated_at?: string | null
+}
+
+export const fetchGowcmPenyaluran = (params?: { search?: string; status?: string; kecamatan?: string; produk?: string }) => {
+  const query = new URLSearchParams()
+  if (params?.search) query.append('search', params.search)
+  if (params?.status && params.status !== 'ALL') query.append('status', params.status)
+  if (params?.kecamatan && params.kecamatan !== 'ALL') query.append('kecamatan', params.kecamatan)
+  if (params?.produk && params.produk !== 'ALL') query.append('produk', params.produk)
+  const qs = query.toString()
+  return apiFetch<GowcmPenyaluranResponse>(`/api/gowcm/penyaluran${qs ? `?${qs}` : ''}`)
+}
+
+
+

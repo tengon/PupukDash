@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/lib/store'
 import {
   Sidebar,
@@ -26,13 +28,20 @@ import {
   Boxes,
   Truck,
   ShoppingCart,
-  Leaf,
   FileBarChart,
   ClipboardList,
+  ClipboardCheck,
   History,
   Store,
   ShoppingBag,
-  Clock,
+  Settings,
+  HelpCircle,
+  BookOpen,
+  LogOut,
+  Leaf,
+  ChevronLeft,
+  ChevronRight,
+  Building2,
 } from 'lucide-react'
 
 const navGroups = [
@@ -52,8 +61,10 @@ const navGroups = [
   {
     label: 'MONITORING',
     items: [
+      { id: 'monitoring-ppts', label: 'PPTS', icon: Store },
+      { id: 'monitoring-pud', label: 'PUD', icon: Warehouse },
       { id: 'stock', label: 'Stok', icon: Boxes },
-      { id: 'monitoring-warehouses', label: 'Gudang', icon: Warehouse },
+      { id: 'stock-confirmation', label: 'Konfirmasi Stok', icon: ClipboardCheck },
       { id: 'distributions', label: 'Distribusi', icon: Truck },
     ],
   },
@@ -62,7 +73,7 @@ const navGroups = [
     items: [
       { id: 'rpkp', label: 'RPKP', icon: ClipboardList },
       { id: 'reports', label: 'Laporan', icon: FileBarChart },
-      { id: 'activity', label: 'Aktivitas', icon: History },
+      { id: 'stock-confirmation-report', label: 'Konfirmasi Stok', icon: ClipboardCheck },
     ],
   },
   {
@@ -101,105 +112,149 @@ function useWIBClock() {
 }
 
 export function AppSidebar() {
+  const [showSettings, setShowSettings] = useState(false)
   const { activeTab, setActiveTab } = useAppStore()
-  const { setOpen, setOpenMobile, isMobile } = useSidebar()
+  const { open, setOpen, setOpenMobile, isMobile } = useSidebar()
   const wibTime = useWIBClock()
+
   const handleNavClick = (tabId: string) => {
     setActiveTab(tabId)
-    if (isMobile) setOpenMobile(false)
+    if (isMobile) {
+      setOpenMobile(false)
+    }
   }
 
+  const isExpanded = open || isMobile
+
   return (
-    <Sidebar collapsible="none" className="bg-sidebar sticky top-0 h-screen overflow-hidden select-none">
-      <SidebarHeader className="px-2 py-2 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0 shadow-sm">
-            <Leaf className="h-5 w-5" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-tight">SiPUPUK</span>
-            <span className="text-[10px] text-muted-foreground leading-tight">
-              Pupuk Bersubsidi
-            </span>
-            {/* {wibTime && (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
-                <Clock className="h-3.5 w-3.5" />
-                <span className="font-mono tabular-nums">{wibTime}</span>
+    <Sidebar
+      collapsible="icon"
+      onMouseEnter={() => !isMobile && setOpen(true)}
+      onMouseLeave={() => !isMobile && setOpen(false)}
+      className="bg-sidebar sticky top-0 h-screen overflow-hidden select-none transition-all duration-300 ease-in-out border-r border-sidebar-border"
+    >
+      <SidebarHeader className="px-2.5 py-3 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0 shadow-sm">
+              <Leaf className="h-5 w-5" />
+            </div>
+            {isExpanded && (
+              <div className="flex flex-col min-w-0">
+                <span className="text-base font-bold tracking-tight truncate">SiPUPUK</span>
+                <span className="text-[10px] text-muted-foreground leading-tight truncate">
+                  Pupuk Bersubsidi
+                </span>
               </div>
-            )} */}
+            )}
           </div>
-          <div className="ml-auto">
-            <ThemeToggle className='absolute top-2 right-2' size='sm' />
-          </div>
+          {isExpanded && (
+            <Popover open={showSettings} onOpenChange={setShowSettings}>
+              <PopoverTrigger asChild>
+                <button
+                  className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-none shrink-0"
+                  aria-label="Settings & Help"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" side="bottom" sideOffset={4} className="w-56 p-2 space-y-1">
+                <div className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-sidebar-accent text-xs font-semibold">
+                  <span className="text-muted-foreground">Mode Tema:</span>
+                  <ThemeToggle />
+                </div>
+                <button
+                  onClick={() => {
+                    handleNavClick('activity')
+                    setShowSettings(false)
+                  }}
+                  className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium hover:bg-sidebar-accent"
+                >
+                  <History className="h-4 w-4 text-emerald-500" />
+                  <span>Riwayat Aktivitas</span>
+                </button>
+                <button className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium hover:bg-sidebar-accent">
+                  <HelpCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Bantuan</span>
+                </button>
+                <button className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs font-medium hover:bg-sidebar-accent">
+                  <BookOpen className="h-4 w-4 text-emerald-500" />
+                  <span>Dokumentasi</span>
+                </button>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </SidebarHeader>
 
       <SidebarSeparator />
 
-      <SidebarContent className="px-1 py-1 space-y-1 overflow-hidden">
-        {navGroups.map((group, groupIdx) => (
-          <SidebarGroup key={group.label} className="py-1">
-            <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-[10px] font-bold tracking-wider text-emerald-600/90 dark:text-emerald-400/90 uppercase px-3 py-1">
-              {group.label}
-            </SidebarGroupLabel>
-            <SidebarGroupContent className={(group.label === 'MONITORING' || group.label === 'DATA' || group.label === 'TRANSAKSI' || group.label === 'LAPORAN & REKAP') ? 'group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:pl-0 border-l-2 border-l-emerald-500/30 dark:border-l-emerald-400/25 ml-3.5 pl-1.5 space-y-0.5 transition-all' : ''}>
+      <SidebarContent className="px-2 py-1.5 space-y-2 overflow-y-auto">
+        {navGroups.map((group) => (
+          <SidebarGroup key={group.label} className="p-0">
+            {isExpanded && (
+              <SidebarGroupLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground px-2 py-1">
+                {group.label}
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item, itemIdx) => {
+                {group.items.map((item) => {
+                  const Icon = item.icon
                   const isActive = activeTab === item.id
-                  const isMonitoring = group.label === 'MONITORING'
-                  const isBranch = group.label === 'MONITORING' || group.label === 'DATA' || group.label === 'TRANSAKSI'
                   return (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
                         isActive={isActive}
-                        tooltip={item.label}
                         onClick={() => handleNavClick(item.id)}
-                        className={`relative transition-all duration-200 ${isActive
-                          ? 'bg-sidebar-accent/80 font-medium border-l-[3px] border-l-emerald-400 rounded-l-none pl-[calc(0.5rem-3px)] sidebar-active-glow'
-                          : 'hover:bg-sidebar-accent/50 hover:border-l-[3px] hover:border-l-emerald-400/40 hover:rounded-l-none hover:pl-[calc(0.5rem-3px)]'
-                          }`}
+                        tooltip={item.label}
+                        className={`w-full justify-start gap-2.5 rounded-lg px-2.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors min-h-[40px] ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                        }`}
                       >
-                        <div className="relative flex items-center">
-                          {isActive && (
-                            <span className="absolute -left-2 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                          )}
-                          <item.icon className={`h-4 w-4 transition-colors duration-200 ${isActive ? 'text-emerald-400' : isBranch ? 'text-emerald-500/90 dark:text-emerald-400/90' : ''}`} />
-                        </div>
-                        <span className="flex items-center gap-1.5">
-                          {item.label}
-                          {isMonitoring && (
-                            <span className="group-data-[collapsible=icon]:hidden text-[9px] px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono scale-90">
-                              {itemIdx === 0 ? 'Stok' : itemIdx === 1 ? 'Gudang' : 'Distribusi'}
-                            </span>
-                          )}
-                        </span>
+                        <Icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-primary-foreground' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                        {isExpanded && <span className="truncate">{item.label}</span>}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )
                 })}
               </SidebarMenu>
             </SidebarGroupContent>
-            {groupIdx < navGroups.length - 1 && (
-              <div className="my-1.5 mx-3 h-px bg-sidebar-border/40 group-data-[collapsible=icon]:hidden" />
-            )}
           </SidebarGroup>
         ))}
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarSeparator />
-        <div className="px-4 py-3 group-data-[collapsible=icon]:px-2">
-          <div className="flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
-            <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">
-              CV Anugerah Makmur
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              Distributor Resmi Pupuk Bersubsidi
-            </span>
-          </div>
+      <SidebarFooter className="p-2.5 border-t border-sidebar-border mt-auto shrink-0 bg-sidebar-accent/30">
+        <div className="flex items-center justify-between gap-2">
+          {isExpanded ? (
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-8 w-8 rounded-lg bg-transparent dark:bg-slate-900 border border-emerald-500/30 flex items-center justify-center shrink-0 overflow-hidden p-0.5 shadow-xs">
+                <img src="/images/sipupuk-icon.png" alt="CV. Anugerah Makmur" className="h-full w-full object-contain" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-extrabold text-white dark:text-slate-100 truncate">CV. ANUGERAH MAKMUR</span>
+                <span className="text-[10px] text-white dark:text-slate-400 truncate">Distributor Resmi Pupuk</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-transparent dark:bg-slate-900 border border-emerald-500/30 mx-auto overflow-hidden p-0.5 shadow-xs" title="CV. ANUGERAH MAKMUR">
+              <img src="/images/sipupuk-icon.png" alt="CV. Anugerah Makmur" className="h-full w-full object-contain" />
+            </div>
+          )}
+
+          {!isMobile && isExpanded && (
+            <button
+              onClick={() => setOpen(!open)}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground shrink-0"
+              title={open ? 'Minimize Sidebar' : 'Expand Sidebar'}
+            >
+              {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          )}
         </div>
       </SidebarFooter>
-
       <SidebarRail />
     </Sidebar>
   )
