@@ -4,7 +4,10 @@ import path from 'path'
 
 export async function GET(request: NextRequest) {
   try {
-    const filePath = path.join('d:', 'testGet', 'penyaluran_full.json')
+    let filePath = path.join(process.cwd(), 'scraper', 'penyaluran_full.json')
+    if (!fs.existsSync(filePath)) {
+      filePath = path.join('d:', 'testGet', 'penyaluran_full.json')
+    }
 
     if (!fs.existsSync(filePath)) {
       return NextResponse.json({

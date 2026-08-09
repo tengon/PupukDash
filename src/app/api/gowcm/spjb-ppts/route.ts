@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server'
 import fs from 'fs'
 
+import path from 'path'
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')?.toLowerCase() || ''
     const status = searchParams.get('status') || 'ALL'
 
-    const filePath = 'd:\\testGet\\spjb_ppts_full.json'
+    let filePath = path.join(process.cwd(), 'scraper', 'spjb_ppts_full.json')
+    if (!fs.existsSync(filePath)) {
+      filePath = path.join('d:', 'testGet', 'spjb_ppts_full.json')
+    }
 
     if (!fs.existsSync(filePath)) {
       return NextResponse.json({
