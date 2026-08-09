@@ -10,6 +10,7 @@
     "scrape:spjb-op": "node scraper/spjb_operasional.js",
     "scrape:spjb-ppts": "node scraper/spjb_ppts.js",
     "scrape:penyaluran": "node scraper/penyaluran_monitoring_order_kios.js",
+    "scrape:cron": "node scraper/cron-runner.js",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
