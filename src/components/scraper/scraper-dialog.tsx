@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Progress } from '@/components/ui/progress'
 import {
   Bot,
   RefreshCw,
@@ -53,6 +54,25 @@ export function ScraperDialog({
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [isSyncing, setIsSyncing] = useState(false)
+  const [progressValue, setProgressValue] = useState(10)
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    const active = isSyncing || data?.isRunning
+    if (active) {
+      interval = setInterval(() => {
+        setProgressValue((prev) => {
+          if (prev < 35) return prev + 5
+          if (prev < 75) return prev + 3
+          if (prev < 96) return prev + 1
+          return prev
+        })
+      }, 1500)
+    } else {
+      setProgressValue(100)
+    }
+    return () => clearInterval(interval)
+  }, [isSyncing, data?.isRunning])
 
   const { data, isLoading, refetch } = useQuery<ScraperSyncResponse>({
     queryKey: ['scraper-sync-status'],
@@ -139,6 +159,36 @@ export function ScraperDialog({
                 ))}
               </div>
             </div>
+
+            {/* Progress Bar Status saat Running */}
+            {(data?.isRunning || isSyncing) && (
+              <div className="p-3.5 rounded-xl border bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-amber-500/10 border-emerald-500/30 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-emerald-600 dark:text-emerald-400" />
+                    <span>Progres Sinkronisasi Scraper GOW CM</span>
+                  </div>
+                  <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-300 text-sm">
+                    {progressValue}%
+                  </span>
+                </div>
+
+                <Progress value={progressValue} className="h-2.5 bg-muted/60" />
+
+                <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-0.5 font-medium">
+                  <span>
+                    {progressValue < 35
+                      ? 'Tahap 1/3: Scraping SPJB Operasional (PUD)...'
+                      : progressValue < 75
+                      ? 'Tahap 2/3: Scraping SPJB PPTS & Kios...'
+                      : progressValue < 98
+                      ? 'Tahap 3/3: Scraping Penyaluran GOW CM...'
+                      : 'Menyimpan & memperbarui database...'}
+                  </span>
+                  <span className="font-mono text-[10px] bg-background/80 px-1.5 py-0.5 rounded border">Est: ~2-3 min</span>
+                </div>
+              </div>
+            )}
 
             {/* Status Sync Terakhir */}
             <div className="p-3 rounded-xl border bg-card space-y-2">
