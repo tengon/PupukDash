@@ -42,7 +42,7 @@ async function login(page) {
   await page.waitForFunction(
     () => !window.location.href.includes('/login'),
     { timeout: 15000 }
-  ).catch(() => {});
+  ).catch(() => { });
 
   await page.waitForTimeout(3000);
   const homeUrl = page.url();
@@ -85,19 +85,19 @@ async function getSpjbListViaMenu(page, prefix) {
 
     // Klik menu Alokasi
     await page.click('a:has-text("Alokasi"), li:has-text("Alokasi"), .menu-item:has-text("Alokasi")')
-      .catch(() => page.click('[class*="sidebar"] >> text=Alokasi').catch(() => {}));
+      .catch(() => page.click('[class*="sidebar"] >> text=Alokasi').catch(() => { }));
     await page.waitForTimeout(1000);
 
     // Klik submenu SPJB PPTS
     await page.click('a:has-text("SPJB PPTS"), li:has-text("SPJB PPTS")')
-      .catch(() => page.click('text=SPJB PPTS').catch(() => {}));
+      .catch(() => page.click('text=SPJB PPTS').catch(() => { }));
     await page.waitForTimeout(3000);
 
     console.log(`  URL setelah klik menu: ${page.url()}`);
   }
 
   // Tunggu tabel muncul
-  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => {});
+  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => { });
   rowCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
   console.log(`  Rows ditemukan di DOM: ${rowCount}`);
 
@@ -157,7 +157,7 @@ async function getSpjbListViaMenu(page, prefix) {
     // Juga coba klik tombol filter jika ada dropdown Vue custom
     const statusBtn = [...document.querySelectorAll('button, .dropdown-item, li')]
       .find(el => el.innerText?.trim()?.toLowerCase() === 'active' ||
-                  el.innerText?.trim()?.toLowerCase() === 'actived');
+        el.innerText?.trim()?.toLowerCase() === 'actived');
     if (statusBtn) statusBtn.click();
   });
 
@@ -178,14 +178,14 @@ async function getSpjbListViaMenu(page, prefix) {
       const href = link ? (link.href || link.getAttribute('href') || '') : '';
       return {
         nomorSpjb: cells[1] || '',  // col 1: Nomor SPJB (col 0 = checkbox)
-        kodePpts:  cells[2] || '',  // col 2: Kode PPTS
-        namaPpts:  cells[3] || '',  // col 3: Nama PPTS
-        kodePud:   cells[4] || '',  // col 4: Kode PUD
-        namaPud:   cells[5] || '',  // col 5: Nama PUD
-        provinsi:  cells[6] || '',  // col 6: Provinsi
+        kodePpts: cells[2] || '',  // col 2: Kode PPTS
+        namaPpts: cells[3] || '',  // col 3: Nama PPTS
+        kodePud: cells[4] || '',  // col 4: Kode PUD
+        namaPud: cells[5] || '',  // col 5: Nama PUD
+        provinsi: cells[6] || '',  // col 6: Provinsi
         kabupaten: cells[7] || '',  // col 7: Kabupaten
-        status:    cells[8] || '',  // col 8: Status
-        tanggalAwal:  cells[9]  || '', // col 9: Tgl Awal
+        status: cells[8] || '',  // col 8: Status
+        tanggalAwal: cells[9] || '', // col 9: Tgl Awal
         tanggalAkhir: cells[10] || '', // col 10: Tgl Akhir
         href,
       };
@@ -220,7 +220,7 @@ async function getSpjbListViaApi(page) {
         if (res.ok && text.startsWith('[') || text.includes('"data"')) {
           return { endpoint: ep, status: res.status, body: text };
         }
-      } catch (_) {}
+      } catch (_) { }
     }
     return null;
   }, CONFIG.baseUrl);
@@ -232,19 +232,19 @@ async function getSpjbListViaApi(page) {
     const json = JSON.parse(result.body);
     const rows = Array.isArray(json) ? json
       : Array.isArray(json.data) ? json.data
-      : Array.isArray(json.result) ? json.result : [];
+        : Array.isArray(json.result) ? json.result : [];
 
     return rows.map(r => ({
-      nomorSpjb:   r.no_spjb || r.nomorSpjb || r.contract_number || '',
-      kodePpts:    r.kode_ppts || r.kodePpts || r.ppts_code || '',
-      namaPpts:    r.nama_ppts || r.namaPpts || r.ppts_name || '',
-      kodePud:     r.kode_pud || r.kodePud || r.pud_code || '',
-      namaPud:     r.nama_pud || r.namaPud || r.pud_name || '',
-      provinsi:    r.provinsi || r.province || '',
-      kabupaten:   r.kabupaten || r.city || '',
-      status:      r.status || '',
+      nomorSpjb: r.no_spjb || r.nomorSpjb || r.contract_number || '',
+      kodePpts: r.kode_ppts || r.kodePpts || r.ppts_code || '',
+      namaPpts: r.nama_ppts || r.namaPpts || r.ppts_name || '',
+      kodePud: r.kode_pud || r.kodePud || r.pud_code || '',
+      namaPud: r.nama_pud || r.namaPud || r.pud_name || '',
+      provinsi: r.provinsi || r.province || '',
+      kabupaten: r.kabupaten || r.city || '',
+      status: r.status || '',
       tanggalAwal: r.tanggal_awal || r.start_date || '',
-      tanggalAkhir:r.tanggal_akhir || r.end_date || '',
+      tanggalAkhir: r.tanggal_akhir || r.end_date || '',
     }));
   } catch (_) {
     console.log('  Raw:', result.body.substring(0, 300));
@@ -272,7 +272,7 @@ async function getSpjbDetail(page, spjb, prefix) {
   await page.goto(detailUrl, { waitUntil: 'networkidle', timeout: 30000 });
 
   // Tunggu tabel muncul (max 8 detik)
-  await page.waitForSelector('table', { timeout: 8000 }).catch(() => {});
+  await page.waitForSelector('table', { timeout: 8000 }).catch(() => { });
   await page.waitForTimeout(1500);
 
   // Cek apakah tabel sudah ada; jika belum, reload sekali
@@ -280,7 +280,7 @@ async function getSpjbDetail(page, spjb, prefix) {
   if (tableCount === 0) {
     console.log(`    ⚠️  Tabel belum muncul, reload...`);
     await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
-    await page.waitForSelector('table', { timeout: 8000 }).catch(() => {});
+    await page.waitForSelector('table', { timeout: 8000 }).catch(() => { });
     await page.waitForTimeout(2000);
   }
 
@@ -291,7 +291,7 @@ async function getSpjbDetail(page, spjb, prefix) {
     const statusMatch = allText.match(/Status[:\s]+(Active|Rejected|Ditolak|Pending)/i);
 
     const header = {
-      judul:  document.querySelector('h4, h3, h2, .page-title, .card-title')?.innerText?.trim() || '',
+      judul: document.querySelector('h4, h3, h2, .page-title, .card-title')?.innerText?.trim() || '',
       status: statusMatch ? statusMatch[1] : '',
     };
 
@@ -301,7 +301,7 @@ async function getSpjbDetail(page, spjb, prefix) {
     formRows.forEach(group => {
       const label = group.querySelector('label')?.innerText?.trim();
       const value = group.querySelector('input')?.value?.trim()
-                  || group.querySelector('p, span:not(label span)')?.innerText?.trim() || '';
+        || group.querySelector('p, span:not(label span)')?.innerText?.trim() || '';
       if (label && value && value !== label && value.length < 200) {
         infoFields[label] = value;
       }
@@ -518,7 +518,7 @@ function printSummary(results) {
     console.error('❌ Error:', err.message);
     console.error(err.stack);
   } finally {
-    try { await page.waitForTimeout(1000); } catch (_) {}
-    try { await browser.close(); } catch (_) {}
+    try { await page.waitForTimeout(1000); } catch (_) { }
+    try { await browser.close(); } catch (_) { }
   }
 })();

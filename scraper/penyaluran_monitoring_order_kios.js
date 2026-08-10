@@ -18,9 +18,9 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 
 const CONFIG = {
-  baseUrl:    'https://gowcm.pupuk-indonesia.com',
-  username:   '1000001601',
-  password:   'A@makmur25',
+  baseUrl: 'https://gowcm.pupuk-indonesia.com',
+  username: '1000001601',
+  password: 'A@makmur25',
   outputFile: 'penyaluran_monitoring_order_kios_full.json',
 };
 
@@ -34,7 +34,7 @@ async function login(page) {
   await page.waitForFunction(
     () => !window.location.href.includes('/login'),
     { timeout: 15000 }
-  ).catch(() => {});
+  ).catch(() => { });
   await page.waitForTimeout(4000);
 
   console.log(`✅ Login berhasil. URL: ${page.url()}`);
@@ -63,7 +63,7 @@ async function login(page) {
 
   if (!prefix) {
     console.log('  🖱️  Klik menu Penyaluran ke Pengecer untuk capture prefix...');
-    await page.click('a:has-text("Penyaluran ke Pengecer"), li:has-text("Penyaluran ke Pengecer")').catch(() => {});
+    await page.click('a:has-text("Penyaluran ke Pengecer"), li:has-text("Penyaluran ke Pengecer")').catch(() => { });
     await page.waitForTimeout(2000);
     const url = page.url();
     const hash = decodeURIComponent(url.split('#/')[1] || '');
@@ -93,7 +93,7 @@ async function setFilters(page) {
 
   // 1. Reset filter
   console.log('  🔄 Reset filter...');
-  await page.click('#resettableMonitoringOrderKios, button:has-text("Reset Filter")').catch(() => {});
+  await page.click('#resettableMonitoringOrderKios, button:has-text("Reset Filter")').catch(() => { });
   await page.waitForTimeout(2000);
 
   // 2. Set Show = Semua
@@ -102,9 +102,9 @@ async function setFilters(page) {
     const showSelects = [...document.querySelectorAll('select')].filter(s => {
       const opts = [...s.options].map(o => o.value);
       return opts.includes('-1') || opts.includes('100') || s.name?.includes('length') ||
-             [...s.options].some(o =>
-               o.text.toLowerCase().includes('semua') || o.text.toLowerCase().includes('all')
-             );
+        [...s.options].some(o =>
+          o.text.toLowerCase().includes('semua') || o.text.toLowerCase().includes('all')
+        );
     });
 
     if (showSelects.length > 0) {
@@ -143,22 +143,22 @@ async function scrapeCurrentPage(page) {
       if (map.has(nomorOrder)) return;
 
       map.set(nomorOrder, {
-        noIndex:            cells[orderIdx - 2] || '',
-        status:             cells[orderIdx - 1] || '',
-        nomorOrder:         nomorOrder,
-        provinsi:           cells[orderIdx + 1] || '',
-        kabupatenKota:      cells[orderIdx + 2] || '',
-        kecamatan:          cells[orderIdx + 3] || '',
-        kodePengecer:       cells[orderIdx + 4] || '',
-        namaPengecer:       cells[orderIdx + 5] || '',
-        tanggalOrder:       cells[orderIdx + 6] || '',
-        durasiOrder:        cells[orderIdx + 7] || '',
-        pembayaran:         cells[orderIdx + 8] || '',
-        nilaiOrderRupiah:   cells[orderIdx + 9] || '',
-        totalQtyTon:        cells[orderIdx + 10] || '',
+        noIndex: cells[orderIdx - 2] || '',
+        status: cells[orderIdx - 1] || '',
+        nomorOrder: nomorOrder,
+        provinsi: cells[orderIdx + 1] || '',
+        kabupatenKota: cells[orderIdx + 2] || '',
+        kecamatan: cells[orderIdx + 3] || '',
+        kodePengecer: cells[orderIdx + 4] || '',
+        namaPengecer: cells[orderIdx + 5] || '',
+        tanggalOrder: cells[orderIdx + 6] || '',
+        durasiOrder: cells[orderIdx + 7] || '',
+        pembayaran: cells[orderIdx + 8] || '',
+        nilaiOrderRupiah: cells[orderIdx + 9] || '',
+        totalQtyTon: cells[orderIdx + 10] || '',
         terakhirDiperbarui: cells[orderIdx + 11] || '',
-        kodeDistributor:    cells[orderIdx + 12] || '',
-        namaDistributor:    cells[orderIdx + 13] || '',
+        kodeDistributor: cells[orderIdx + 12] || '',
+        namaDistributor: cells[orderIdx + 13] || '',
       });
     });
     return Array.from(map.values());
@@ -179,14 +179,14 @@ async function getSpjbList(page, prefix) {
   let rowsCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
   if (rowsCount === 0) {
     console.log('  ⚠️  Tabel masih kosong, coba klik menu sidebar...');
-    await page.click('a:has-text("Penyaluran ke Pengecer"), li:has-text("Penyaluran ke Pengecer")').catch(() => {});
+    await page.click('a:has-text("Penyaluran ke Pengecer"), li:has-text("Penyaluran ke Pengecer")').catch(() => { });
     await page.waitForTimeout(1000);
-    await page.click('a[href*="monitoring-order-kios"], text=Monitoring Order Kios').catch(() => {});
+    await page.click('a[href*="monitoring-order-kios"], text=Monitoring Order Kios').catch(() => { });
     await page.waitForTimeout(5000);
   }
 
   console.log(`  URL aktif: ${page.url()}`);
-  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => {});
+  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => { });
 
   // Apply Filter
   await setFilters(page);
@@ -202,14 +202,14 @@ async function getPageInfo(page) {
 }
 
 async function clickNextPage(page) {
-  await page.click('.pagination .next:not(.disabled) a, li.next:not(.disabled) a, [aria-label="Next"]:not([disabled])').catch(() => {});
+  await page.click('.pagination .next:not(.disabled) a, li.next:not(.disabled) a, [aria-label="Next"]:not([disabled])').catch(() => { });
   await page.waitForTimeout(2500);
 }
 
 (async () => {
   const browser = await chromium.launch({ headless: false, slowMo: 50 });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const page    = await context.newPage();
+  const page = await context.newPage();
 
   try {
     const prefix = await login(page);
@@ -238,7 +238,7 @@ async function clickNextPage(page) {
 
     console.log('\nSampel 10 baris pertama:');
     allData.slice(0, 10).forEach((r, i) => {
-      console.log(`\n  [${i+1}] Order: ${r.nomorOrder} | Status: ${r.status}`);
+      console.log(`\n  [${i + 1}] Order: ${r.nomorOrder} | Status: ${r.status}`);
       console.log(`       Pengecer : ${r.namaPengecer} (${r.kodePengecer})`);
       console.log(`       Lokasi   : ${r.kecamatan}, ${r.kabupatenKota}, ${r.provinsi}`);
       console.log(`       Tgl Order: ${r.tanggalOrder} | Bayar: ${r.pembayaran} | Nilai: ${r.nilaiOrder}`);
@@ -316,13 +316,13 @@ async function clickNextPage(page) {
     try {
       console.log('🔄 Memperbarui file penyaluran_full.json...');
       require('child_process').execSync('node gabung_penyaluran.js', { cwd: __dirname, stdio: 'inherit' });
-    } catch (_) {}
+    } catch (_) { }
 
   } catch (err) {
     console.error('❌ Error:', err.message);
     console.error(err.stack);
   } finally {
-    try { await page.waitForTimeout(1000); } catch (_) {}
-    try { await browser.close(); } catch (_) {}
+    try { await page.waitForTimeout(1000); } catch (_) { }
+    try { await browser.close(); } catch (_) { }
   }
 })();

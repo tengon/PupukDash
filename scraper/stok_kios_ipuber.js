@@ -16,9 +16,9 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 
 const CONFIG = {
-  baseUrl:    'https://gowcm.pupuk-indonesia.com',
-  username:   '1000001601',
-  password:   'A@makmur25',
+  baseUrl: 'https://gowcm.pupuk-indonesia.com',
+  username: '1000001601',
+  password: 'A@makmur25',
   outputFile: 'stok_kios_ipuber_full.json',
 };
 
@@ -33,7 +33,7 @@ async function login(page) {
   await page.waitForFunction(
     () => !window.location.href.includes('/login'),
     { timeout: 15000 }
-  ).catch(() => {});
+  ).catch(() => { });
   await page.waitForTimeout(4000);
 
   console.log(`✅ Login berhasil. URL: ${page.url()}`);
@@ -65,7 +65,7 @@ async function login(page) {
   // Strategi 3: klik menu Realisasi untuk capture prefix
   if (!prefix) {
     console.log('  🖱️  Klik menu Realisasi untuk capture prefix...');
-    await page.click('a:has-text("Realisasi"), li:has-text("Realisasi")').catch(() => {});
+    await page.click('a:has-text("Realisasi"), li:has-text("Realisasi")').catch(() => { });
     await page.waitForTimeout(2000);
     const url = page.url();
     const hash = decodeURIComponent(url.split('#/')[1] || '');
@@ -97,7 +97,7 @@ async function setFilters(page) {
 
   // 1. Klik Reset Filter (supaya tidak ter-filter kata kunci tertentu)
   console.log('  🔄 Reset filter...');
-  await page.click('#resetMonitoringStockKiosIPubers, button:has-text("Reset Filter")').catch(() => {});
+  await page.click('#resetMonitoringStockKiosIPubers, button:has-text("Reset Filter")').catch(() => { });
   await page.waitForTimeout(1500);
 
   // 2. Set Show = Semua / Max entries
@@ -106,9 +106,9 @@ async function setFilters(page) {
     const showSelects = [...document.querySelectorAll('select')].filter(s => {
       const opts = [...s.options].map(o => o.value);
       return opts.includes('-1') || opts.includes('100') || s.name?.includes('length') ||
-             [...s.options].some(o =>
-               o.text.toLowerCase().includes('semua') || o.text.toLowerCase().includes('all')
-             );
+        [...s.options].some(o =>
+          o.text.toLowerCase().includes('semua') || o.text.toLowerCase().includes('all')
+        );
     });
 
     if (showSelects.length > 0) {
@@ -138,12 +138,12 @@ async function scrapeCurrentPage(page) {
     return rows.map(row => {
       const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
       return {
-        kodeKios:    cells[0] || '', // col 0: Kode Kios
-        namaKios:    cells[1] || '', // col 1: Nama Kios
+        kodeKios: cells[0] || '', // col 0: Kode Kios
+        namaKios: cells[1] || '', // col 1: Nama Kios
         kodeProduct: cells[2] || '', // col 2: Kode Product
         namaProduct: cells[3] || '', // col 3: Nama Product
-        stokKg:      cells[4] || '', // col 4: Stok (Kg)
-        syncnAt:     cells[5] || '', // col 5: Syncn At
+        stokKg: cells[4] || '', // col 4: Stok (Kg)
+        syncnAt: cells[5] || '', // col 5: Syncn At
       };
     }).filter(r => r.kodeKios !== '' && r.kodeKios !== 'No data available in table');
   });
@@ -164,7 +164,7 @@ async function getPageInfo(page) {
 async function clickNextPage(page) {
   await page.click(
     '.pagination .next:not(.disabled) a, li.next:not(.disabled) a, [aria-label="Next"]:not([disabled])'
-  ).catch(() => {});
+  ).catch(() => { });
   await page.waitForTimeout(2000);
 }
 
@@ -172,7 +172,7 @@ async function clickNextPage(page) {
 (async () => {
   const browser = await chromium.launch({ headless: false, slowMo: 50 });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const page    = await context.newPage();
+  const page = await context.newPage();
 
   try {
     const prefix = await login(page);
@@ -192,14 +192,14 @@ async function clickNextPage(page) {
     let rowCount = await page.$$eval('table tbody tr', r => r.length).catch(() => 0);
     if (rowCount === 0) {
       console.log('  ⚠️  Tabel kosong, klik menu...');
-      await page.click('a:has-text("Realisasi"), .menu-item:has-text("Realisasi")').catch(() => {});
+      await page.click('a:has-text("Realisasi"), .menu-item:has-text("Realisasi")').catch(() => { });
       await page.waitForTimeout(1000);
-      await page.click('a:has-text("Stok Kios IPuber"), a:has-text("IPuber"), text=IPuber').catch(() => {});
+      await page.click('a:has-text("Stok Kios IPuber"), a:has-text("IPuber"), text=IPuber').catch(() => { });
       await page.waitForTimeout(3000);
       console.log(`  URL setelah klik: ${page.url()}`);
     }
 
-    await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => {});
+    await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => { });
 
     // Set Filter: Reset + Show Max
     console.log('  🔧 Reset filter & set Show = Max entries...');
@@ -249,7 +249,7 @@ async function clickNextPage(page) {
 
     console.log('\nSampel 10 baris pertama:');
     allData.slice(0, 10).forEach((r, i) => {
-      console.log(`\n  [${i+1}] Kios: ${r.namaKios} (${r.kodeKios})`);
+      console.log(`\n  [${i + 1}] Kios: ${r.namaKios} (${r.kodeKios})`);
       console.log(`       Produk   : ${r.namaProduct} (${r.kodeProduct})`);
       console.log(`       Stok     : ${r.stokKg} Kg`);
       console.log(`       Sync At  : ${r.syncnAt}`);
@@ -265,7 +265,7 @@ async function clickNextPage(page) {
     // ── Merging dengan data eksisting jika ada data baru ─────────────────────
     let existingMap = new Map();
     let existingCount = 0;
-    
+
     if (fs.existsSync(CONFIG.outputFile)) {
       try {
         const fileContent = fs.readFileSync(CONFIG.outputFile, 'utf8');
@@ -334,7 +334,7 @@ async function clickNextPage(page) {
     console.error('❌ Error:', err.message);
     console.error(err.stack);
   } finally {
-    try { await page.waitForTimeout(1000); } catch (_) {}
-    try { await browser.close(); } catch (_) {}
+    try { await page.waitForTimeout(1000); } catch (_) { }
+    try { await browser.close(); } catch (_) { }
   }
 })();

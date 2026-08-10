@@ -14,9 +14,9 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 
 const CONFIG = {
-  baseUrl:    'https://gowcm.pupuk-indonesia.com',
-  username:   '1000001601',
-  password:   'A@makmur25',
+  baseUrl: 'https://gowcm.pupuk-indonesia.com',
+  username: '1000001601',
+  password: 'A@makmur25',
   outputFile: 'spjb_operasional_full.json',
 };
 
@@ -31,7 +31,7 @@ async function login(page) {
   await page.waitForFunction(
     () => !window.location.href.includes('/login'),
     { timeout: 15000 }
-  ).catch(() => {});
+  ).catch(() => { });
   await page.waitForTimeout(4000); // tunggu lebih lama agar sidebar render
 
   const homeUrl = page.url();
@@ -103,15 +103,15 @@ async function getSpjbList(page, prefix) {
   if (rowCount === 0) {
     console.log('  ⚠️  Tabel kosong, coba klik menu...');
     await page.click('a:has-text("Alokasi"), li:has-text("Alokasi")')
-      .catch(() => {});
+      .catch(() => { });
     await page.waitForTimeout(1000);
     await page.click('a:has-text("SPJB Operasional"), li:has-text("SPJB Operasional"), text=SPJB Operasional')
-      .catch(() => {});
+      .catch(() => { });
     await page.waitForTimeout(3000);
     console.log(`  URL setelah klik menu: ${page.url()}`);
   }
 
-  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => {});
+  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => { });
   rowCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
   console.log(`  Rows ditemukan di DOM: ${rowCount}`);
 
@@ -122,9 +122,9 @@ async function getSpjbList(page, prefix) {
     const showSelects = [...document.querySelectorAll('select')].filter(s => {
       const opts = [...s.options].map(o => o.value);
       return opts.includes('-1') || s.name?.includes('length') ||
-             [...s.options].some(o =>
-               o.text.toLowerCase().includes('semua') || o.text.toLowerCase().includes('all')
-             );
+        [...s.options].some(o =>
+          o.text.toLowerCase().includes('semua') || o.text.toLowerCase().includes('all')
+        );
     });
     if (showSelects.length > 0) {
       const sel = showSelects[0];
@@ -166,7 +166,7 @@ async function getSpjbList(page, prefix) {
     // Vue custom dropdown fallback
     const statusBtn = [...document.querySelectorAll('button, .dropdown-item, li')]
       .find(el => el.innerText?.trim()?.toLowerCase() === 'active' ||
-                  el.innerText?.trim()?.toLowerCase() === 'actived');
+        el.innerText?.trim()?.toLowerCase() === 'actived');
     if (statusBtn) statusBtn.click();
   });
 
@@ -201,16 +201,16 @@ async function getSpjbList(page, prefix) {
     return rows.map(row => {
       // col[0] = checkbox (skip) → data mulai col[1]
       const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
-      const link  = row.querySelector('td:nth-child(2) a') || row.querySelector('a');
-      const href  = link ? (link.href || link.getAttribute('href') || '') : '';
+      const link = row.querySelector('td:nth-child(2) a') || row.querySelector('a');
+      const href = link ? (link.href || link.getAttribute('href') || '') : '';
       return {
-        nomorSpjb:    cells[1] || '',
-        tahun:        cells[2] || '',
-        distributor:  cells[3] || '',
-        produsen:     cells[4] || '',
-        tanggalBuat:  cells[5] || '',
+        nomorSpjb: cells[1] || '',
+        tahun: cells[2] || '',
+        distributor: cells[3] || '',
+        produsen: cells[4] || '',
+        tanggalBuat: cells[5] || '',
         tanggalGanti: cells[6] || '',
-        status:       cells[7] || '',
+        status: cells[7] || '',
         href,
       };
     }).filter(r => r.nomorSpjb !== '');
@@ -242,7 +242,7 @@ async function getSpjbDetail(page, spjb) {
   console.log(`  📄 [${spjb.status}] ${spjb.nomorSpjb} → ${spjb.distributor}`);
 
   await page.goto(detailUrl, { waitUntil: 'networkidle', timeout: 30000 });
-  await page.waitForSelector('table, .card, .form-group', { timeout: 8000 }).catch(() => {});
+  await page.waitForSelector('table, .card, .form-group', { timeout: 8000 }).catch(() => { });
   await page.waitForTimeout(1500);
 
   // Reload jika belum ada tabel
@@ -250,13 +250,13 @@ async function getSpjbDetail(page, spjb) {
   if (tableCount === 0) {
     console.log(`    ⚠️  Tabel belum muncul, reload...`);
     await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
-    await page.waitForSelector('table, .card', { timeout: 8000 }).catch(() => {});
+    await page.waitForSelector('table, .card', { timeout: 8000 }).catch(() => { });
     await page.waitForTimeout(2000);
   }
 
   const detail = await page.evaluate(() => {
     const header = {
-      judul:  document.querySelector('h4, h3, h2, .page-title, .card-title')?.innerText?.trim() || '',
+      judul: document.querySelector('h4, h3, h2, .page-title, .card-title')?.innerText?.trim() || '',
       status: document.querySelector('[class*="badge"], [class*="label-status"]')?.innerText?.trim() || '',
     };
 
@@ -265,7 +265,7 @@ async function getSpjbDetail(page, spjb) {
     document.querySelectorAll('.form-group, .row > [class*="col"]').forEach(group => {
       const label = group.querySelector('label')?.innerText?.trim();
       const value = group.querySelector('input')?.value?.trim()
-                  || group.querySelector('p, span:not(label span)')?.innerText?.trim() || '';
+        || group.querySelector('p, span:not(label span)')?.innerText?.trim() || '';
       if (label && value && value !== label && value.length < 300) {
         infoFields[label] = value;
       }
@@ -346,7 +346,7 @@ async function getSpjbDetail(page, spjb) {
       const hdrs = [...t.querySelectorAll('thead th')].map(h => h.innerText.trim().toLowerCase());
       return hdrs.some(h =>
         h.includes('alokasi') || h.includes('kacamatan') ||
-        h.includes('urea')    || h.includes('npk') || h.includes('realisasi')
+        h.includes('urea') || h.includes('npk') || h.includes('realisasi')
       );
     });
 
@@ -354,7 +354,7 @@ async function getSpjbDetail(page, spjb) {
       const hdrs = [...t.querySelectorAll('thead th')].map(h => h.innerText.trim().toLowerCase());
       return hdrs.some(h =>
         h.includes('dokument') || h.includes('jenis') ||
-        h.includes('alasan')   || h.includes('riwayat')
+        h.includes('alasan') || h.includes('riwayat')
       );
     });
 
@@ -368,7 +368,7 @@ async function getSpjbDetail(page, spjb) {
       infoFields,
       alokasiTable: parseTable(alokasiTableEl),
       riwayatTable: parseTable(riwayatTableEl),
-      allTables:    allParsed,
+      allTables: allParsed,
       fileLinks,
     };
   });
@@ -386,7 +386,7 @@ function printSummary(results) {
   for (const r of results) {
     const alokasiRows = r.detail?.alokasiTable?.rows?.length || 0;
     const riwayatDocs = r.detail?.riwayatTable?.rows?.length || 0;
-    const files       = r.detail?.fileLinks?.length || 0;
+    const files = r.detail?.fileLinks?.length || 0;
 
     console.log(`\n  [${r.status.padEnd(8)}] ${r.nomorSpjb}`);
     console.log(`           Distributor: ${r.distributor} | Produsen: ${r.produsen}`);
@@ -417,11 +417,11 @@ function printSummary(results) {
 (async () => {
   const browser = await chromium.launch({ headless: false, slowMo: 50 });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const page    = await context.newPage();
+  const page = await context.newPage();
 
   try {
-    const prefix  = await login(page);
-    const list    = await getSpjbList(page, prefix);
+    const prefix = await login(page);
+    const list = await getSpjbList(page, prefix);
 
     if (list.length === 0) {
       console.error('❌ Tidak ada data SPJB Operasional ditemukan');
@@ -505,7 +505,7 @@ function printSummary(results) {
     console.error('❌ Error:', err.message);
     console.error(err.stack);
   } finally {
-    try { await page.waitForTimeout(1000); } catch (_) {}
-    try { await browser.close(); } catch (_) {}
+    try { await page.waitForTimeout(1000); } catch (_) { }
+    try { await browser.close(); } catch (_) { }
   }
 })();
