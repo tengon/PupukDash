@@ -14,14 +14,13 @@
  * Output: penyaluran_monitoring_order_kios_full.json
  */
 
-const { chromium } = require('playwright');
-const fs = require('fs');
+const path = require('path');
 
 const CONFIG = {
   baseUrl: 'https://gowcm.pupuk-indonesia.com',
   username: '1000001601',
   password: 'A@makmur25',
-  outputFile: 'penyaluran_monitoring_order_kios_full.json',
+  outputFile: path.join(__dirname, 'penyaluran_monitoring_order_kios_full.json'),
 };
 
 async function login(page) {

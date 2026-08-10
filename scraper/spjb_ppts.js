@@ -451,7 +451,7 @@ function printSummary(results) {
     printSummary(results);
 
     // Step 5: Incremental Merge dengan data eksisting
-    const outputFile = 'spjb_ppts_full.json';
+    const outputFile = path.join(__dirname, 'spjb_ppts_full.json');
     let existingMap = new Map();
     let existingCount = 0;
 

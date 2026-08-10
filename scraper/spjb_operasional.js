@@ -13,11 +13,13 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 
+const path = require('path');
+
 const CONFIG = {
   baseUrl: 'https://gowcm.pupuk-indonesia.com',
   username: '1000001601',
   password: 'A@makmur25',
-  outputFile: 'spjb_operasional_full.json',
+  outputFile: path.join(__dirname, 'spjb_operasional_full.json'),
 };
 
 // ─── Login & ambil prefix dari sidebar ──────────────────────────────────────
