@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Dialog,
@@ -44,15 +44,23 @@ interface AllocationItem {
 export function EditAlokasiDialog({
   open,
   onOpenChange,
+  initialSearch = '',
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialSearch?: string
 }) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
+
+  useEffect(() => {
+    if (open) {
+      setSearch(initialSearch)
+    }
+  }, [open, initialSearch])
 
   const { data, isLoading, refetch } = useQuery<{ success: boolean; data: AllocationItem[] }>({
     queryKey: ['allocation-list', search],

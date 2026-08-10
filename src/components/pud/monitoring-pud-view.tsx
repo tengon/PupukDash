@@ -60,7 +60,13 @@ function getActiveIndices(headers: string[], filter: string): number[] {
   return indices
 }
 
-function SpjbOperasionalCard({ item }: { item: SpjbOperasionalItem }) {
+function SpjbOperasionalCard({
+  item,
+  onEditKecamatan,
+}: {
+  item: SpjbOperasionalItem
+  onEditKecamatan?: (district: string) => void
+}) {
   const headers = item.detail?.alokasiTable?.headers || []
   const rows = item.detail?.alokasiTable?.rows || []
   const [columnFilter, setColumnFilter] = useState<string>('TOTAL')
@@ -275,7 +281,7 @@ function SpjbOperasionalCard({ item }: { item: SpjbOperasionalItem }) {
                         {isNewGroup && (
                           <TableRow className={`text-xs ${groupHeaderBg}`}>
                             <TableCell colSpan={activeIndices.length} className="py-2 px-3 border border-border/60">
-                              <div className="sticky left-3 flex items-center gap-1.5 font-extrabold uppercase tracking-wide text-[11px] w-max">
+                              <div className="sticky left-3 flex items-center gap-2 font-extrabold uppercase tracking-wide text-[11px] w-max">
                                 {isKabTotal ? (
                                   <BarChart3 className="h-4 w-4 text-purple-600 shrink-0" />
                                 ) : isProvTotal ? (
@@ -284,6 +290,18 @@ function SpjbOperasionalCard({ item }: { item: SpjbOperasionalItem }) {
                                   <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
                                 )}
                                 <span>{groupTitle}</span>
+                                {!isKabTotal && !isProvTotal && onEditKecamatan && (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="ml-2 h-5 text-[10px] font-bold gap-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs rounded-md"
+                                    onClick={() => onEditKecamatan(groupKey)}
+                                    title={`Edit Alokasi Tahunan untuk Kecamatan ${groupKey}`}
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                    Edit
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -401,11 +419,17 @@ export function MonitoringPudView() {
   const [search, setSearch] = useState('')
   const [produsenFilter, setProdusenFilter] = useState('ALL')
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [selectedDistrict, setSelectedDistrict] = useState('')
 
   const { data: spjbOperasionalRes, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['spjbOperasional', search, produsenFilter],
     queryFn: () => fetchSpjbOperasional({ search, produsen: produsenFilter }),
   })
+
+  const handleOpenEditKecamatan = (district: string) => {
+    setSelectedDistrict(district)
+    setShowEditDialog(true)
+  }
 
   const items = spjbOperasionalRes?.data || []
   const totalSpjb = spjbOperasionalRes?.total || 0
@@ -433,7 +457,7 @@ export function MonitoringPudView() {
                   className="pl-9 h-9 w-full sm:w-64"
                 />
               </div>
-              <Button onClick={() => setShowEditDialog(true)} size="sm" className="h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0">
+              <Button onClick={() => { setSelectedDistrict(''); setShowEditDialog(true) }} size="sm" className="h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0">
                 <Pencil className="h-3.5 w-3.5" />
                 Edit Alokasi
               </Button>
@@ -496,14 +520,14 @@ export function MonitoringPudView() {
           ) : (
             <div className="space-y-4">
               {items.map((item, idx) => (
-                <SpjbOperasionalCard key={`${item.nomorSpjb}_${idx}`} item={item} />
+                <SpjbOperasionalCard key={`${item.nomorSpjb}_${idx}`} item={item} onEditKecamatan={handleOpenEditKecamatan} />
               ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <EditAlokasiDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
+      <EditAlokasiDialog open={showEditDialog} onOpenChange={setShowEditDialog} initialSearch={selectedDistrict} />
     </motion.div>
   )
 }
