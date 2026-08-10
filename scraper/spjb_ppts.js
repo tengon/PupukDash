@@ -44,25 +44,60 @@ async function login(page) {
     { timeout: 15000 }
   ).catch(() => { });
 
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(4000);
   const homeUrl = page.url();
   console.log(`✅ Login berhasil. URL: ${homeUrl}`);
 
-  // Setelah login, URL = /#/home (tanpa prefix)
-  // Ambil prefix dari href link sidebar yang ter-render di DOM
-  const prefix = await page.evaluate(() => {
-    // Cari link sidebar yang mengandung encrypted path
-    const links = [...document.querySelectorAll('a[href], router-link')];
+  // Strategi 1: Ambil prefix dari href sidebar links
+  let prefix = await page.evaluate(() => {
+    const links = [...document.querySelectorAll('a[href], [href], a[to], router-link')];
     for (const link of links) {
       const href = link.getAttribute('href') || link.getAttribute('to') || '';
-      // Encrypted prefix adalah base64 string panjang sebelum /alokasi, /home, dll
       const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
       if (match) return match[1];
     }
     return null;
   });
 
-  console.log(`🔑 Route Prefix dari sidebar: ${prefix || '(tidak terdeteksi, coba klik menu)'}`);
+  // Strategi 2: Tunggu lebih lama jika sidebar belum render
+  if (!prefix) {
+    console.log('  ⏳ Sidebar belum siap, tunggu 3 detik lagi...');
+    await page.waitForTimeout(3000);
+    prefix = await page.evaluate(() => {
+      const links = [...document.querySelectorAll('a[href], [href]')];
+      for (const link of links) {
+        const href = link.href || link.getAttribute('href') || link.getAttribute('to') || '';
+        const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
+        if (match) return match[1];
+      }
+      return null;
+    });
+  }
+
+  // Strategi 3: Klik menu Alokasi dan capture prefix dari URL
+  if (!prefix) {
+    console.log('  🖱️  Klik menu Alokasi untuk capture prefix dari URL...');
+    const clicked = await page.click(
+      'a:has-text("Alokasi"), li:has-text("Alokasi"), .sidebar a[href*="alokasi"]'
+    ).then(() => true).catch(() => false);
+
+    if (clicked) {
+      await page.waitForTimeout(3000);
+      const currentUrl = page.url();
+      console.log(`  URL setelah klik Alokasi: ${currentUrl}`);
+      const hash = decodeURIComponent(currentUrl.split('#/')[1] || '');
+      const parts = hash.split('/');
+      if (parts[0] && parts[0].length > 20) {
+        prefix = encodeURIComponent(parts[0]);
+      }
+    }
+  }
+
+  if (prefix && prefix.includes('%25')) {
+    prefix = decodeURIComponent(prefix);
+  }
+
+  console.log(`🔑 Route Prefix: ${prefix || '(tidak terdeteksi)'}`);
   return prefix;
 }
 
