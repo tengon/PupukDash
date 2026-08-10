@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
-import { Pencil, Save, RefreshCw, Layers, Search, MapPin, Building2, TrendingUp, CheckCircle2, ArrowRight } from 'lucide-react'
+import { Pencil, Save, RefreshCw, Layers, Search, MapPin, CheckCircle2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 interface AllocationItem {
@@ -47,8 +47,7 @@ export function EditAlokasiDialog({
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState(initialSearch)
-  const [selectedItem, setSelectedItem] = useState<AllocationItem | null>(null)
-  const [newAllocInput, setNewAllocInput] = useState<string>('')
+  const [formInputs, setFormInputs] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (open) {
@@ -56,7 +55,7 @@ export function EditAlokasiDialog({
     }
   }, [open, initialSearch])
 
-  const { data, isLoading, refetch } = useQuery<{ success: boolean; data: AllocationItem[] }>({
+  const { data, isLoading, refetch, isFetching } = useQuery<{ success: boolean; data: AllocationItem[] }>({
     queryKey: ['allocation-list', search],
     queryFn: async () => {
       const res = await fetch(`/api/allocation?search=${encodeURIComponent(search)}`)
@@ -68,11 +67,14 @@ export function EditAlokasiDialog({
 
   const list = data?.data || []
 
-  // Auto-select first item when searching specifically for a kecamatan
+  // Initialize form input values whenever list changes
   useEffect(() => {
-    if (list.length > 0 && (!selectedItem || !list.some(i => i.id === selectedItem.id))) {
-      setSelectedItem(list[0])
-      setNewAllocInput(list[0].totalAllocationTon.toString())
+    if (list.length > 0) {
+      const initial: Record<string, string> = {}
+      list.forEach((item) => {
+        initial[item.id] = item.totalAllocationTon.toString()
+      })
+      setFormInputs(initial)
     }
   }, [list])
 
@@ -89,7 +91,7 @@ export function EditAlokasiDialog({
       }
       return res.json()
     },
-    onSuccess: (res) => {
+    onSuccess: () => {
       toast({
         title: 'Form Alokasi Berhasil Disimpan',
         description: 'Nilai Alokasi Baru telah tersimpan di database dan terlindungi dari overwrite scraper.',
@@ -108,14 +110,13 @@ export function EditAlokasiDialog({
     },
   })
 
-  const handleSelectFormItem = (item: AllocationItem) => {
-    setSelectedItem(item)
-    setNewAllocInput(item.totalAllocationTon.toString())
+  const handleInputChange = (id: string, value: string) => {
+    setFormInputs((prev) => ({ ...prev, [id]: value }))
   }
 
-  const handleSaveForm = () => {
-    if (!selectedItem) return
-    const val = parseFloat(newAllocInput)
+  const handleSaveItem = (item: AllocationItem) => {
+    const rawVal = formInputs[item.id]
+    const val = parseFloat(rawVal)
     if (isNaN(val) || val < 0) {
       toast({
         title: 'Nilai Alokasi Tidak Valid',
@@ -124,209 +125,151 @@ export function EditAlokasiDialog({
       })
       return
     }
-    updateMutation.mutate({ id: selectedItem.id, totalAllocationTon: val })
+    updateMutation.mutate({ id: item.id, totalAllocationTon: val })
   }
 
-  // Calculated Preview values
-  const parsedNewAlloc = parseFloat(newAllocInput) || 0
-  const currentReal = selectedItem?.totalRealizationTon || 0
-  const estRemaining = Math.max(0, parsedNewAlloc - currentReal)
-  const estPct = parsedNewAlloc > 0 ? (currentReal / parsedNewAlloc) * 100 : 0
+  const districtTitle = search ? search.toUpperCase() : 'SEMUA WILAYAH'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-4 border-b bg-muted/30">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Layers className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             Form Edit Kuota Alokasi Tahunan (Database)
           </DialogTitle>
-          <DialogDescription className="text-xs">
-            Kelola dan ubah Alokasi Tahunan via Form. Nilai Alokasi Baru yang disimpan di sini akan **terkunci di database dan terlindungi dari overwrite scraper**.
-          </DialogDescription>
+
+          <div className="flex items-center justify-between gap-2 pt-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Cari Kecamatan / Kios / Produk..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-8 text-xs bg-background"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="h-8 px-2.5 text-xs gap-1 shrink-0">
+              <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x overflow-hidden">
-          {/* Left Panel: List Selector */}
-          <div className="md:col-span-5 flex flex-col p-3 space-y-2 bg-muted/10 overflow-hidden">
-            <div className="flex items-center gap-1.5 pb-1">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Cari Kecamatan / Kios / Produk..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 h-8 text-xs bg-background"
-                />
-              </div>
-              <Button variant="outline" size="sm" onClick={() => refetch()} className="h-8 px-2 text-xs shrink-0">
-                <RefreshCw className="h-3 w-3" />
-              </Button>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {isLoading ? (
+            <div className="space-y-3 py-2">
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
             </div>
+          ) : list.length === 0 ? (
+            <div className="text-center py-12 text-xs text-muted-foreground italic">
+              Tidak ada data alokasi untuk &quot;{search}&quot;. Coba ganti kata kunci pencarian.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                <MapPin className="h-4 w-4" />
+                <span>FORM EDIT ALOKASI KECAMATAN / WILAYAH: {districtTitle}</span>
+              </div>
 
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
-              {isLoading ? (
-                <div className="space-y-2 py-2">
-                  <Skeleton className="h-12 w-full rounded-lg" />
-                  <Skeleton className="h-12 w-full rounded-lg" />
-                  <Skeleton className="h-12 w-full rounded-lg" />
-                </div>
-              ) : list.length === 0 ? (
-                <div className="text-center py-12 text-xs text-muted-foreground italic">
-                  Data alokasi tidak ditemukan.
-                </div>
-              ) : (
-                list.map((item) => {
-                  const isSelected = selectedItem?.id === item.id
-                  const displayName = item.type === 'PPTS' ? item.pptsName : `Kec. ${item.district || '-'}`
+              {list.map((item) => {
+                const newAlloc = parseFloat(formInputs[item.id]) || 0
+                const currentReal = item.totalRealizationTon || 0
+                const estRemaining = Math.max(0, newAlloc - currentReal)
+                const estPct = newAlloc > 0 ? (currentReal / newAlloc) * 100 : 0
 
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => handleSelectFormItem(item)}
-                      className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
-                        isSelected
-                          ? 'bg-emerald-50/90 border-emerald-500 shadow-2xs dark:bg-emerald-950/40'
-                          : 'bg-card hover:bg-muted/50 border-border/70'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <Badge variant="outline" className={`text-[9px] px-1 py-0 font-bold shrink-0 ${item.type === 'PPTS' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-                            {item.type}
+                let prodBadgeClass = 'bg-blue-500/10 text-blue-700 border-blue-200'
+                if (item.productName.includes('UREA')) {
+                  prodBadgeClass = 'bg-emerald-500/10 text-emerald-700 border-emerald-300'
+                } else if (item.productName.includes('NPK')) {
+                  prodBadgeClass = 'bg-blue-500/10 text-blue-700 border-blue-300'
+                } else if (item.productName.includes('ORGANIK')) {
+                  prodBadgeClass = 'bg-amber-500/10 text-amber-700 border-amber-300'
+                }
+
+                return (
+                  <Card key={item.id} className="border shadow-2xs">
+                    <CardContent className="p-3.5 space-y-3">
+                      {/* Product Header */}
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={`text-xs font-extrabold px-2 py-0.5 ${prodBadgeClass}`}>
+                            PRODUK {item.productName}
                           </Badge>
-                          <span className="font-bold truncate text-foreground">{displayName}</span>
+                          <span className="text-xs font-bold text-foreground">
+                            {item.type === 'PPTS' ? item.pptsName : `Kec. ${item.district || '-'}`}
+                          </span>
                         </div>
-                        <Badge variant="secondary" className="text-[9px] font-bold shrink-0">
-                          {item.productName}
-                        </Badge>
+                        {item.spjbNumber && (
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            No SPJB: {item.spjbNumber}
+                          </span>
+                        )}
                       </div>
 
-                      <div className="flex justify-between items-center text-[11px] text-muted-foreground font-mono pt-0.5">
-                        <span>Alokasi: <strong className="text-foreground">{item.totalAllocationTon.toLocaleString('id-ID')} Ton</strong></span>
-                        <span className="text-emerald-600 font-semibold">{item.totalRealizationTon.toLocaleString('id-ID')} Ton ({item.realizationPct.toFixed(0)}%)</span>
+                      {/* FORM FIELDS GRID */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        {/* 1. ALOKASI SEBELUMNYA */}
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-bold text-muted-foreground">
+                            1. Alokasi Sebelumnya (Eksisting)
+                          </Label>
+                          <div className="h-9 px-3 rounded-lg border bg-muted/60 flex items-center justify-between font-mono text-xs">
+                            <span className="text-muted-foreground">Nilai Sebelumnya:</span>
+                            <span className="font-extrabold text-foreground">{item.totalAllocationTon.toLocaleString('id-ID')} Ton</span>
+                          </div>
+                        </div>
+
+                        {/* 2. ALOKASI BARU */}
+                        <div className="space-y-1">
+                          <Label htmlFor={`input-${item.id}`} className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                            <Pencil className="h-3 w-3 text-emerald-600" />
+                            2. Alokasi Baru (Ton)
+                          </Label>
+                          <div className="flex gap-1.5">
+                            <Input
+                              id={`input-${item.id}`}
+                              type="number"
+                              step="0.1"
+                              value={formInputs[item.id] || ''}
+                              onChange={(e) => handleInputChange(item.id, e.target.value)}
+                              placeholder="Input Alokasi Baru..."
+                              className="h-9 text-xs font-mono font-bold text-right bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-9 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 shrink-0"
+                              disabled={updateMutation.isPending}
+                              onClick={() => handleSaveItem(item)}
+                            >
+                              <Save className="h-3.5 w-3.5" />
+                              Simpan
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )
-                })
-              )}
+
+                      {/* LIVE CALCULATION PREVIEW */}
+                      <div className="p-2 rounded-lg bg-muted/40 border text-[11px] font-mono flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Realisasi Tebusan: <strong className="text-foreground">{currentReal.toLocaleString('id-ID')} Ton</strong>
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-700 dark:text-emerald-300 font-bold">
+                            Estimasi Sisa Baru: <strong>{estRemaining.toLocaleString('id-ID')} Ton</strong>
+                          </span>
+                          <Badge variant="outline" className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border-emerald-300">
+                            {estPct.toFixed(1)}% Realisasi
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
-          </div>
-
-          {/* Right Panel: Form Editor */}
-          <div className="md:col-span-7 flex flex-col p-4 space-y-4 overflow-y-auto bg-background">
-            {selectedItem ? (
-              <div className="space-y-4">
-                {/* Information Header Card */}
-                <div className="p-3 rounded-xl border bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 font-bold text-foreground">
-                      <MapPin className="h-4 w-4 text-emerald-600" />
-                      <span>{selectedItem.type === 'PPTS' ? selectedItem.pptsName : `Kecamatan ${selectedItem.district || '-'}`}</span>
-                    </div>
-                    <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold text-xs">
-                      Produk {selectedItem.productName}
-                    </Badge>
-                  </div>
-                  {selectedItem.spjbNumber && (
-                    <p className="text-[11px] text-muted-foreground font-mono">
-                      No SPJB: <strong className="text-foreground">{selectedItem.spjbNumber}</strong>
-                    </p>
-                  )}
-                </div>
-
-                {/* FORM INPUTS */}
-                <Card className="border shadow-2xs">
-                  <CardContent className="p-4 space-y-4">
-                    {/* FORM FIELD 1: ALOKASI SEBELUMNYA */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-slate-400"></span>
-                        1. Alokasi Sebelumnya (Eksisting Sistem)
-                      </Label>
-                      <div className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/50 text-xs font-mono font-bold">
-                        <span className="text-muted-foreground">Kuota Alokasi Sebelumnya:</span>
-                        <Badge variant="secondary" className="text-sm font-extrabold px-3 py-1 bg-background border">
-                          {selectedItem.totalAllocationTon.toLocaleString('id-ID')} Ton
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* FORM FIELD 2: ALOKASI BARU */}
-                    <div className="space-y-1.5 pt-1">
-                      <Label htmlFor="newAllocInput" className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-                        <Pencil className="h-3.5 w-3.5 text-emerald-600" />
-                        2. Alokasi Baru (Ton)
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="newAllocInput"
-                          type="number"
-                          step="0.1"
-                          value={newAllocInput}
-                          onChange={(e) => setNewAllocInput(e.target.value)}
-                          placeholder="Masukkan nilai alokasi baru..."
-                          className="h-10 text-sm font-mono font-bold text-right bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-500 focus:ring-emerald-500"
-                        />
-                        <div className="h-10 px-3 bg-muted rounded-lg flex items-center justify-center font-bold text-xs text-muted-foreground border">
-                          Ton
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* LIVE CALCULATION PREVIEW CARD */}
-                <div className="p-3.5 rounded-xl border bg-card space-y-2.5 border-border/80 text-xs">
-                  <span className="font-bold text-xs text-muted-foreground block border-b pb-1.5">
-                    📊 Ringkasan Kalkulasi Otomatis Sistem:
-                  </span>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                    <div className="p-2 rounded-lg bg-muted/40 border">
-                      <span className="text-[10px] text-muted-foreground block">Realisasi Tebusan (GOW CM):</span>
-                      <span className="font-bold text-foreground text-sm">{currentReal.toLocaleString('id-ID')} Ton</span>
-                    </div>
-
-                    <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-                      <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block font-bold">Estimasi Sisa Alokasi Baru:</span>
-                      <span className="font-extrabold text-emerald-700 dark:text-emerald-300 text-sm">
-                        {estRemaining.toLocaleString('id-ID')} Ton
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1 text-[11px] font-mono">
-                    <span className="text-muted-foreground">Prosentase Realisasi Baru:</span>
-                    <Badge variant="outline" className="font-extrabold bg-emerald-100 text-emerald-800 border-emerald-300">
-                      {estPct.toFixed(1)}% Realisasi
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* FORM ACTION BUTTONS */}
-                <div className="pt-2 flex items-center justify-end gap-2">
-                  <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-9 px-4 text-xs font-medium">
-                    Batal
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-9 px-5 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm"
-                    disabled={updateMutation.isPending}
-                    onClick={handleSaveForm}
-                  >
-                    <Save className="h-4 w-4" />
-                    {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Alokasi Baru'}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full py-16 text-muted-foreground">
-                <Layers className="h-10 w-10 opacity-30 mb-2" />
-                <p className="text-xs">Pilih data alokasi di sebelah kiri untuk mengisi form edit.</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -24,10 +24,20 @@ export async function GET(request: NextRequest) {
         : {}),
     }
 
-    const allocations = await db.allocation.findMany({
+    let allocations = await db.allocation.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
     })
+
+    // Jika tabel Allocation masih kosong di DB, otomatis jalankan sync/seed 1x
+    if (allocations.length === 0) {
+      const { syncAnnualTotalToDb } = await import('@/lib/sync-annual-to-db')
+      await syncAnnualTotalToDb()
+      allocations = await db.allocation.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+      })
+    }
 
     return NextResponse.json({
       success: true,
