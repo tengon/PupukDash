@@ -60,7 +60,7 @@ async function login(page) {
         if (match) return match[1];
       }
       return null;
-    });
+    })
   }
 
   // Strategi 3: klik menu Realisasi untuk capture prefix

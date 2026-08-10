@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-08-10T03:31:20.520Z",
+  "updated_at": "2026-08-10T11:01:39.439Z",
   "source": "GOW CM - Penyaluran Terintegrasi (Gabungan 4 Menu)",
   "summary": {
-    "total_monitoring_order_kios": 354,
+    "total_monitoring_order_kios": 355,
     "total_pemenuhan_order_kios": 457,
     "total_monitoring_pop": 316,
     "total_surat_jalan": 307,
@@ -10629,7 +10629,7 @@
     },
     {
       "nomorOrder": "PSN082621108003",
-      "statusOrder": "APPROVED",
+      "statusOrder": "ON PROCESS",
       "kodePengecer": "RT0000021108",
       "namaPengecer": "MEKAR",
       "provinsi": "JAWA TENGAH",
@@ -10639,7 +10639,7 @@
       "durasiOrder": "1 hari",
       "pembayaran": "Tunai    \nRp 18.413.360,00",
       "nilaiOrderRupiah": "11.000",
-      "totalQtyTon": "2026-08-10 09:52:41",
+      "totalQtyTon": "2026-08-10 17:32:41",
       "terakhirDiperbarui": "1000001601",
       "kodeDistributor": "CV. ANUGERAH MAKMUR",
       "namaDistributor": "",
@@ -10686,7 +10686,7 @@
     },
     {
       "nomorOrder": "PSN082685298001",
-      "statusOrder": "APPROVED",
+      "statusOrder": "ON PROCESS",
       "kodePengecer": "RT0000085298",
       "namaPengecer": "AGRO LESTARI",
       "provinsi": "JAWA TENGAH",
@@ -10696,7 +10696,7 @@
       "durasiOrder": "0 hari",
       "pembayaran": "Tunai    \nRp 26.812.160,00",
       "nilaiOrderRupiah": "16.000",
-      "totalQtyTon": "2026-08-10 09:52:36",
+      "totalQtyTon": "2026-08-10 17:25:19",
       "terakhirDiperbarui": "1000001601",
       "kodeDistributor": "CV. ANUGERAH MAKMUR",
       "namaDistributor": "",
@@ -10705,7 +10705,7 @@
     },
     {
       "nomorOrder": "PSN082617846001",
-      "statusOrder": "APPROVED",
+      "statusOrder": "ON PROCESS",
       "kodePengecer": "RT0000017846",
       "namaPengecer": "TOKO MARISA",
       "provinsi": "JAWA TENGAH",
@@ -10715,7 +10715,26 @@
       "durasiOrder": "0 hari",
       "pembayaran": "Non Tunai    \nRp 16.957.600,00",
       "nilaiOrderRupiah": "10.000",
-      "totalQtyTon": "2026-08-10 09:52:51",
+      "totalQtyTon": "2026-08-10 17:28:54",
+      "terakhirDiperbarui": "1000001601",
+      "kodeDistributor": "CV. ANUGERAH MAKMUR",
+      "namaDistributor": "",
+      "detailPemenuhanCount": 0,
+      "detailPemenuhan": []
+    },
+    {
+      "nomorOrder": "PSN082621058002",
+      "statusOrder": "ON PROCESS",
+      "kodePengecer": "RT0000021058",
+      "namaPengecer": "BINA MAJU JAYA",
+      "provinsi": "JAWA TENGAH",
+      "kabupatenKota": "Kab. Semarang",
+      "kecamatan": "Sumowono",
+      "tanggalOrder": "2026-08-10",
+      "durasiOrder": "0 hari",
+      "pembayaran": "Tunai    \nRp 30.123.680,00",
+      "nilaiOrderRupiah": "18.000",
+      "totalQtyTon": "2026-08-10 17:25:19",
       "terakhirDiperbarui": "1000001601",
       "kodeDistributor": "CV. ANUGERAH MAKMUR",
       "namaDistributor": "",
@@ -10796,7 +10815,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -10815,7 +10834,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -10906,7 +10925,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -10925,7 +10944,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -10944,7 +10963,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -10999,7 +11018,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -11018,7 +11037,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -17016,7 +17035,7 @@
       },
       {
         "noIndex": "",
-        "status": "APPROVED",
+        "status": "ON PROCESS",
         "nomorOrder": "PSN082621108003",
         "provinsi": "JAWA TENGAH",
         "kabupatenKota": "Kab. Semarang",
@@ -17027,11 +17046,11 @@
         "durasiOrder": "1 hari",
         "pembayaran": "Tunai    \nRp 18.413.360,00",
         "nilaiOrderRupiah": "11.000",
-        "totalQtyTon": "2026-08-10 09:52:41",
+        "totalQtyTon": "2026-08-10 17:32:41",
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -17050,7 +17069,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
@@ -17069,11 +17088,11 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
-        "status": "APPROVED",
+        "status": "ON PROCESS",
         "nomorOrder": "PSN082685298001",
         "provinsi": "JAWA TENGAH",
         "kabupatenKota": "Kab. Semarang",
@@ -17084,15 +17103,15 @@
         "durasiOrder": "0 hari",
         "pembayaran": "Tunai    \nRp 26.812.160,00",
         "nilaiOrderRupiah": "16.000",
-        "totalQtyTon": "2026-08-10 09:52:36",
+        "totalQtyTon": "2026-08-10 17:25:19",
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
       },
       {
         "noIndex": "",
-        "status": "APPROVED",
+        "status": "ON PROCESS",
         "nomorOrder": "PSN082617846001",
         "provinsi": "JAWA TENGAH",
         "kabupatenKota": "Kab. Semarang",
@@ -17103,11 +17122,30 @@
         "durasiOrder": "0 hari",
         "pembayaran": "Non Tunai    \nRp 16.957.600,00",
         "nilaiOrderRupiah": "10.000",
-        "totalQtyTon": "2026-08-10 09:52:51",
+        "totalQtyTon": "2026-08-10 17:28:54",
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "added_at": "2026-08-10T03:31:20.424Z"
+        "updated_at": "2026-08-10T11:01:39.348Z"
+      },
+      {
+        "noIndex": "",
+        "status": "ON PROCESS",
+        "nomorOrder": "PSN082621058002",
+        "provinsi": "JAWA TENGAH",
+        "kabupatenKota": "Kab. Semarang",
+        "kecamatan": "Sumowono",
+        "kodePengecer": "RT0000021058",
+        "namaPengecer": "BINA MAJU JAYA",
+        "tanggalOrder": "2026-08-10",
+        "durasiOrder": "0 hari",
+        "pembayaran": "Tunai    \nRp 30.123.680,00",
+        "nilaiOrderRupiah": "18.000",
+        "totalQtyTon": "2026-08-10 17:25:19",
+        "terakhirDiperbarui": "1000001601",
+        "kodeDistributor": "CV. ANUGERAH MAKMUR",
+        "namaDistributor": "",
+        "added_at": "2026-08-10T11:01:39.348Z"
       }
     ],
     "pemenuhan_order_kios": [
