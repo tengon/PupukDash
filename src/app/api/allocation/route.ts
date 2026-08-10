@@ -8,24 +8,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'ALL' // OPERASIONAL, PPTS, ALL
     const district = searchParams.get('district') || ''
 
-    const where: any = {
-      ...(type !== 'ALL' ? { type } : {}),
-      ...(district ? { district } : {}),
-      ...(search
-        ? {
-            OR: [
-              { productName: { contains: search } },
-              { district: { contains: search } },
-              { spjbNumber: { contains: search } },
-              { pptsName: { contains: search } },
-              { pptsCode: { contains: search } },
-            ],
-          }
-        : {}),
-    }
-
     let allocations = await db.allocation.findMany({
-      where,
       orderBy: { updatedAt: 'desc' },
     })
 
@@ -34,9 +17,27 @@ export async function GET(request: NextRequest) {
       const { syncAnnualTotalToDb } = await import('@/lib/sync-annual-to-db')
       await syncAnnualTotalToDb()
       allocations = await db.allocation.findMany({
-        where,
         orderBy: { updatedAt: 'desc' },
       })
+    }
+
+    if (type !== 'ALL') {
+      allocations = allocations.filter(a => a.type === type)
+    }
+
+    if (district) {
+      allocations = allocations.filter(a => a.district && a.district.toLowerCase() === district.toLowerCase())
+    }
+
+    if (search) {
+      const s = search.toLowerCase()
+      allocations = allocations.filter(a =>
+        (a.productName && a.productName.toLowerCase().includes(s)) ||
+        (a.district && a.district.toLowerCase().includes(s)) ||
+        (a.spjbNumber && a.spjbNumber.toLowerCase().includes(s)) ||
+        (a.pptsName && a.pptsName.toLowerCase().includes(s)) ||
+        (a.pptsCode && a.pptsCode.toLowerCase().includes(s))
+      )
     }
 
     return NextResponse.json({

@@ -28,6 +28,52 @@ export async function GET(request: Request) {
     const json = JSON.parse(fileContent)
     let list = json.data || []
 
+    // Fetch user-edited allocation values from DB
+    const { db } = await import('@/lib/db')
+    const dbAllocations = await db.allocation.findMany({ where: { type: 'OPERASIONAL' } })
+    const allocMap = new Map<string, number>()
+    dbAllocations.forEach(a => {
+      if (a.district && a.productName) {
+        const key = `${a.district.toLowerCase().trim()}_${a.productName.toLowerCase().trim()}`
+        allocMap.set(key, a.totalAllocationTon)
+      }
+    })
+
+    // Merge user-edited allocation values into list
+    list = list.map((item: any) => {
+      if (item.detail?.alokasiTable?.rows && item.detail?.alokasiTable?.headers) {
+        const headers: string[] = item.detail.alokasiTable.headers
+        const prodIdx = headers.findIndex(h => h.includes('Prov') || h.includes('Prod'))
+        const baseProdIdx = prodIdx >= 0 ? prodIdx : 1
+        const totalAlokasiIdx = headers.findIndex(h => h.toLowerCase().trim() === 'total alokasi')
+        const totalSoApproveIdx = headers.findIndex(h => h.toLowerCase().trim() === 'total so approve')
+        const totalSisaIdx = headers.findIndex(h => h.toLowerCase().trim() === 'total sisa')
+
+        if (totalAlokasiIdx >= 0) {
+          item.detail.alokasiTable.rows = item.detail.alokasiTable.rows.map((row: string[]) => {
+            const cellVal = row[baseProdIdx] || ''
+            const parts = cellVal.split(' - ')
+            if (parts.length > 1) {
+              const dist = parts[0].trim().toLowerCase()
+              const prod = parts.slice(1).join(' - ').trim().toLowerCase()
+              const key = `${dist}_${prod}`
+              if (allocMap.has(key)) {
+                const userAlloc = allocMap.get(key)!
+                row[totalAlokasiIdx] = userAlloc.toFixed(2).replace('.', ',')
+                if (totalSoApproveIdx >= 0 && totalSisaIdx >= 0) {
+                  const realTon = parseFloat((row[totalSoApproveIdx] || '0').replace(/\./g, '').replace(',', '.')) || 0
+                  const sisaTon = Math.max(0, userAlloc - realTon)
+                  row[totalSisaIdx] = sisaTon.toFixed(2).replace('.', ',')
+                }
+              }
+            }
+            return row
+          })
+        }
+      }
+      return item
+    })
+
     if (search) {
       list = list.filter((item: any) =>
         (item.nomorSpjb && item.nomorSpjb.toLowerCase().includes(search)) ||
