@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
-import { Pencil, Save, RefreshCw, Layers, Search, MapPin, Calculator, X } from 'lucide-react'
+import { Pencil, Save, RefreshCw, Layers, Search, MapPin, Calculator } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 interface AllocationItem {
@@ -47,12 +47,13 @@ export function EditAlokasiDialog({
   const queryClient = useQueryClient()
   const [search, setSearch] = useState(initialSearch)
   const [selectedProductIndex, setSelectedProductIndex] = useState<number>(0)
-  const [newAllocInput, setNewAllocInput] = useState<string>('')
+  const [formInputs, setFormInputs] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (open) {
       setSearch(initialSearch)
       setSelectedProductIndex(0)
+      setFormInputs({})
     }
   }, [open, initialSearch])
 
@@ -69,12 +70,18 @@ export function EditAlokasiDialog({
   const list = data?.data || []
   const currentItem: AllocationItem | undefined = list[selectedProductIndex] || list[0]
 
-  // Update input field whenever currentItem changes
-  useEffect(() => {
+  // Get active input value for current product item
+  const currentInputValue = currentItem
+    ? (formInputs[currentItem.id] !== undefined
+        ? formInputs[currentItem.id]
+        : currentItem.totalAllocationTon.toString())
+    : '0'
+
+  const handleInputChange = (val: string) => {
     if (currentItem) {
-      setNewAllocInput(currentItem.totalAllocationTon.toString())
+      setFormInputs((prev) => ({ ...prev, [currentItem.id]: val }))
     }
-  }, [currentItem?.id, currentItem?.totalAllocationTon])
+  }
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, totalAllocationTon }: { id: string; totalAllocationTon: number }) => {
@@ -89,15 +96,16 @@ export function EditAlokasiDialog({
       }
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: (resData, variables) => {
       toast({
         title: 'Alokasi Berhasil Disimpan',
-        description: 'Nilai Alokasi Baru telah tersimpan di database dan terlindungi dari overwrite scraper.',
+        description: `Nilai Alokasi Baru (${variables.totalAllocationTon} Ton) telah tersimpan di database dan terlindungi dari overwrite scraper.`,
       })
       refetch()
       queryClient.invalidateQueries({ queryKey: ['spjbOperasional'] })
       queryClient.invalidateQueries({ queryKey: ['ppts'] })
       queryClient.invalidateQueries({ queryKey: ['spjb-ppts'] })
+      queryClient.invalidateQueries({ queryKey: ['allocation-list'] })
     },
     onError: (err: Error) => {
       toast({
@@ -110,7 +118,7 @@ export function EditAlokasiDialog({
 
   const handleSave = () => {
     if (!currentItem) return
-    const val = parseFloat(newAllocInput)
+    const val = parseFloat(currentInputValue)
     if (isNaN(val) || val < 0) {
       toast({
         title: 'Nilai Tidak Valid',
@@ -123,7 +131,7 @@ export function EditAlokasiDialog({
   }
 
   // Calculate live previews
-  const parsedNewAlloc = parseFloat(newAllocInput) || 0
+  const parsedNewAlloc = parseFloat(currentInputValue) || 0
   const currentReal = currentItem?.totalRealizationTon || 0
   const estRemaining = Math.max(0, parsedNewAlloc - currentReal)
   const estPct = parsedNewAlloc > 0 ? (currentReal / parsedNewAlloc) * 100 : 0
@@ -196,25 +204,28 @@ export function EditAlokasiDialog({
             </div>
           ) : (
             <>
-              {/* Product Tabs (If multiple products exist for this Kecamatan) */}
+              {/* Product Tabs */}
               {list.length > 1 && (
                 <div className="flex items-center gap-1.5 border-b pb-2 overflow-x-auto">
                   <span className="text-xs font-semibold text-muted-foreground shrink-0">Pilih Produk:</span>
-                  {list.map((item, idx) => (
-                    <Button
-                      key={item.id}
-                      variant={selectedProductIndex === idx ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-7 text-xs font-bold px-3 transition-all ${
-                        selectedProductIndex === idx
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
-                          : 'text-muted-foreground'
-                      }`}
-                      onClick={() => setSelectedProductIndex(idx)}
-                    >
-                      {item.productName} ({item.totalAllocationTon.toLocaleString('id-ID')} Ton)
-                    </Button>
-                  ))}
+                  {list.map((item, idx) => {
+                    const activeVal = formInputs[item.id] !== undefined ? formInputs[item.id] : item.totalAllocationTon.toString()
+                    return (
+                      <Button
+                        key={item.id}
+                        variant={selectedProductIndex === idx ? 'default' : 'outline'}
+                        size="sm"
+                        className={`h-7 text-xs font-bold px-3 transition-all ${
+                          selectedProductIndex === idx
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
+                            : 'text-muted-foreground'
+                        }`}
+                        onClick={() => setSelectedProductIndex(idx)}
+                      >
+                        {item.productName} ({activeVal} Ton)
+                      </Button>
+                    )
+                  })}
                 </div>
               )}
 
@@ -248,8 +259,8 @@ export function EditAlokasiDialog({
                           id="newAllocInput"
                           type="number"
                           step="0.1"
-                          value={newAllocInput}
-                          onChange={(e) => setNewAllocInput(e.target.value)}
+                          value={currentInputValue}
+                          onChange={(e) => handleInputChange(e.target.value)}
                           placeholder="Masukkan alokasi baru..."
                           className="h-10 text-base font-mono font-extrabold text-right bg-background border-emerald-500 focus:ring-emerald-500"
                           autoFocus
