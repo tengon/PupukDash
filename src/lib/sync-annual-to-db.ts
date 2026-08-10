@@ -1,13 +1,12 @@
 import fs from 'fs'
 import path from 'path'
-import { db } from './db'
+import { db } from '@/lib/db'
 
 export async function syncAnnualTotalToDb() {
-  console.log('🔄 Memulai sinkronisasi Realisasi GOW CM ke SQLite Database (Proteksi Alokasi Tahunan)...')
   let updatedPptsCount = 0
   let updatedAllocationCount = 0
 
-  // 1. Sync SPJB PPTS (Hanya update Realisasi & Sisa, TIDAK menimpa Total Alokasi yang ada)
+  // 1. Sync SPJB PPTS (Hanya update Realisasi, TIDAK menimpa Alokasi yang diset user)
   let pptsFilePath = path.join(process.cwd(), 'scraper', 'spjb_ppts_full.json')
   if (!fs.existsSync(pptsFilePath)) {
     pptsFilePath = path.join('d:', 'testGet', 'spjb_ppts_full.json')
@@ -15,8 +14,8 @@ export async function syncAnnualTotalToDb() {
 
   if (fs.existsSync(pptsFilePath)) {
     try {
-      const content = fs.readFileSync(pptsFilePath, 'utf-8')
-      const json = JSON.parse(content)
+      const fileContent = fs.readFileSync(pptsFilePath, 'utf-8')
+      const json = JSON.parse(fileContent)
       const list = json.data || []
 
       for (const item of list) {
@@ -37,7 +36,8 @@ export async function syncAnnualTotalToDb() {
           }
 
           if (prodName) {
-            const allocId = `PPTS-${item.kodePpts}-${prodName.toUpperCase().replace(/\s+/g, '_')}`
+            const cleanProd = prodName.toUpperCase().trim().replace(/\s+/g, '_')
+            const allocId = `PPTS-${item.kodePpts}-${cleanProd}`
             const existingAlloc = await db.allocation.findUnique({ where: { id: allocId } })
 
             if (existingAlloc) {
@@ -57,29 +57,41 @@ export async function syncAnnualTotalToDb() {
                 },
               })
             } else {
-              // RECORD BARU: Inisialisasi awal dari scraper
+              // RECORD BARU: Inisialisasi awal dari scraper (Upsert / catch duplicate safe)
               const alok = parseFloat(row[2]) || 0
               const sisa = Math.max(0, alok - real)
               const pct = alok > 0 ? (real / alok) * 100 : 0
 
-              await db.allocation.create({
-                data: {
-                  id: allocId,
-                  year: '2026',
-                  type: 'PPTS',
-                  spjbNumber: item.nomorSpjb || '',
-                  pptsCode: item.kodePpts,
-                  pptsName: item.namaPpts || 'Kios PPTS',
-                  distributorName: item.namaPud || 'CV. ANUGERAH MAKMUR',
-                  district: item.kabupaten || 'Kab. Semarang',
-                  productName: prodName.toUpperCase(),
-                  totalAllocationTon: alok,
-                  totalRealizationTon: real,
-                  totalRemainingTon: sisa,
-                  realizationPct: pct,
-                  status: item.status || 'Active',
-                },
-              })
+              try {
+                await db.allocation.upsert({
+                  where: { id: allocId },
+                  update: {
+                    totalRealizationTon: real,
+                    totalRemainingTon: Math.max(0, alok - real),
+                    realizationPct: pct,
+                    status: item.status || 'Active',
+                    updatedAt: new Date(),
+                  },
+                  create: {
+                    id: allocId,
+                    year: '2026',
+                    type: 'PPTS',
+                    spjbNumber: item.nomorSpjb || '',
+                    pptsCode: item.kodePpts,
+                    pptsName: item.namaPpts || 'Kios PPTS',
+                    distributorName: item.namaPud || 'CV. ANUGERAH MAKMUR',
+                    district: item.kabupaten || 'Kab. Semarang',
+                    productName: prodName.toUpperCase(),
+                    totalAllocationTon: alok,
+                    totalRealizationTon: real,
+                    totalRemainingTon: sisa,
+                    realizationPct: pct,
+                    status: item.status || 'Active',
+                  },
+                })
+              } catch (upsertErr: any) {
+                console.warn(`[Sync PPTS Warn] Duplicate bypass for ${allocId}: ${upsertErr.message}`)
+              }
             }
             updatedAllocationCount++
           }
@@ -107,21 +119,31 @@ export async function syncAnnualTotalToDb() {
           const alokUrea = parseFloat(rows.find(r => (r[1]||'').toLowerCase().includes('urea'))?.[2] || '0') || 0
           const alokNpk = parseFloat(rows.find(r => (r[1]||'').toLowerCase().includes('npk'))?.[2] || '0') || 0
 
-          await db.ppts.create({
-            data: {
-              code: item.kodePpts,
-              name: item.namaPpts || 'Kios PPTS',
-              address: item.kabupaten || 'Kab. Semarang',
-              district: item.kecamatan || 'Kudus',
-              spjbNumber: item.nomorSpjb || '',
-              alokasiUrea: alokUrea,
-              realisasiUrea: realisasiUreaScraped,
-              sisaUrea: Math.max(0, alokUrea - realisasiUreaScraped),
-              alokasiNpk: alokNpk,
-              realisasiNpk: realisasiNpkScraped,
-              sisaNpk: Math.max(0, alokNpk - realisasiNpkScraped),
-            },
-          })
+          try {
+            await db.ppts.upsert({
+              where: { code: item.kodePpts },
+              update: {
+                realisasiUrea: realisasiUreaScraped,
+                realisasiNpk: realisasiNpkScraped,
+                updatedAt: new Date(),
+              },
+              create: {
+                code: item.kodePpts,
+                name: item.namaPpts || 'Kios PPTS',
+                address: item.kabupaten || 'Kab. Semarang',
+                district: item.kecamatan || 'Kudus',
+                spjbNumber: item.nomorSpjb || '',
+                alokasiUrea: alokUrea,
+                realisasiUrea: realisasiUreaScraped,
+                sisaUrea: Math.max(0, alokUrea - realisasiUreaScraped),
+                alokasiNpk: alokNpk,
+                realisasiNpk: realisasiNpkScraped,
+                sisaNpk: Math.max(0, alokNpk - realisasiNpkScraped),
+              },
+            })
+          } catch (pptsUpsertErr: any) {
+            console.warn(`[Sync PPTS Warn] Duplicate code bypass for ${item.kodePpts}`)
+          }
         }
         updatedPptsCount++
       }
@@ -139,14 +161,14 @@ export async function syncAnnualTotalToDb() {
 
   if (fs.existsSync(opFilePath)) {
     try {
-      const content = fs.readFileSync(opFilePath, 'utf-8')
-      const json = JSON.parse(content)
+      const fileContent = fs.readFileSync(opFilePath, 'utf-8')
+      const json = JSON.parse(fileContent)
       const list = json.data || []
 
       for (const item of list) {
         const rows = item.detail?.alokasiTable?.rows || []
         for (const row of rows) {
-          const regionProd = (row[1] || '').trim()
+          const regionProd = row[1] || ''
           if (!regionProd || regionProd === '-' || regionProd.toLowerCase().includes('total')) continue
 
           const parts = regionProd.split('-').map(s => s.trim())
@@ -162,7 +184,9 @@ export async function syncAnnualTotalToDb() {
 
           const totalReal = parseVal(52) || (janReal + febReal + marReal + aprReal + mayReal + junReal + julReal + augReal + sepReal + octReal + novReal + decReal)
 
-          const allocId = `OP-${item.nomorSpjb ? item.nomorSpjb.replace(/[^A-Za-z0-9]/g, '_') : 'SPJB'}-${district}-${prodName}`
+          const cleanDistrict = district.replace(/\s+/g, '_')
+          const cleanProd = prodName.replace(/\s+/g, '_')
+          const allocId = `OP-${item.nomorSpjb ? item.nomorSpjb.replace(/[^A-Za-z0-9]/g, '_') : 'SPJB'}-${cleanDistrict}-${cleanProd}`
           const existing = await db.allocation.findUnique({ where: { id: allocId } })
 
           if (existing) {
@@ -184,7 +208,7 @@ export async function syncAnnualTotalToDb() {
               },
             })
           } else {
-            // RECORD BARU: Inisialisasi awal
+            // RECORD BARU: Inisialisasi awal (Upsert safe)
             const janAlloc = parseVal(2); const febAlloc = parseVal(6); const marAlloc = parseVal(10)
             const aprAlloc = parseVal(14); const mayAlloc = parseVal(18); const junAlloc = parseVal(22)
             const julAlloc = parseVal(26); const augAlloc = parseVal(30); const sepAlloc = parseVal(34)
@@ -193,26 +217,40 @@ export async function syncAnnualTotalToDb() {
             const totalRemaining = Math.max(0, totalAlloc - totalReal)
             const pct = totalAlloc > 0 ? (totalReal / totalAlloc) * 100 : 0
 
-            await db.allocation.create({
-              data: {
-                id: allocId,
-                year: item.tahun || '2026',
-                type: 'OPERASIONAL',
-                spjbNumber: item.nomorSpjb || '',
-                distributorName: item.distributor || 'CV. ANUGERAH MAKMUR',
-                producerName: item.produsen || 'PT Pupuk Sriwidjaja',
-                district: district,
-                productName: prodName,
-                totalAllocationTon: totalAlloc,
-                totalRealizationTon: totalReal,
-                totalApprovedSoTon: totalReal,
-                totalRemainingTon: totalRemaining,
-                realizationPct: pct,
-                janAlloc, febAlloc, marAlloc, aprAlloc, mayAlloc, junAlloc, julAlloc, augAlloc, sepAlloc, octAlloc, novAlloc, decAlloc,
-                janReal, febReal, marReal, aprReal, mayReal, junReal, julReal, augReal, sepReal, octReal, novReal, decReal,
-                status: item.status || 'Active',
-              },
-            })
+            try {
+              await db.allocation.upsert({
+                where: { id: allocId },
+                update: {
+                  totalRealizationTon: totalReal,
+                  totalApprovedSoTon: totalReal,
+                  totalRemainingTon: totalRemaining,
+                  realizationPct: pct,
+                  janReal, febReal, marReal, aprReal, mayReal, junReal, julReal, augReal, sepReal, octReal, novReal, decReal,
+                  status: item.status || 'Active',
+                  updatedAt: new Date(),
+                },
+                create: {
+                  id: allocId,
+                  year: item.tahun || '2026',
+                  type: 'OPERASIONAL',
+                  spjbNumber: item.nomorSpjb || '',
+                  distributorName: item.distributor || 'CV. ANUGERAH MAKMUR',
+                  producerName: item.produsen || 'PT Pupuk Sriwidjaja',
+                  district: district,
+                  productName: prodName,
+                  totalAllocationTon: totalAlloc,
+                  totalRealizationTon: totalReal,
+                  totalApprovedSoTon: totalReal,
+                  totalRemainingTon: totalRemaining,
+                  realizationPct: pct,
+                  janAlloc, febAlloc, marAlloc, aprAlloc, mayAlloc, junAlloc, julAlloc, augAlloc, sepAlloc, octAlloc, novAlloc, decAlloc,
+                  janReal, febReal, marReal, aprReal, mayReal, junReal, julReal, augReal, sepReal, octReal, novReal, decReal,
+                  status: item.status || 'Active',
+                },
+              })
+            } catch (opUpsertErr: any) {
+              console.warn(`[Sync OP Warn] Duplicate bypass for ${allocId}`)
+            }
           }
           updatedAllocationCount++
         }
