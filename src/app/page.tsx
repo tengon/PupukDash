@@ -37,6 +37,7 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   products: { title: 'Produk Pupuk', description: 'Kelola data produk pupuk bersubsidi' },
   farmers: { title: 'Data Petani', description: 'Kelola data petani penerima pupuk bersubsidi' },
   ppts: { title: 'PPTS (Kios Pengecer)', description: 'Kelola data Pos Penyalur Pupuk Terdaftar & Bersubsidi' },
+  allocation: { title: 'Data Alokasi', description: 'Kelola dan monitor alokasi pupuk bersubsidi SPJB Operasional & SPJB PPTS' },
   'monitoring-ppts': { title: 'Monitoring PPTS', description: 'Monitor alokasi SPJB dan realisasi tebusan pupuk bersubsidi per Kios PPTS' },
   'monitoring-pud': { title: 'Monitoring PUD', description: 'Monitor SPJB Operasional Distributor PUD dan Alokasi Bulanan dari Produsen' },
   warehouses: { title: 'Gudang', description: 'Kelola data gudang penyimpanan pupuk' },
@@ -281,6 +282,7 @@ export default function HomePage() {
                 transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
               >
                 {activeTab === 'dashboard' && <DashboardView />}
+                {activeTab === 'allocation' && <MonitoringPudView />}
                 {activeTab === 'products' && <ProductsView />}
                 {activeTab === 'farmers' && <FarmersView />}
                 {activeTab === 'ppts' && <PptsView />}

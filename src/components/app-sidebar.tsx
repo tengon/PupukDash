@@ -44,6 +44,7 @@ import {
   ChevronRight,
   Building2,
   Bot,
+  Layers,
 } from 'lucide-react'
 
 const navGroups = [
@@ -81,6 +82,7 @@ const navGroups = [
   {
     label: 'DATA',
     items: [
+      { id: 'allocation', label: 'Alokasi', icon: Layers },
       { id: 'farmers', label: 'Data Petani', icon: Users },
       { id: 'ppts', label: 'PPTS (Kios)', icon: Store },
       { id: 'warehouses', label: 'Gudang', icon: Warehouse },
