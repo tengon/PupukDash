@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-08-10T00:00:20.862Z",
+  "updated_at": "2026-08-10T03:31:20.520Z",
   "source": "GOW CM - Penyaluran Terintegrasi (Gabungan 4 Menu)",
   "summary": {
-    "total_monitoring_order_kios": 352,
+    "total_monitoring_order_kios": 354,
     "total_pemenuhan_order_kios": 457,
     "total_monitoring_pop": 316,
     "total_surat_jalan": 307,
@@ -138,7 +138,7 @@
       "kabupatenKota": "Kab. Semarang",
       "kecamatan": "Pringapus",
       "tanggalOrder": "2026-08-05",
-      "durasiOrder": "4 hari",
+      "durasiOrder": "5 hari",
       "pembayaran": "Tunai    \nRp 23.180.640,00",
       "nilaiOrderRupiah": "14.000",
       "totalQtyTon": "2026-08-05 18:52:20",
@@ -10629,17 +10629,17 @@
     },
     {
       "nomorOrder": "PSN082621108003",
-      "statusOrder": "SUBMITTED",
+      "statusOrder": "APPROVED",
       "kodePengecer": "RT0000021108",
       "namaPengecer": "MEKAR",
       "provinsi": "JAWA TENGAH",
       "kabupatenKota": "Kab. Semarang",
       "kecamatan": "Pringapus",
       "tanggalOrder": "2026-08-09",
-      "durasiOrder": "0 hari",
+      "durasiOrder": "1 hari",
       "pembayaran": "Tunai    \nRp 18.413.360,00",
       "nilaiOrderRupiah": "11.000",
-      "totalQtyTon": "2026-08-09 19:32:08",
+      "totalQtyTon": "2026-08-10 09:52:41",
       "terakhirDiperbarui": "1000001601",
       "kodeDistributor": "CV. ANUGERAH MAKMUR",
       "namaDistributor": "",
@@ -10678,6 +10678,44 @@
       "pembayaran": "Tunai    \nRp 13.246.080,00",
       "nilaiOrderRupiah": "8.000",
       "totalQtyTon": "2026-08-09 13:40:08",
+      "terakhirDiperbarui": "1000001601",
+      "kodeDistributor": "CV. ANUGERAH MAKMUR",
+      "namaDistributor": "",
+      "detailPemenuhanCount": 0,
+      "detailPemenuhan": []
+    },
+    {
+      "nomorOrder": "PSN082685298001",
+      "statusOrder": "APPROVED",
+      "kodePengecer": "RT0000085298",
+      "namaPengecer": "AGRO LESTARI",
+      "provinsi": "JAWA TENGAH",
+      "kabupatenKota": "Kab. Semarang",
+      "kecamatan": "Sumowono",
+      "tanggalOrder": "2026-08-10",
+      "durasiOrder": "0 hari",
+      "pembayaran": "Tunai    \nRp 26.812.160,00",
+      "nilaiOrderRupiah": "16.000",
+      "totalQtyTon": "2026-08-10 09:52:36",
+      "terakhirDiperbarui": "1000001601",
+      "kodeDistributor": "CV. ANUGERAH MAKMUR",
+      "namaDistributor": "",
+      "detailPemenuhanCount": 0,
+      "detailPemenuhan": []
+    },
+    {
+      "nomorOrder": "PSN082617846001",
+      "statusOrder": "APPROVED",
+      "kodePengecer": "RT0000017846",
+      "namaPengecer": "TOKO MARISA",
+      "provinsi": "JAWA TENGAH",
+      "kabupatenKota": "Kab. Semarang",
+      "kecamatan": "Pringapus",
+      "tanggalOrder": "2026-08-10",
+      "durasiOrder": "0 hari",
+      "pembayaran": "Non Tunai    \nRp 16.957.600,00",
+      "nilaiOrderRupiah": "10.000",
+      "totalQtyTon": "2026-08-10 09:52:51",
       "terakhirDiperbarui": "1000001601",
       "kodeDistributor": "CV. ANUGERAH MAKMUR",
       "namaDistributor": "",
@@ -10758,7 +10796,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -10770,14 +10808,14 @@
         "kodePengecer": "RT0000021109",
         "namaPengecer": "NGUDI MAKMUR",
         "tanggalOrder": "2026-08-05",
-        "durasiOrder": "4 hari",
+        "durasiOrder": "5 hari",
         "pembayaran": "Tunai    \nRp 23.180.640,00",
         "nilaiOrderRupiah": "14.000",
         "totalQtyTon": "2026-08-05 18:52:20",
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -10868,7 +10906,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -10887,7 +10925,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -10906,7 +10944,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -10961,7 +10999,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -10980,7 +11018,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -16978,7 +17016,7 @@
       },
       {
         "noIndex": "",
-        "status": "SUBMITTED",
+        "status": "APPROVED",
         "nomorOrder": "PSN082621108003",
         "provinsi": "JAWA TENGAH",
         "kabupatenKota": "Kab. Semarang",
@@ -16986,14 +17024,14 @@
         "kodePengecer": "RT0000021108",
         "namaPengecer": "MEKAR",
         "tanggalOrder": "2026-08-09",
-        "durasiOrder": "0 hari",
+        "durasiOrder": "1 hari",
         "pembayaran": "Tunai    \nRp 18.413.360,00",
         "nilaiOrderRupiah": "11.000",
-        "totalQtyTon": "2026-08-09 19:32:08",
+        "totalQtyTon": "2026-08-10 09:52:41",
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -17012,7 +17050,7 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
       },
       {
         "noIndex": "",
@@ -17031,7 +17069,45 @@
         "terakhirDiperbarui": "1000001601",
         "kodeDistributor": "CV. ANUGERAH MAKMUR",
         "namaDistributor": "",
-        "updated_at": "2026-08-10T00:00:20.774Z"
+        "updated_at": "2026-08-10T03:31:20.424Z"
+      },
+      {
+        "noIndex": "",
+        "status": "APPROVED",
+        "nomorOrder": "PSN082685298001",
+        "provinsi": "JAWA TENGAH",
+        "kabupatenKota": "Kab. Semarang",
+        "kecamatan": "Sumowono",
+        "kodePengecer": "RT0000085298",
+        "namaPengecer": "AGRO LESTARI",
+        "tanggalOrder": "2026-08-10",
+        "durasiOrder": "0 hari",
+        "pembayaran": "Tunai    \nRp 26.812.160,00",
+        "nilaiOrderRupiah": "16.000",
+        "totalQtyTon": "2026-08-10 09:52:36",
+        "terakhirDiperbarui": "1000001601",
+        "kodeDistributor": "CV. ANUGERAH MAKMUR",
+        "namaDistributor": "",
+        "updated_at": "2026-08-10T03:31:20.424Z"
+      },
+      {
+        "noIndex": "",
+        "status": "APPROVED",
+        "nomorOrder": "PSN082617846001",
+        "provinsi": "JAWA TENGAH",
+        "kabupatenKota": "Kab. Semarang",
+        "kecamatan": "Pringapus",
+        "kodePengecer": "RT0000017846",
+        "namaPengecer": "TOKO MARISA",
+        "tanggalOrder": "2026-08-10",
+        "durasiOrder": "0 hari",
+        "pembayaran": "Non Tunai    \nRp 16.957.600,00",
+        "nilaiOrderRupiah": "10.000",
+        "totalQtyTon": "2026-08-10 09:52:51",
+        "terakhirDiperbarui": "1000001601",
+        "kodeDistributor": "CV. ANUGERAH MAKMUR",
+        "namaDistributor": "",
+        "added_at": "2026-08-10T03:31:20.424Z"
       }
     ],
     "pemenuhan_order_kios": [
