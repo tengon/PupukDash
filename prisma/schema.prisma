@@ -236,3 +236,103 @@ model Allocation {
   @@index([pptsCode])
   @@index([district])
 }
+
+// 1. Tabel Alokasi Bulanan Kecamatan (SPJB Operasional: Jan - Des)
+model AlokasiBulananKecamatan {
+  id          String   @id
+  spjbNumber  String
+  district    String
+  productName String
+  year        String   @default("2026")
+  janAlloc    Float    @default(0)
+  janSo       Float    @default(0)
+  janReal     Float    @default(0)
+  janSisa     Float    @default(0)
+  febAlloc    Float    @default(0)
+  febSo       Float    @default(0)
+  febReal     Float    @default(0)
+  febSisa     Float    @default(0)
+  marAlloc    Float    @default(0)
+  marSo       Float    @default(0)
+  marReal     Float    @default(0)
+  marSisa     Float    @default(0)
+  aprAlloc    Float    @default(0)
+  aprSo       Float    @default(0)
+  aprReal     Float    @default(0)
+  aprSisa     Float    @default(0)
+  mayAlloc    Float    @default(0)
+  maySo       Float    @default(0)
+  mayReal     Float    @default(0)
+  maySisa     Float    @default(0)
+  junAlloc    Float    @default(0)
+  junSo       Float    @default(0)
+  junReal     Float    @default(0)
+  junSisa     Float    @default(0)
+  julAlloc    Float    @default(0)
+  julSo       Float    @default(0)
+  julReal     Float    @default(0)
+  julSisa     Float    @default(0)
+  augAlloc    Float    @default(0)
+  augSo       Float    @default(0)
+  augReal     Float    @default(0)
+  augSisa     Float    @default(0)
+  sepAlloc    Float    @default(0)
+  sepSo       Float    @default(0)
+  sepReal     Float    @default(0)
+  sepSisa     Float    @default(0)
+  octAlloc    Float    @default(0)
+  octSo       Float    @default(0)
+  octReal     Float    @default(0)
+  octSisa     Float    @default(0)
+  novAlloc    Float    @default(0)
+  novSo       Float    @default(0)
+  novReal     Float    @default(0)
+  novSisa     Float    @default(0)
+  decAlloc    Float    @default(0)
+  decSo       Float    @default(0)
+  decReal     Float    @default(0)
+  decSisa     Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([district, productName])
+}
+
+// 2. Tabel Alokasi Tahun Kecamatan (SPJB Operasional: Total Alokasi - Total SO - Total SO Approve - Total Sisa)
+model AlokasiTahunanKecamatan {
+  id              String   @id
+  spjbNumber      String
+  district        String
+  productName     String
+  year            String   @default("2026")
+  totalAlokasi    Float    @default(0)
+  totalSo         Float    @default(0)
+  totalSoApprove  Float    @default(0)
+  totalSisa       Float    @default(0)
+  realizationPct  Float    @default(0)
+  sisaPct         Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([district, productName])
+}
+
+// 3. Tabel Alokasi PPTS (SPJB PPTS Kios)
+model AlokasiPpts {
+  id              String   @id
+  pptsCode        String
+  pptsName        String
+  district        String?
+  address         String?
+  spjbNumber      String?
+  productName     String
+  year            String   @default("2026")
+  totalAlokasi    Float    @default(0)
+  totalRealisasi  Float    @default(0)
+  totalSisa       Float    @default(0)
+  realizationPct  Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([pptsCode, productName])
+}
