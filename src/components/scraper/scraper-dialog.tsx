@@ -41,6 +41,7 @@ interface ScraperSyncResponse {
     spjb_operasional: string | null
     spjb_ppts: string | null
     penyaluran: string | null
+    stok_kios_ipuber: string | null
   }
 }
 
@@ -177,15 +178,17 @@ export function ScraperDialog({
 
                 <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-0.5 font-medium">
                   <span>
-                    {progressValue < 35
-                      ? 'Tahap 1/3: Scraping SPJB Operasional (PUD)...'
-                      : progressValue < 75
-                      ? 'Tahap 2/3: Scraping SPJB PPTS & Kios...'
+                    {progressValue < 25
+                      ? 'Tahap 1/4: Scraping SPJB Operasional (PUD)...'
+                      : progressValue < 55
+                      ? 'Tahap 2/4: Scraping SPJB PPTS & Kios...'
+                      : progressValue < 80
+                      ? 'Tahap 3/4: Scraping Penyaluran GOW CM...'
                       : progressValue < 98
-                      ? 'Tahap 3/3: Scraping Penyaluran GOW CM...'
+                      ? 'Tahap 4/4: Scraping Stok Kios iPuber...'
                       : 'Menyimpan & memperbarui database...'}
                   </span>
-                  <span className="font-mono text-[10px] bg-background/80 px-1.5 py-0.5 rounded border">Est: ~2-3 min</span>
+                  <span className="font-mono text-[10px] bg-background/80 px-1.5 py-0.5 rounded border">Est: ~3-4 min</span>
                 </div>
               </div>
             )}
@@ -219,6 +222,10 @@ export function ScraperDialog({
                 <div className="flex justify-between">
                   <span>Update Penyaluran GOW CM:</span>
                   <span className="font-mono font-semibold text-foreground">{data?.files?.penyaluran ? new Date(data.files.penyaluran).toLocaleString('id-ID') : 'Tersedia'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Update Stok Kios iPuber:</span>
+                  <span className="font-mono font-semibold text-foreground">{data?.files?.stok_kios_ipuber ? new Date(data.files.stok_kios_ipuber).toLocaleString('id-ID') : 'Tersedia'}</span>
                 </div>
               </div>
             </div>

@@ -46,7 +46,16 @@ function runScrapers() {
         } else {
           logMessage('✅ Penyaluran Order Scraper berhasil!')
         }
-        logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+
+        // 4. Run Stok Kios iPuber Scraper
+        exec('node stok_kios_ipuber.js', { cwd: __dirname, env: execEnv }, (err4, stdout4, stderr4) => {
+          if (err4) {
+            logMessage(`❌ Gagal eksekusi Stok Kios iPuber: ${err4.message}`)
+          } else {
+            logMessage('✅ Stok Kios iPuber Scraper berhasil!')
+          }
+          logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+        })
       })
     })
   })

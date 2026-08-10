@@ -31,6 +31,7 @@ export async function GET() {
   const spjbOpTime = getFileTime('spjb_operasional_full.json')
   const spjbPptsTime = getFileTime('spjb_ppts_full.json')
   const penyaluranTime = getFileTime('penyaluran_full.json')
+  const stokIpuberTime = getFileTime('stok_kios_ipuber_full.json')
 
   return NextResponse.json({
     success: true,
@@ -47,6 +48,7 @@ export async function GET() {
       spjb_operasional: spjbOpTime,
       spjb_ppts: spjbPptsTime,
       penyaluran: penyaluranTime,
+      stok_kios_ipuber: stokIpuberTime,
     },
   })
 }
@@ -90,6 +92,13 @@ export async function POST() {
         await execAsync('node penyaluran_monitoring_order_kios.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
       } catch (err3: any) {
         console.error('Penyaluran Order error:', err3?.message || err3)
+      }
+
+      // 4. Execute Stok Kios iPuber Scraper
+      try {
+        await execAsync('node stok_kios_ipuber.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
+      } catch (err4: any) {
+        console.error('Stok Kios iPuber error:', err4?.message || err4)
       }
 
       lastSyncTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'

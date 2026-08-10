@@ -14,12 +14,13 @@
 
 const { chromium } = require('playwright');
 const fs = require('fs');
+const path = require('path');
 
 const CONFIG = {
   baseUrl: 'https://gowcm.pupuk-indonesia.com',
   username: '1000001601',
   password: 'A@makmur25',
-  outputFile: 'stok_kios_ipuber_full.json',
+  outputFile: path.join(__dirname, 'stok_kios_ipuber_full.json'),
 };
 
 // ─── Login & ambil prefix dari sidebar ──────────────────────────────────────
@@ -170,7 +171,11 @@ async function clickNextPage(page) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 (async () => {
-  const browser = await chromium.launch({ headless: false, slowMo: 50 });
+  const isHeadless = process.env.HEADLESS === 'false' ? false : true;
+  const browser = await chromium.launch({
+    headless: isHeadless,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
 
