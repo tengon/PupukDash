@@ -24,7 +24,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { motion } from 'framer-motion'
-import { Search, Warehouse, CheckCircle2, RefreshCw, Building2, Layers, TableProperties, MapPin, BarChart3, TrendingUp } from 'lucide-react'
+import { Search, Warehouse, CheckCircle2, RefreshCw, Building2, Layers, TableProperties, MapPin, BarChart3, TrendingUp, Pencil } from 'lucide-react'
+import { EditAlokasiDialog } from './edit-alokasi-dialog'
 
 function parseTon(val: string): number {
   if (!val || val === '-' || val === '') return 0
@@ -399,6 +400,7 @@ function SpjbOperasionalCard({ item }: { item: SpjbOperasionalItem }) {
 export function MonitoringPudView() {
   const [search, setSearch] = useState('')
   const [produsenFilter, setProdusenFilter] = useState('ALL')
+  const [showEditDialog, setShowEditDialog] = useState(false)
 
   const { data: spjbOperasionalRes, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['spjbOperasional', search, produsenFilter],
@@ -431,6 +433,10 @@ export function MonitoringPudView() {
                   className="pl-9 h-9 w-full sm:w-64"
                 />
               </div>
+              <Button onClick={() => setShowEditDialog(true)} size="sm" className="h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0">
+                <Pencil className="h-3.5 w-3.5" />
+                Edit Alokasi
+              </Button>
               <Button onClick={() => refetch()} size="sm" variant="outline" className="h-9 gap-1 shrink-0">
                 <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
                 Refresh
@@ -496,6 +502,8 @@ export function MonitoringPudView() {
           )}
         </CardContent>
       </Card>
+
+      <EditAlokasiDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
     </motion.div>
   )
 }
