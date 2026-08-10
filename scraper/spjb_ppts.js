@@ -407,8 +407,8 @@ function printSummary(results) {
 // =====================
 (async () => {
   const browser = await chromium.launch({
-    headless: false,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
 
   const context = await browser.newContext({
