@@ -56,6 +56,17 @@ export function ScraperDialog({
   const [isSyncing, setIsSyncing] = useState(false)
   const [progressValue, setProgressValue] = useState(10)
 
+  const { data, isLoading, refetch } = useQuery<ScraperSyncResponse>({
+    queryKey: ['scraper-sync-status'],
+    queryFn: async () => {
+      const res = await fetch('/api/scraper/sync')
+      if (!res.ok) throw new Error('Gagal mengambil status scraper')
+      return res.json()
+    },
+    enabled: open,
+    refetchInterval: open ? 5000 : false,
+  })
+
   useEffect(() => {
     let interval: NodeJS.Timeout
     const active = isSyncing || data?.isRunning
@@ -73,17 +84,6 @@ export function ScraperDialog({
     }
     return () => clearInterval(interval)
   }, [isSyncing, data?.isRunning])
-
-  const { data, isLoading, refetch } = useQuery<ScraperSyncResponse>({
-    queryKey: ['scraper-sync-status'],
-    queryFn: async () => {
-      const res = await fetch('/api/scraper/sync')
-      if (!res.ok) throw new Error('Gagal mengambil status scraper')
-      return res.json()
-    },
-    enabled: open,
-    refetchInterval: open ? 5000 : false,
-  })
 
   const triggerSyncMutation = useMutation({
     mutationFn: async () => {
