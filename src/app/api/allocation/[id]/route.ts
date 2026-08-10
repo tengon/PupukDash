@@ -88,35 +88,41 @@ export async function PUT(
           ? { alokasiUrea: newTotalAlloc, sisaUrea: Math.max(0, newTotalAlloc - existing.totalRealizationTon) }
           : { alokasiNpk: newTotalAlloc, sisaNpk: Math.max(0, newTotalAlloc - existing.totalRealizationTon) },
       })
-      await db.alokasiPpts.updateMany({
-        where: { pptsCode: existing.pptsCode, productName: existing.productName },
-        data: {
-          totalAlokasi: newTotalAlloc,
-          totalSisa: Math.max(0, newTotalAlloc - existing.totalRealizationTon),
-          realizationPct: newPct,
-        },
-      })
+      if ((db as any).alokasiPpts?.updateMany) {
+        await (db as any).alokasiPpts.updateMany({
+          where: { pptsCode: existing.pptsCode, productName: existing.productName },
+          data: {
+            totalAlokasi: newTotalAlloc,
+            totalSisa: Math.max(0, newTotalAlloc - existing.totalRealizationTon),
+            realizationPct: newPct,
+          },
+        })
+      }
     }
 
     // Jika tipe OPERASIONAL, selaraskan ke AlokasiTahunanKecamatan & AlokasiBulananKecamatan
     if (existing.type === 'OPERASIONAL' && existing.district) {
-      await db.alokasiTahunanKecamatan.updateMany({
-        where: { district: existing.district, productName: existing.productName },
-        data: {
-          totalAlokasi: newTotalAlloc,
-          totalSisa: Math.max(0, newTotalAlloc - existing.totalRealizationTon),
-          realizationPct: newPct,
-          sisaPct: newTotalAlloc > 0 ? (Math.max(0, newTotalAlloc - existing.totalRealizationTon) / newTotalAlloc) * 100 : 0,
-        },
-      })
-      await db.alokasiBulananKecamatan.updateMany({
-        where: { district: existing.district, productName: existing.productName },
-        data: {
-          janAlloc: newJan, febAlloc: newFeb, marAlloc: newMar, aprAlloc: newApr,
-          mayAlloc: newMay, junAlloc: newJun, julAlloc: newJul, augAlloc: newAug,
-          sepAlloc: newSep, octAlloc: newOct, novAlloc: newNov, decAlloc: newDec,
-        },
-      })
+      if ((db as any).alokasiTahunanKecamatan?.updateMany) {
+        await (db as any).alokasiTahunanKecamatan.updateMany({
+          where: { district: existing.district, productName: existing.productName },
+          data: {
+            totalAlokasi: newTotalAlloc,
+            totalSisa: Math.max(0, newTotalAlloc - existing.totalRealizationTon),
+            realizationPct: newPct,
+            sisaPct: newTotalAlloc > 0 ? (Math.max(0, newTotalAlloc - existing.totalRealizationTon) / newTotalAlloc) * 100 : 0,
+          },
+        })
+      }
+      if ((db as any).alokasiBulananKecamatan?.updateMany) {
+        await (db as any).alokasiBulananKecamatan.updateMany({
+          where: { district: existing.district, productName: existing.productName },
+          data: {
+            janAlloc: newJan, febAlloc: newFeb, marAlloc: newMar, aprAlloc: newApr,
+            mayAlloc: newMay, junAlloc: newJun, julAlloc: newJul, augAlloc: newAug,
+            sepAlloc: newSep, octAlloc: newOct, novAlloc: newNov, decAlloc: newDec,
+          },
+        })
+      }
     }
 
     return NextResponse.json({
