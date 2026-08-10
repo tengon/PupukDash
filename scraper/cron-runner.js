@@ -19,21 +19,35 @@ function logMessage(msg) {
 function runScrapers() {
   logMessage('🚀 Memulai eksekusi scraper otomatis GOW CM...')
   
-  exec('node spjb_operasional.js', { cwd: __dirname }, (error, stdout, stderr) => {
+  const testGetNodeModules = path.join('d:', 'testGet', 'node_modules')
+  const nodePath = `${testGetNodeModules};${path.join(__dirname, 'node_modules')};${process.env.NODE_PATH || ''}`
+  const execEnv = { ...process.env, NODE_PATH: nodePath }
+
+  // 1. Run SPJB Operasional
+  exec('node spjb_operasional.js', { cwd: __dirname, env: execEnv }, (error, stdout, stderr) => {
     if (error) {
       logMessage(`❌ Gagal eksekusi SPJB Operasional: ${error.message}`)
     } else {
       logMessage('✅ SPJB Operasional Scraper berhasil!')
     }
 
-    // Run Penyaluran scraper after SPJB Operasional
-    exec('node penyaluran_monitoring_order_kios.js', { cwd: __dirname }, (err2, stdout2, stderr2) => {
+    // 2. Run SPJB PPTS Scraper
+    exec('node spjb_ppts.js', { cwd: __dirname, env: execEnv }, (err2, stdout2, stderr2) => {
       if (err2) {
-        logMessage(`❌ Gagal eksekusi Penyaluran Order: ${err2.message}`)
+        logMessage(`❌ Gagal eksekusi SPJB PPTS: ${err2.message}`)
       } else {
-        logMessage('✅ Penyaluran Order Scraper berhasil!')
+        logMessage('✅ SPJB PPTS Scraper berhasil!')
       }
-      logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+
+      // 3. Run Penyaluran Order Scraper
+      exec('node penyaluran_monitoring_order_kios.js', { cwd: __dirname, env: execEnv }, (err3, stdout3, stderr3) => {
+        if (err3) {
+          logMessage(`❌ Gagal eksekusi Penyaluran Order: ${err3.message}`)
+        } else {
+          logMessage('✅ Penyaluran Order Scraper berhasil!')
+        }
+        logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+      })
     })
   })
 }

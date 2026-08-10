@@ -67,12 +67,18 @@ export async function POST() {
   ;(async () => {
     try {
       const scraperDir = path.join(process.cwd(), 'scraper')
+      const testGetNodeModules = path.join('d:', 'testGet', 'node_modules')
+      const nodePath = `${testGetNodeModules};${path.join(process.cwd(), 'node_modules')};${process.env.NODE_PATH || ''}`
+      const execEnv = { ...process.env, NODE_PATH: nodePath }
       
-      // Execute SPJB Operasional Scraper
-      await execAsync('node spjb_operasional.js', { cwd: scraperDir, timeout: 60000 })
+      // 1. Execute SPJB Operasional Scraper
+      await execAsync('node spjb_operasional.js', { cwd: scraperDir, timeout: 60000, env: execEnv })
       
-      // Execute Penyaluran Scraper
-      await execAsync('node penyaluran_monitoring_order_kios.js', { cwd: scraperDir, timeout: 60000 })
+      // 2. Execute SPJB PPTS Scraper
+      await execAsync('node spjb_ppts.js', { cwd: scraperDir, timeout: 90000, env: execEnv })
+
+      // 3. Execute Penyaluran Scraper
+      await execAsync('node penyaluran_monitoring_order_kios.js', { cwd: scraperDir, timeout: 60000, env: execEnv })
 
       lastSyncTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'
       lastSyncStatus = 'SUCCESS'
