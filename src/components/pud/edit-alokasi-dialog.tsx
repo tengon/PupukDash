@@ -165,18 +165,19 @@ export function EditAlokasiDialog({
             <Table className="text-xs">
               <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10">
                 <TableRow className="text-[11px]">
-                  <TableHead className="w-[100px]">Tipe</TableHead>
+                  <TableHead className="w-[90px]">Tipe</TableHead>
                   <TableHead>Wilayah / Kios</TableHead>
-                  <TableHead className="w-[110px]">Produk</TableHead>
-                  <TableHead className="text-right w-[150px]">Alokasi (Ton)</TableHead>
-                  <TableHead className="text-right w-[130px]">Realisasi (Ton)</TableHead>
-                  <TableHead className="text-right w-[110px]">Aksi</TableHead>
+                  <TableHead className="w-[100px]">Produk</TableHead>
+                  <TableHead className="text-right w-[140px]">1. Alokasi Sebelumnya</TableHead>
+                  <TableHead className="text-right w-[150px]">2. Alokasi Baru (Ton)</TableHead>
+                  <TableHead className="text-right w-[120px]">Realisasi (Ton)</TableHead>
+                  <TableHead className="text-right w-[100px]">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {list.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground italic">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground italic">
                       Tidak ada data alokasi ditemukan.
                     </TableCell>
                   </TableRow>
@@ -205,6 +206,15 @@ export function EditAlokasiDialog({
                             {item.productName}
                           </Badge>
                         </TableCell>
+
+                        {/* 1. Alokasi Sebelumnya */}
+                        <TableCell className="text-right font-mono font-semibold text-muted-foreground">
+                          <span className="px-2 py-0.5 bg-muted/70 rounded border border-border/80 text-[11px] tabular-nums">
+                            {item.totalAllocationTon.toLocaleString('id-ID')} Ton
+                          </span>
+                        </TableCell>
+
+                        {/* 2. Alokasi Baru */}
                         <TableCell className="text-right font-mono font-bold">
                           {isEditing ? (
                             <Input
@@ -212,26 +222,31 @@ export function EditAlokasiDialog({
                               step="0.1"
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
-                              className="h-7 text-xs font-mono text-right w-28 inline-block bg-background"
+                              placeholder="Alokasi Baru"
+                              className="h-7 text-xs font-mono font-bold text-right w-28 inline-block bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500 focus:ring-emerald-500"
                               autoFocus
                             />
                           ) : (
-                            <span className="text-emerald-700 dark:text-emerald-300">
+                            <span className="text-emerald-700 dark:text-emerald-300 font-extrabold text-xs">
                               {item.totalAllocationTon.toLocaleString('id-ID')} Ton
                             </span>
                           )}
                         </TableCell>
+
+                        {/* Realisasi */}
                         <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                           {item.totalRealizationTon.toLocaleString('id-ID')} Ton
                           <span className="block text-[10px] font-bold text-emerald-600">
                             ({item.realizationPct.toFixed(1)}%)
                           </span>
                         </TableCell>
+
+                        {/* Aksi */}
                         <TableCell className="text-right">
                           {isEditing ? (
                             <Button
                               size="sm"
-                              className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2"
+                              className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2.5 shadow-2xs"
                               disabled={updateMutation.isPending}
                               onClick={() => handleSaveEdit(item.id)}
                             >
@@ -242,7 +257,7 @@ export function EditAlokasiDialog({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 gap-1 text-[11px] font-bold px-2 hover:bg-muted"
+                              className="h-7 gap-1 text-[11px] font-bold px-2 hover:bg-muted border-border/80"
                               onClick={() => handleStartEdit(item)}
                             >
                               <Pencil className="h-3 w-3 text-muted-foreground" />
