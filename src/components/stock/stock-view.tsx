@@ -57,7 +57,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Warehouse as WarehouseIcon, Layers, PackagePlus, ArrowLeftRight, Store, RefreshCw, LayoutGrid, List } from 'lucide-react'
+import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Search, Warehouse as WarehouseIcon, Layers, PackagePlus, ArrowLeftRight, Store, RefreshCw, LayoutGrid, List, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Switch } from '@/components/ui/switch'
 import { QuickRestockDialog } from './quick-restock-dialog'
@@ -405,7 +405,9 @@ function StokPptsSection() {
   const [search, setSearch] = useState('')
   const [productFilter, setProductFilter] = useState('ALL')
   const [page, setPage] = useState(1)
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('table')
+  const [sortField, setSortField] = useState<'kodeKios' | 'namaKios' | 'namaProduct' | 'stokKg' | 'syncnAt'>('namaKios')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const { data: pptsStockRes, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['pptsStock', search, productFilter],
@@ -419,6 +421,45 @@ function StokPptsSection() {
 
   const totalKg = items.reduce((acc, r) => acc + (parseFloat(r.stokKg.replace(/\./g, '').replace(',', '.')) || 0), 0)
 
+  // Dynamic sorting logic
+  const sortedItems = [...items].sort((a, b) => {
+    let valA: any = a[sortField] || ''
+    let valB: any = b[sortField] || ''
+
+    if (sortField === 'stokKg') {
+      valA = parseFloat((a.stokKg || '0').replace(/\./g, '').replace(',', '.')) || 0
+      valB = parseFloat((b.stokKg || '0').replace(/\./g, '').replace(',', '.')) || 0
+    } else {
+      valA = String(valA).toLowerCase()
+      valB = String(valB).toLowerCase()
+    }
+
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1
+    return 0
+  })
+
+  const handleSortColumn = (field: 'kodeKios' | 'namaKios' | 'namaProduct' | 'stokKg' | 'syncnAt') => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+    setPage(1)
+  }
+
+  const renderSortIcon = (field: 'kodeKios' | 'namaKios' | 'namaProduct' | 'stokKg' | 'syncnAt') => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50 shrink-0" />
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="h-3 w-3 ml-1 text-primary shrink-0" />
+    ) : (
+      <ArrowDown className="h-3 w-3 ml-1 text-primary shrink-0" />
+    )
+  }
+
   // Group items by Kios
   const groupedKiosList = groupStockByKios(items)
 
@@ -429,8 +470,8 @@ function StokPptsSection() {
 
   // Table pagination
   const TABLE_PER_PAGE = 12
-  const totalTablePages = Math.max(1, Math.ceil(items.length / TABLE_PER_PAGE))
-  const pagedTableItems = items.slice((safePage - 1) * TABLE_PER_PAGE, safePage * TABLE_PER_PAGE)
+  const totalTablePages = Math.max(1, Math.ceil(sortedItems.length / TABLE_PER_PAGE))
+  const pagedTableItems = sortedItems.slice((safePage - 1) * TABLE_PER_PAGE, safePage * TABLE_PER_PAGE)
 
   const productOptions = ['ALL', 'Urea', 'NPK', 'Organik Granul', 'Organik Cair', 'NPK FK']
 
@@ -460,15 +501,6 @@ function StokPptsSection() {
             {/* View Mode Toggle */}
             <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
               <Button
-                variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setViewMode('card')}
-                title="Tampilan Card per Kios"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
                 variant={viewMode === 'table' ? 'secondary' : 'ghost'}
                 size="icon"
                 className="h-8 w-8"
@@ -476,6 +508,15 @@ function StokPptsSection() {
                 title="Tampilan Tabel Detail"
               >
                 <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'card' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setViewMode('card')}
+                title="Tampilan Card per Kios"
+              >
+                <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
 
@@ -543,17 +584,37 @@ function StokPptsSection() {
                 ))}
               </div>
             ) : (
-              /* TABLE VIEW */
+              /* TABLE VIEW WITH SORTABLE HEADERS */
               <div className="rounded-xl border overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="w-[140px]">Kode Kios</TableHead>
-                      <TableHead>Nama Kios (PPTS)</TableHead>
-                      <TableHead>Produk</TableHead>
-                      <TableHead className="text-right">Stok (Kg)</TableHead>
-                      <TableHead>Sync At (GOW CM)</TableHead>
-                      <TableHead className="text-center w-[100px]">Status</TableHead>
+                    <TableRow className="bg-muted/50 text-xs">
+                      <TableHead className="w-[140px] cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('kodeKios')}>
+                        <div className="flex items-center font-bold">
+                          Kode Kios {renderSortIcon('kodeKios')}
+                        </div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('namaKios')}>
+                        <div className="flex items-center font-bold">
+                          Nama Kios (PPTS) {renderSortIcon('namaKios')}
+                        </div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('namaProduct')}>
+                        <div className="flex items-center font-bold">
+                          Produk {renderSortIcon('namaProduct')}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-right cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('stokKg')}>
+                        <div className="flex items-center justify-end font-bold">
+                          Stok (Kg) {renderSortIcon('stokKg')}
+                        </div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('syncnAt')}>
+                        <div className="flex items-center font-bold">
+                          Sync At (GOW CM) {renderSortIcon('syncnAt')}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-center w-[100px] font-bold">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
