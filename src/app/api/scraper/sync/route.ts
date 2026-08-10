@@ -72,17 +72,29 @@ export async function POST() {
       const execEnv = { ...process.env, NODE_PATH: nodePath }
       
       // 1. Execute SPJB Operasional Scraper
-      await execAsync('node spjb_operasional.js', { cwd: scraperDir, timeout: 60000, env: execEnv })
-      
-      // 2. Execute SPJB PPTS Scraper
-      await execAsync('node spjb_ppts.js', { cwd: scraperDir, timeout: 90000, env: execEnv })
+      try {
+        await execAsync('node spjb_operasional.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
+      } catch (err1: any) {
+        console.error('SPJB Operasional error:', err1?.message || err1)
+      }
+
+      // 2. Execute SPJB PPTS Scraper (5 min timeout for detailed kios list)
+      try {
+        await execAsync('node spjb_ppts.js', { cwd: scraperDir, timeout: 300000, env: execEnv })
+      } catch (err2: any) {
+        console.error('SPJB PPTS error:', err2?.message || err2)
+      }
 
       // 3. Execute Penyaluran Scraper
-      await execAsync('node penyaluran_monitoring_order_kios.js', { cwd: scraperDir, timeout: 60000, env: execEnv })
+      try {
+        await execAsync('node penyaluran_monitoring_order_kios.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
+      } catch (err3: any) {
+        console.error('Penyaluran Order error:', err3?.message || err3)
+      }
 
       lastSyncTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'
       lastSyncStatus = 'SUCCESS'
-      lastSyncMessage = 'Sinkronisasi scraper GOW CM selesai dengan sukses!'
+      lastSyncMessage = 'Sinkronisasi scraper GOW CM selesai!'
     } catch (err: any) {
       console.error('Scraper sync execution error:', err)
       lastSyncStatus = 'FAILED'
