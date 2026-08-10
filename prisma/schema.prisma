@@ -187,14 +187,52 @@ model Purchase {
   product         FertilizerProduct @relation(fields: [productId], references: [id])
 }
 
-model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("Administrator Distributor")
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Allocation {
+  id                  String   @id @default(cuid())
+  year                String   @default("2026")
+  type                String   @default("OPERASIONAL") // OPERASIONAL or PPTS
+  spjbNumber          String?
+  distributorName     String?
+  producerName        String?
+  pptsCode            String?
+  pptsName            String?
+  district            String?
+  productName         String
+  totalAllocationTon  Float    @default(0)
+  totalRealizationTon Float    @default(0)
+  totalApprovedSoTon  Float    @default(0)
+  totalRemainingTon   Float    @default(0)
+  realizationPct      Float    @default(0)
+  janAlloc            Float    @default(0)
+  febAlloc            Float    @default(0)
+  marAlloc            Float    @default(0)
+  aprAlloc            Float    @default(0)
+  mayAlloc            Float    @default(0)
+  junAlloc            Float    @default(0)
+  julAlloc            Float    @default(0)
+  augAlloc            Float    @default(0)
+  sepAlloc            Float    @default(0)
+  octAlloc            Float    @default(0)
+  novAlloc            Float    @default(0)
+  decAlloc            Float    @default(0)
+  janReal            Float    @default(0)
+  febReal            Float    @default(0)
+  marReal            Float    @default(0)
+  aprReal            Float    @default(0)
+  mayReal            Float    @default(0)
+  junReal            Float    @default(0)
+  julReal            Float    @default(0)
+  augReal            Float    @default(0)
+  sepReal            Float    @default(0)
+  octReal            Float    @default(0)
+  novReal            Float    @default(0)
+  decReal            Float    @default(0)
+  rawJson             String?
+  status              String   @default("Active")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([year, type])
+  @@index([pptsCode])
+  @@index([district])
 }
