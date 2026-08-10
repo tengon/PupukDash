@@ -10,6 +10,7 @@
 
 const { chromium } = require('playwright');
 const fs = require('fs');
+const path = require('path');
 
 const CONFIG = {
   baseUrl: 'https://gowcm.pupuk-indonesia.com',
