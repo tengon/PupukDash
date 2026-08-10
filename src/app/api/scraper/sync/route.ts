@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
+import { syncAnnualTotalToDb } from '@/lib/sync-annual-to-db'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 
@@ -99,6 +100,13 @@ export async function POST() {
         await execAsync('node stok_kios_ipuber.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
       } catch (err4: any) {
         console.error('Stok Kios iPuber error:', err4?.message || err4)
+      }
+
+      // 5. Sync Total Alokasi Tahunan ke Database SQLite
+      try {
+        await syncAnnualTotalToDb()
+      } catch (err5: any) {
+        console.error('DB Sync error:', err5?.message || err5)
       }
 
       lastSyncTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'
