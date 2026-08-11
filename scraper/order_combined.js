@@ -8,7 +8,20 @@
  * Step 4: Auto-Sync ke Tabel OrderGow (Database)
  */
 
-const { chromium } = require('playwright');
+let chromium;
+try {
+  chromium = require('playwright').chromium;
+} catch (e1) {
+  try {
+    chromium = require('d:/testGet/node_modules/playwright').chromium;
+  } catch (e2) {
+    try {
+      chromium = require(path.join(process.cwd(), 'node_modules', 'playwright')).chromium;
+    } catch (e3) {
+      throw new Error("Cannot find module 'playwright'. Jalankan 'npm install playwright' terlebih dahulu.");
+    }
+  }
+}
 const fs = require('fs');
 const path = require('path');
 
