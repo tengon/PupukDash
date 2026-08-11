@@ -57,8 +57,9 @@ export async function syncOrderToDb() {
 
     const matchingDo = doMap.get(ord.noPenebusan.trim()) || doMap.get((ord.kodeSo || '').trim())
 
-    const nomorDo = ord.nomorDo || matchingDo?.nomorDo || ''
-    const tglDo = ord.tglDo || matchingDo?.tanggalDo || ''
+    const kodeSo = ord.kodeSo || matchingDo?.kodeSo || ord.kodeBooking || null
+    const nomorDo = ord.nomorDo || matchingDo?.nomorDo || null
+    const tglDo = ord.tglDo || matchingDo?.tanggalDo || null
     const prodName = ord.namaProduk || matchingDo?.namaProduk || ord.detail?.itemsTable?.rows?.[0]?.[1] || 'UREA'
     const qtyKgStr = ord.qtyKg || matchingDo?.qty || ord.detail?.itemsTable?.rows?.[0]?.[2] || '0'
     const qtyKg = parseFloat(String(qtyKgStr).replace(/\./g, '').replace(',', '.')) || 0
@@ -78,13 +79,13 @@ export async function syncOrderToDb() {
             tglRencana: ord.tglRencana || null,
             tglOrder: ord.tglOrder || null,
             status: ord.status || null,
-            kodeSo: ord.kodeSo || null,
-            nomorDo: nomorDo || null,
+            kodeSo: kodeSo,
+            nomorDo: nomorDo,
             productName: prodName,
             quantityKg: qtyKg,
             quantityTon: qtyTon,
-            tglDo: tglDo || null,
-            rawJson: JSON.stringify(ord),
+            tglDo: tglDo,
+            rawJson: JSON.stringify({ ...ord, kodeSo, nomorDo, namaProduk: prodName, qtyKg: qtyKg.toString(), tglDo }),
             updatedAt: new Date(),
           },
           create: {
@@ -98,13 +99,13 @@ export async function syncOrderToDb() {
             tglRencana: ord.tglRencana || null,
             tglOrder: ord.tglOrder || null,
             status: ord.status || null,
-            kodeSo: ord.kodeSo || null,
-            nomorDo: nomorDo || null,
+            kodeSo: kodeSo,
+            nomorDo: nomorDo,
             productName: prodName,
             quantityKg: qtyKg,
             quantityTon: qtyTon,
-            tglDo: tglDo || null,
-            rawJson: JSON.stringify(ord),
+            tglDo: tglDo,
+            rawJson: JSON.stringify({ ...ord, kodeSo, nomorDo, namaProduk: prodName, qtyKg: qtyKg.toString(), tglDo }),
           },
         })
         syncedCount++
