@@ -364,3 +364,30 @@ model OrderGow {
   @@index([kodeSo])
   @@index([nomorDo])
 }
+
+// 5. Tabel Distribusi PO (Pemenuhan Order Kios & Penyaluran ke Pengecer dari GOW CM)
+model DistribusiPo {
+  id                String   @id @default(cuid())
+  noPkp             String?  // No. PKP / PO (e.g. PKP0007080325)
+  noOrderPengecer   String   @unique // No. Order Kios (e.g. PSN082621094001)
+  kodePengecer      String?  // Kode Kios (e.g. RT0000021094)
+  namaPengecer      String?  // Nama Kios PPTS (e.g. USAHA TANI)
+  provinsi          String?  // Provinsi
+  kabupaten         String?  // Kabupaten
+  kecamatan         String?  // Kecamatan
+  kodeSo            String?  // Nomor SO
+  noSuratJalan      String?  // Nomor Surat Jalan
+  status            String?  // Status (Submitted, Draft, Selesai)
+  tanggalPenyaluran String?  // Tanggal Penyaluran PO
+  productName       String?  // Nama Produk (UREA, NPK)
+  quantityTon       Float    @default(0) // Quantity (Ton)
+  quantityKg        Float    @default(0) // Quantity (Kg)
+  rawJson           String?  // Detail JSON lengkap
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([noPkp])
+  @@index([noOrderPengecer])
+  @@index([kodePengecer])
+  @@index([kodeSo])
+}

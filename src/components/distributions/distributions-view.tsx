@@ -47,6 +47,7 @@ import {
 import { motion } from 'framer-motion'
 import { Plus, Truck, Package, Store, RefreshCw, Layers, ShieldCheck, ShoppingCart, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { DistribusiPoSection } from './distribusi-po-section'
 
 const ITEMS_PER_PAGE = 10
 
@@ -72,7 +73,7 @@ export function DistributionsView() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const [activeMainTab, setActiveMainTab] = useState<'gowcm' | 'internal'>('gowcm')
+  const [activeMainTab, setActiveMainTab] = useState<'distribusi-po' | 'gowcm' | 'internal'>('distribusi-po')
 
   // GOW CM Penyaluran filters & page & sorting
   const [gowcmSearch, setGowcmSearch] = useState('')
@@ -288,19 +289,28 @@ export function DistributionsView() {
           </p>
         </div>
 
-        <Tabs value={activeMainTab} onValueChange={(val) => setActiveMainTab(val as 'gowcm' | 'internal')}>
-          <TabsList className="grid grid-cols-2 w-full sm:w-auto">
+        <Tabs value={activeMainTab} onValueChange={(val) => setActiveMainTab(val as 'distribusi-po' | 'gowcm' | 'internal')}>
+          <TabsList className="grid grid-cols-3 w-full sm:w-auto">
+            <TabsTrigger value="distribusi-po" className="gap-1.5 text-xs font-bold">
+              <Truck className="h-3.5 w-3.5 text-indigo-600" />
+              Distribusi PO
+            </TabsTrigger>
             <TabsTrigger value="gowcm" className="gap-1.5 text-xs font-bold">
               <ShoppingCart className="h-3.5 w-3.5 text-emerald-600" />
-              Penyaluran GOW CM ({sortedFlatRows.length})
+              Penyaluran Kios ({sortedFlatRows.length})
             </TabsTrigger>
             <TabsTrigger value="internal" className="gap-1.5 text-xs font-bold">
-              <Truck className="h-3.5 w-3.5 text-blue-600" />
+              <Layers className="h-3.5 w-3.5 text-blue-600" />
               Distribusi Internal
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
+
+      {/* SECTION 0: DISTRIBUSI PO (PEMENUHAN ORDER KIOS GOW CM) */}
+      {activeMainTab === 'distribusi-po' && (
+        <DistribusiPoSection />
+      )}
 
       {/* SECTION 1: PENYALURAN GOW CM TERINTEGRASI */}
       {activeMainTab === 'gowcm' && (
