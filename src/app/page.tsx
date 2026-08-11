@@ -40,6 +40,7 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   allocation: { title: 'Data Alokasi', description: 'Kelola dan monitor alokasi pupuk bersubsidi SPJB Operasional & SPJB PPTS' },
   'monitoring-ppts': { title: 'Monitoring PPTS', description: 'Monitor alokasi SPJB dan realisasi tebusan pupuk bersubsidi per Kios PPTS' },
   'monitoring-pud': { title: 'Monitoring PUD', description: 'Monitor SPJB Operasional Distributor PUD dan Alokasi Bulanan dari Produsen' },
+  'monitoring-order': { title: 'Monitoring Order & DO', description: 'Monitor data order penebusan dan Delivery Order (DO) dari GOW CM Pupuk Indonesia' },
   warehouses: { title: 'Gudang', description: 'Kelola data gudang penyimpanan pupuk' },
   'monitoring-warehouses': { title: 'Gudang', description: 'Monitoring data gudang penyimpanan pupuk' },
   stock: { title: 'Stok Gudang', description: 'Monitor dan kelola stok pupuk di setiap gudang' },
@@ -294,7 +295,7 @@ export default function HomePage() {
                 {activeTab === 'stock-confirmation' && <StockConfirmationView reportMode={false} />}
                 {activeTab === 'stock-confirmation-report' && <StockConfirmationView reportMode={true} />}
                 {activeTab === 'distributions' && <DistributionsView />}
-                {activeTab === 'orders' && <OrdersView />}
+                {(activeTab === 'orders' || activeTab === 'monitoring-order') && <OrdersView />}
                 {activeTab === 'purchases' && <PurchasesView />}
                 {activeTab === 'rpkp' && <RPKPView />}
                 {activeTab === 'reports' && <ReportsView />}
