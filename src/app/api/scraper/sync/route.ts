@@ -103,11 +103,25 @@ export async function POST() {
         console.error('Stok Kios iPuber error:', err4?.message || err4)
       }
 
-      // 5. Execute Combined Order Scraper (Monitoring Order + DO)
+      // 5. Execute Monitoring Order Scraper
       try {
-        await execAsync('node order_combined.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
+        await execAsync('node monitoring_order.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
       } catch (err5: any) {
-        console.error('Combined Order Scraper error:', err5?.message || err5)
+        console.error('Monitoring Order error:', err5?.message || err5)
+      }
+
+      // 6. Execute Monitoring DO Scraper
+      try {
+        await execAsync('node monitoring_do.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
+      } catch (err6: any) {
+        console.error('Monitoring DO error:', err6?.message || err6)
+      }
+
+      // 7. Execute Gabung Order Script
+      try {
+        await execAsync('node gabung_order.js', { cwd: scraperDir, timeout: 60000, env: execEnv })
+      } catch (err7: any) {
+        console.error('Gabung Order error:', err7?.message || err7)
       }
 
       // 6. Sync Total Alokasi Tahunan & Order ke Database SQLite

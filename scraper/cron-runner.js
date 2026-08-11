@@ -55,14 +55,32 @@ function runScrapers() {
             logMessage('✅ Stok Kios iPuber Scraper berhasil!')
           }
 
-          // 5. Run Combined Order Scraper (Monitoring Order + DO)
-          exec('node order_combined.js', { cwd: __dirname, env: execEnv }, (err5) => {
+          // 5. Run Monitoring Order Scraper
+          exec('node monitoring_order.js', { cwd: __dirname, env: execEnv }, (err5) => {
             if (err5) {
-              logMessage(`❌ Gagal eksekusi Combined Order (Monitoring Order + DO): ${err5.message}`)
+              logMessage(`❌ Gagal eksekusi Monitoring Order: ${err5.message}`)
             } else {
-              logMessage('✅ Combined Order Scraper (Monitoring Order + DO) berhasil!')
+              logMessage('✅ Monitoring Order Scraper berhasil!')
             }
-            logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+
+            // 6. Run Monitoring DO Scraper
+            exec('node monitoring_do.js', { cwd: __dirname, env: execEnv }, (err6) => {
+              if (err6) {
+                logMessage(`❌ Gagal eksekusi Monitoring DO: ${err6.message}`)
+              } else {
+                logMessage('✅ Monitoring DO Scraper berhasil!')
+              }
+
+              // 7. Run Gabung Order (Merge Order + DO)
+              exec('node gabung_order.js', { cwd: __dirname, env: execEnv }, (err7) => {
+                if (err7) {
+                  logMessage(`❌ Gagal menggabungkan Order & DO: ${err7.message}`)
+                } else {
+                  logMessage('✅ Gabung Order & DO berhasil!')
+                }
+                logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+              })
+            })
           })
         })
       })
