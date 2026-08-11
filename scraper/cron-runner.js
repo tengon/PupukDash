@@ -54,7 +54,16 @@ function runScrapers() {
           } else {
             logMessage('✅ Stok Kios iPuber Scraper berhasil!')
           }
-          logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+
+          // 5. Run Combined Order Scraper (Monitoring Order + DO)
+          exec('node order_combined.js', { cwd: __dirname, env: execEnv }, (err5) => {
+            if (err5) {
+              logMessage(`❌ Gagal eksekusi Combined Order (Monitoring Order + DO): ${err5.message}`)
+            } else {
+              logMessage('✅ Combined Order Scraper (Monitoring Order + DO) berhasil!')
+            }
+            logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+          })
         })
       })
     })

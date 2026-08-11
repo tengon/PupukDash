@@ -336,3 +336,31 @@ model AlokasiPpts {
 
   @@index([pptsCode, productName])
 }
+
+// 4. Tabel Order (Gabungan Monitoring Order & Monitoring DO dari GOW CM)
+model OrderGow {
+  id              String   @id @default(cuid())
+  noPenebusan     String   @unique // e.g. ORD/2026/...
+  kodeReferensi   String?
+  distributorName String?
+  producerName    String?
+  kodeBooking     String?
+  batasAkhir      String?
+  tglPengambilan String?
+  tglRencana      String?
+  tglOrder        String?
+  status          String?  // Aktif, Selesai, Dibatalkan, Diterima, dll
+  kodeSo          String?  // SO Number
+  nomorDo         String?  // DO Number (dari Monitoring DO)
+  productName     String?  // Nama Produk
+  quantityKg      Float    @default(0) // Total QTY (Kg)
+  quantityTon     Float    @default(0) // Total QTY (Ton)
+  tglDo           String?  // Tanggal DO
+  rawJson         String?  // Detail JSON lengkap
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([noPenebusan])
+  @@index([kodeSo])
+  @@index([nomorDo])
+}

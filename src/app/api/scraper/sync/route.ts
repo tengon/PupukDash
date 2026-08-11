@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 import { syncAnnualTotalToDb } from '@/lib/sync-annual-to-db'
+import { syncOrderToDb } from '@/lib/sync-order-to-db'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 
@@ -102,11 +103,19 @@ export async function POST() {
         console.error('Stok Kios iPuber error:', err4?.message || err4)
       }
 
-      // 5. Sync Total Alokasi Tahunan ke Database SQLite
+      // 5. Execute Combined Order Scraper (Monitoring Order + DO)
+      try {
+        await execAsync('node order_combined.js', { cwd: scraperDir, timeout: 180000, env: execEnv })
+      } catch (err5: any) {
+        console.error('Combined Order Scraper error:', err5?.message || err5)
+      }
+
+      // 6. Sync Total Alokasi Tahunan & Order ke Database SQLite
       try {
         await syncAnnualTotalToDb()
-      } catch (err5: any) {
-        console.error('DB Sync error:', err5?.message || err5)
+        await syncOrderToDb()
+      } catch (err6: any) {
+        console.error('DB Sync error:', err6?.message || err6)
       }
 
       lastSyncTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'

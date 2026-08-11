@@ -53,9 +53,10 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { motion } from 'framer-motion'
-import { Plus, Search, ShoppingCart, Eye, ArrowRight, Minus, Download, Printer, Check, Clock, PackageCheck, CalendarDays, X, Package, Calculator, Banknote, Weight } from 'lucide-react'
+import { Plus, Search, ShoppingCart, ShoppingBag, Eye, ArrowRight, Minus, Download, Printer, Check, Clock, PackageCheck, CalendarDays, X, Package, Calculator, Banknote, Weight } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { validateHET, getAllocationWarning, getHETPrice, normalizeProductType } from '@/lib/het'
+import { GowCmOrderSection } from './gowcm-order-section'
 
 const ITEMS_PER_PAGE = 10
 
@@ -161,6 +162,7 @@ export function OrdersView() {
   const [districtFilter, setDistrictFilter] = useState('all')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
+  const [mainTab, setMainTab] = useState<'gowcm' | 'local'>('gowcm')
   const [showDateFilter, setShowDateFilter] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
@@ -477,8 +479,27 @@ export function OrdersView() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Card className="border-l-2 border-l-green-500">
-        <CardHeader className="pb-3">
+      {/* Main Mode Tabs: GOW CM vs Local Orders */}
+      <div className="flex items-center justify-between border-b pb-2">
+        <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as 'gowcm' | 'local')} className="w-full">
+          <TabsList className="bg-muted/70 p-1 border">
+            <TabsTrigger value="gowcm" className="gap-2 px-4 py-2 text-xs sm:text-sm font-extrabold">
+              <ShoppingBag className="h-4 w-4 text-blue-600" />
+              Order GOW CM (Monitoring Order & DO)
+            </TabsTrigger>
+            <TabsTrigger value="local" className="gap-2 px-4 py-2 text-xs sm:text-sm font-semibold">
+              <ShoppingCart className="h-4 w-4 text-emerald-600" />
+              Order Tebusan PUD (Lokal)
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {mainTab === 'gowcm' ? (
+        <GowCmOrderSection />
+      ) : (
+        <Card className="border-l-2 border-l-green-500">
+          <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
@@ -707,6 +728,7 @@ export function OrdersView() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Create Order Dialog */}
       <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) setPrefillFarmer(undefined) }}>
