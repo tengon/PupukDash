@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-08-10T11:01:19.457Z",
+  "scraped_at": "2026-08-12T11:01:17.827Z",
   "source": "GOW CM - Alokasi >> SPJB PPTS",
   "total": 18,
   "last_sync_summary": {
@@ -20,8 +20,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/03*SPJB*AM-PPTS*XII*25-rev/RT0000088748",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/03*SPJB*AM-PPTS*XII*25-rev/RT0000088748",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/03*SPJB*AM-PPTS*XII*25-rev/RT0000088748",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/03*SPJB*AM-PPTS*XII*25-rev/RT0000088748",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -50,9 +50,9 @@
               "",
               "NPK",
               "170",
-              "155",
-              "15",
-              "91.176%"
+              "160",
+              "10",
+              "94.118%"
             ]
           ],
           "structured": []
@@ -96,7 +96,7 @@
         },
         "pdfLinks": []
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "02/SPJB/AM-PPTS/XII/25.",
@@ -109,8 +109,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/02*SPJB*AM-PPTS*XII*25./RT0000021104",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/02*SPJB*AM-PPTS*XII*25./RT0000021104",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/02*SPJB*AM-PPTS*XII*25./RT0000021104",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/02*SPJB*AM-PPTS*XII*25./RT0000021104",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -131,17 +131,17 @@
               "",
               "Urea",
               "198",
-              "122",
-              "76",
-              "61.616%"
+              "130",
+              "68",
+              "65.657%"
             ],
             [
               "",
               "NPK",
               "165",
-              "124",
-              "41",
-              "75.152%"
+              "130",
+              "35",
+              "78.788%"
             ]
           ],
           "structured": []
@@ -187,7 +187,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_02/SPJB/AM-PPTS/XII/25._RT0000021104.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "11/SPJB/AM-PPTS/XII/25",
@@ -200,8 +200,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/11*SPJB*AM-PPTS*XII*25/RT0000021083",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/11*SPJB*AM-PPTS*XII*25/RT0000021083",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/11*SPJB*AM-PPTS*XII*25/RT0000021083",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/11*SPJB*AM-PPTS*XII*25/RT0000021083",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -230,9 +230,9 @@
               "",
               "NPK",
               "210",
-              "118",
-              "92",
-              "56.190%"
+              "126",
+              "84",
+              "60.000%"
             ]
           ],
           "structured": []
@@ -278,7 +278,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_11/SPJB/AM-PPTS/XII/25_RT0000021083.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "10/SPJB/AM-PPTS/XII/25",
@@ -291,8 +291,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/10*SPJB*AM-PPTS*XII*25/RT0000021058",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/10*SPJB*AM-PPTS*XII*25/RT0000021058",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/10*SPJB*AM-PPTS*XII*25/RT0000021058",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/10*SPJB*AM-PPTS*XII*25/RT0000021058",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -369,7 +369,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_10/SPJB/AM-PPTS/XII/25_RT0000021058.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "09/SPJB/AM-PPTS/XII/25",
@@ -382,8 +382,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/09*SPJB*AM-PPTS*XII*25/RT0000085298",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/09*SPJB*AM-PPTS*XII*25/RT0000085298",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/09*SPJB*AM-PPTS*XII*25/RT0000085298",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/09*SPJB*AM-PPTS*XII*25/RT0000085298",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -404,9 +404,9 @@
               "",
               "Urea",
               "256",
-              "114",
-              "142",
-              "44.531%"
+              "122",
+              "134",
+              "47.656%"
             ],
             [
               "",
@@ -460,7 +460,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_09/SPJB/AM-PPTS/XII/25_RT0000085298.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "18/SPJB/AM-PPTS/XII/25",
@@ -473,8 +473,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/18*SPJB*AM-PPTS*XII*25/RT0000094478",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/18*SPJB*AM-PPTS*XII*25/RT0000094478",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/18*SPJB*AM-PPTS*XII*25/RT0000094478",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/18*SPJB*AM-PPTS*XII*25/RT0000094478",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -495,17 +495,17 @@
               "",
               "Urea",
               "73",
-              "28",
-              "45",
-              "38.356%"
+              "32",
+              "41",
+              "43.836%"
             ],
             [
               "",
               "NPK",
               "55",
-              "20",
-              "35",
-              "36.364%"
+              "21",
+              "34",
+              "38.182%"
             ]
           ],
           "structured": []
@@ -551,7 +551,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_18/SPJB/AM-PPTS/XII/25_RT0000094478.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "17/SPJB/AM-PPTS/XII/25",
@@ -564,8 +564,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/17*SPJB*AM-PPTS*XII*25/RT0000094477",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/17*SPJB*AM-PPTS*XII*25/RT0000094477",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/17*SPJB*AM-PPTS*XII*25/RT0000094477",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/17*SPJB*AM-PPTS*XII*25/RT0000094477",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -642,7 +642,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_17/SPJB/AM-PPTS/XII/25_RT0000094477.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "16/SPJB/AM-PPTS/XII/25",
@@ -655,8 +655,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/16*SPJB*AM-PPTS*XII*25/RT0000021094",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/16*SPJB*AM-PPTS*XII*25/RT0000021094",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/16*SPJB*AM-PPTS*XII*25/RT0000021094",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/16*SPJB*AM-PPTS*XII*25/RT0000021094",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -677,17 +677,17 @@
               "",
               "Urea",
               "205",
-              "73.5",
-              "131.5",
-              "35.854%"
+              "76.5",
+              "128.5",
+              "37.317%"
             ],
             [
               "",
               "NPK",
               "155",
-              "50",
-              "105",
-              "32.258%"
+              "53",
+              "102",
+              "34.194%"
             ]
           ],
           "structured": []
@@ -733,7 +733,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_16/SPJB/AM-PPTS/XII/25_RT0000021094.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "15/SPJB/AM-PPTS/XII/25",
@@ -746,8 +746,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/15*SPJB*AM-PPTS*XII*25/RT0000021093",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/15*SPJB*AM-PPTS*XII*25/RT0000021093",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/15*SPJB*AM-PPTS*XII*25/RT0000021093",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/15*SPJB*AM-PPTS*XII*25/RT0000021093",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -824,7 +824,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_15/SPJB/AM-PPTS/XII/25_RT0000021093.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "14/SPJB/AM-PPTS/XII/25",
@@ -837,8 +837,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/14*SPJB*AM-PPTS*XII*25/RT0000021079",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/14*SPJB*AM-PPTS*XII*25/RT0000021079",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/14*SPJB*AM-PPTS*XII*25/RT0000021079",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/14*SPJB*AM-PPTS*XII*25/RT0000021079",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -915,7 +915,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_14/SPJB/AM-PPTS/XII/25_RT0000021079.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "13/SPJB/AM-PPTS/XII/25",
@@ -928,8 +928,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/13*SPJB*AM-PPTS*XII*25/RT0000021064",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/13*SPJB*AM-PPTS*XII*25/RT0000021064",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/13*SPJB*AM-PPTS*XII*25/RT0000021064",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/13*SPJB*AM-PPTS*XII*25/RT0000021064",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -1006,7 +1006,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_13/SPJB/AM-PPTS/XII/25_RT0000021064.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "12/SPJB/AM-PPTS/XII/25",
@@ -1019,8 +1019,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/12*SPJB*AM-PPTS*XII*25/RT0000091576",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/12*SPJB*AM-PPTS*XII*25/RT0000091576",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/12*SPJB*AM-PPTS*XII*25/RT0000091576",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/12*SPJB*AM-PPTS*XII*25/RT0000091576",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -1097,7 +1097,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_12/SPJB/AM-PPTS/XII/25_RT0000091576.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "08/SPJB/AM-PPTS/XII/25",
@@ -1110,8 +1110,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/08*SPJB*AM-PPTS*XII*25/RT0000089485",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/08*SPJB*AM-PPTS*XII*25/RT0000089485",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/08*SPJB*AM-PPTS*XII*25/RT0000089485",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/08*SPJB*AM-PPTS*XII*25/RT0000089485",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -1188,7 +1188,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_08/SPJB/AM-PPTS/XII/25_RT0000089485.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "07/SPJB/AM-PPTS/XII/25",
@@ -1201,8 +1201,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/07*SPJB*AM-PPTS*XII*25/RT0000017846",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/07*SPJB*AM-PPTS*XII*25/RT0000017846",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/07*SPJB*AM-PPTS*XII*25/RT0000017846",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/07*SPJB*AM-PPTS*XII*25/RT0000017846",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -1223,17 +1223,17 @@
               "",
               "Urea",
               "490",
-              "284.5",
-              "205.5",
-              "58.061%"
+              "294.5",
+              "195.5",
+              "60.102%"
             ],
             [
               "",
               "NPK",
               "350",
-              "320",
-              "30",
-              "91.429%"
+              "330",
+              "20",
+              "94.286%"
             ]
           ],
           "structured": []
@@ -1279,7 +1279,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_07/SPJB/AM-PPTS/XII/25_RT0000017846.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "06/SPJB/AM-PPTS/XII/25",
@@ -1292,8 +1292,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/06*SPJB*AM-PPTS*XII*25/RT0000021111",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/06*SPJB*AM-PPTS*XII*25/RT0000021111",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/06*SPJB*AM-PPTS*XII*25/RT0000021111",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/06*SPJB*AM-PPTS*XII*25/RT0000021111",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -1370,7 +1370,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_06/SPJB/AM-PPTS/XII/25_RT0000021111.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "05/SPJB/AM-PPTS/XII/25",
@@ -1383,8 +1383,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/05*SPJB*AM-PPTS*XII*25/RT0000021109",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/05*SPJB*AM-PPTS*XII*25/RT0000021109",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/05*SPJB*AM-PPTS*XII*25/RT0000021109",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/05*SPJB*AM-PPTS*XII*25/RT0000021109",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -1461,7 +1461,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_05/SPJB/AM-PPTS/XII/25_RT0000021109.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "04/SPJB/AM-PPTS/XII/25",
@@ -1474,8 +1474,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/04*SPJB*AM-PPTS*XII*25/RT0000021108",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/04*SPJB*AM-PPTS*XII*25/RT0000021108",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/04*SPJB*AM-PPTS*XII*25/RT0000021108",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/04*SPJB*AM-PPTS*XII*25/RT0000021108",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -1552,7 +1552,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_04/SPJB/AM-PPTS/XII/25_RT0000021108.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     },
     {
       "nomorSpjb": "01/SPJB/AM-PPTS/XII/25",
@@ -1565,8 +1565,8 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/01*SPJB*AM-PPTS*XII*25/RT0000088746",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX1%2BRqE7Daq983HmNwXbIoK5bzxzJpyZDDxI%3D/alokasi/contract-distributor-ppts/01*SPJB*AM-PPTS*XII*25/RT0000088746",
+      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/01*SPJB*AM-PPTS*XII*25/RT0000088746",
+      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/01*SPJB*AM-PPTS*XII*25/RT0000088746",
       "detail": {
         "header": {
           "judul": "WCM",
@@ -1643,7 +1643,7 @@
           "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_01/SPJB/AM-PPTS/XII/25_RT0000088746.pdf"
         ]
       },
-      "updated_at": "2026-08-10T11:01:19.457Z"
+      "updated_at": "2026-08-12T11:01:17.827Z"
     }
   ]
 }
