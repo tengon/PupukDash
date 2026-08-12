@@ -78,7 +78,16 @@ function runScrapers() {
                 } else {
                   logMessage('✅ Gabung Order & DO berhasil!')
                 }
-                logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+
+                // 8. Run Laporan Item Penyaluran PKP Scraper
+                exec('node laporan_item_penyaluran_pkp.js', { cwd: __dirname, env: execEnv }, (err8) => {
+                  if (err8) {
+                    logMessage(`❌ Gagal eksekusi Laporan PKP: ${err8.message}`)
+                  } else {
+                    logMessage('✅ Laporan Item Penyaluran PKP Scraper berhasil!')
+                  }
+                  logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
+                })
               })
             })
           })

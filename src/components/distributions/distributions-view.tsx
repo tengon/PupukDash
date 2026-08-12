@@ -48,6 +48,7 @@ import { motion } from 'framer-motion'
 import { Plus, Truck, Package, Store, RefreshCw, Layers, ShieldCheck, ShoppingCart, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { DistribusiPoSection } from './distribusi-po-section'
+import { LaporanPkpSection } from './laporan-pkp-section'
 
 const ITEMS_PER_PAGE = 10
 
@@ -73,7 +74,7 @@ export function DistributionsView() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const [activeMainTab, setActiveMainTab] = useState<'distribusi-po' | 'gowcm' | 'internal'>('distribusi-po')
+  const [activeMainTab, setActiveMainTab] = useState<'distribusi-po' | 'laporan-pkp' | 'gowcm' | 'internal'>('distribusi-po')
 
   // GOW CM Penyaluran filters & page & sorting
   const [gowcmSearch, setGowcmSearch] = useState('')
@@ -289,11 +290,15 @@ export function DistributionsView() {
           </p>
         </div>
 
-        <Tabs value={activeMainTab} onValueChange={(val) => setActiveMainTab(val as 'distribusi-po' | 'gowcm' | 'internal')}>
-          <TabsList className="grid grid-cols-3 w-full sm:w-auto">
+        <Tabs value={activeMainTab} onValueChange={(val) => setActiveMainTab(val as 'distribusi-po' | 'laporan-pkp' | 'gowcm' | 'internal')}>
+          <TabsList className="grid grid-cols-4 w-full sm:w-auto">
             <TabsTrigger value="distribusi-po" className="gap-1.5 text-xs font-bold">
               <Truck className="h-3.5 w-3.5 text-indigo-600" />
               Distribusi PO
+            </TabsTrigger>
+            <TabsTrigger value="laporan-pkp" className="gap-1.5 text-xs font-bold">
+              <FileCheck className="h-3.5 w-3.5 text-purple-600" />
+              Laporan PKP
             </TabsTrigger>
             <TabsTrigger value="gowcm" className="gap-1.5 text-xs font-bold">
               <ShoppingCart className="h-3.5 w-3.5 text-emerald-600" />
@@ -310,6 +315,11 @@ export function DistributionsView() {
       {/* SECTION 0: DISTRIBUSI PO (PEMENUHAN ORDER KIOS GOW CM) */}
       {activeMainTab === 'distribusi-po' && (
         <DistribusiPoSection />
+      )}
+
+      {/* SECTION 0.5: LAPORAN ITEM PENYALURAN PKP GOW CM */}
+      {activeMainTab === 'laporan-pkp' && (
+        <LaporanPkpSection />
       )}
 
       {/* SECTION 1: PENYALURAN GOW CM TERINTEGRASI */}
