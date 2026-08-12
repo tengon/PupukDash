@@ -36,6 +36,7 @@ interface LaporanPkpRecord {
   tipePenyaluran?: string | null
   noPenebusan?: string | null
   kodeSo?: string | null
+  tglSo?: string | null
   tahun?: string | null
   bulan?: string | null
   tglPenyaluran?: string | null
@@ -60,7 +61,7 @@ export function LaporanPkpSection() {
   const [districtFilter, setDistrictFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [page, setPage] = useState(1)
-  const [sortField, setSortField] = useState<'noPkp' | 'noPenebusan' | 'pengecer' | 'kecamatan' | 'kodeSo' | 'productName' | 'quantityTon' | 'tglPenyaluran' | 'status'>('tglPenyaluran')
+  const [sortField, setSortField] = useState<'noPkp' | 'noPenebusan' | 'pengecer' | 'kecamatan' | 'kodeSo' | 'tglSo' | 'productName' | 'quantityTon' | 'tglPenyaluran' | 'status'>('tglPenyaluran')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   const { data: resData, isLoading, refetch, isFetching } = useQuery<{ success: boolean; total: number; data: LaporanPkpRecord[] }>({
@@ -265,6 +266,11 @@ export function LaporanPkpSection() {
                         Kode SO {renderSortIcon('kodeSo')}
                       </div>
                     </TableHead>
+                    <TableHead className="cursor-pointer select-none font-bold hover:text-foreground" onClick={() => handleSort('tglSo')}>
+                      <div className="flex items-center">
+                        Tgl. SO {renderSortIcon('tglSo')}
+                      </div>
+                    </TableHead>
                     <TableHead className="cursor-pointer select-none font-bold hover:text-foreground" onClick={() => handleSort('productName')}>
                       <div className="flex items-center">
                         Produk {renderSortIcon('productName')}
@@ -328,6 +334,9 @@ export function LaporanPkpSection() {
                         </TableCell>
                         <TableCell className="font-mono font-semibold text-blue-600 dark:text-blue-400">
                           {so}
+                        </TableCell>
+                        <TableCell className="font-mono text-muted-foreground">
+                          {item.tglSo || item.tglPenyaluran || '-'}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-extrabold text-xs px-2 py-0.5 bg-muted">

@@ -402,6 +402,7 @@ model LaporanPkp {
   tipePenyaluran  String?  // Tipe Penyaluran (order, dll)
   noPenebusan     String?  // No. Penebusan (ORD003373269)
   kodeSo          String?  // Kode SO
+  tglSo           String?  // Tanggal SO / Order
   tahun           String?  // Tahun (2026)
   bulan           String?  // Bulan (Agustus)
   tglPenyaluran   String?  // Tanggal Penyaluran (12-Ags-2026)

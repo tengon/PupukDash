@@ -15,6 +15,32 @@ export async function syncLaporanPkpToDb() {
     return { success: false, syncedCount: 0 }
   }
 
+  // Load Order map to lookup tglSo
+  const orderMap = new Map<string, string>()
+  let orderPath = path.join(process.cwd(), 'scraper', 'order_full.json')
+  if (fs.existsSync(orderPath)) {
+    try {
+      const rawOrd = fs.readFileSync(orderPath, 'utf-8')
+      const ordList = JSON.parse(rawOrd).data || []
+      ordList.forEach((o: any) => {
+        if (o.noPenebusan && o.tglOrder) orderMap.set(o.noPenebusan.trim(), o.tglOrder)
+        if (o.kodeSo && o.tglOrder) orderMap.set(o.kodeSo.trim(), o.tglOrder)
+      })
+    } catch (e) {}
+  }
+
+  let poPath = path.join(process.cwd(), 'scraper', 'penyaluran_pemenuhan_order_kios_full.json')
+  if (fs.existsSync(poPath)) {
+    try {
+      const rawPo = fs.readFileSync(poPath, 'utf-8')
+      const poList = JSON.parse(rawPo).data || []
+      poList.forEach((p: any) => {
+        if (p.noOrderPengecer && p.tanggalPenyaluran) orderMap.set(p.noOrderPengecer.trim(), p.tanggalPenyaluran)
+        if (p.kodeSo && p.tanggalPenyaluran) orderMap.set(p.kodeSo.trim(), p.tanggalPenyaluran)
+      })
+    } catch (e) {}
+  }
+
   let dataList: any[] = []
   try {
     const raw = fs.readFileSync(filePath, 'utf-8')
@@ -29,6 +55,8 @@ export async function syncLaporanPkpToDb() {
 
     const qtyTon = parseFloat(String(item.qtyTon || '0').replace(/\./g, '').replace(',', '.')) || 0
     const qtyKg = qtyTon * 1000
+
+    const tglSo = item.tglSo || orderMap.get((item.noPenebusan || '').trim()) || orderMap.get((item.kodeSo || '').trim()) || item.tglPenyaluran || ''
 
     try {
       if ((db as any).laporanPkp) {
@@ -47,6 +75,7 @@ export async function syncLaporanPkpToDb() {
             kodeDistributor: item.kodeDistributor || null,
             tipePenyaluran: item.tipePenyaluran || null,
             kodeSo: item.kodeSo || null,
+            tglSo: tglSo || null,
             tahun: item.tahun || null,
             bulan: item.bulan || null,
             tglPenyaluran: item.tglPenyaluran || null,
@@ -59,7 +88,7 @@ export async function syncLaporanPkpToDb() {
             status: item.status || null,
             schemaType: item.schema || null,
             statusIpubers: item.statusIpubers || null,
-            rawJson: JSON.stringify(item),
+            rawJson: JSON.stringify({ ...item, tglSo }),
             updatedAt: new Date(),
           },
           create: {
@@ -70,6 +99,7 @@ export async function syncLaporanPkpToDb() {
             tipePenyaluran: item.tipePenyaluran || null,
             noPenebusan: item.noPenebusan || '',
             kodeSo: item.kodeSo || null,
+            tglSo: tglSo || null,
             tahun: item.tahun || null,
             bulan: item.bulan || null,
             tglPenyaluran: item.tglPenyaluran || null,
@@ -84,7 +114,7 @@ export async function syncLaporanPkpToDb() {
             status: item.status || null,
             schemaType: item.schema || null,
             statusIpubers: item.statusIpubers || null,
-            rawJson: JSON.stringify(item),
+            rawJson: JSON.stringify({ ...item, tglSo }),
           },
         })
         syncedCount++
