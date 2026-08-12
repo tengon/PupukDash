@@ -198,8 +198,9 @@ async function scrapeDoTable(page) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-(async () => {
-  const browser = await chromium.launch({ headless: false, slowMo: 50 });
+(async function scrapeMonitoringDo() {
+  console.log('🚀 === SCRAPER GOW CM: MONITORING DO ===');
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page    = await context.newPage();
 

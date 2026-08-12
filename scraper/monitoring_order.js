@@ -307,8 +307,9 @@ async function getOrderDetail(page, order) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-(async () => {
-  const browser = await chromium.launch({ headless: false, slowMo: 50 });
+(async function scrapeMonitoringOrder() {
+  console.log('🚀 === SCRAPER GOW CM: MONITORING ORDER ===');
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page    = await context.newPage();
 
