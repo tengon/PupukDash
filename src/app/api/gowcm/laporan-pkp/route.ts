@@ -11,10 +11,12 @@ export async function GET(request: NextRequest) {
     const district = searchParams.get('district') || ''
     const status = searchParams.get('status') || ''
 
+    const modelClient = (db as any).tablePkp || (db as any).laporanPkp
+
     // Sync DB if table is empty
     let count = 0
-    if ((db as any).laporanPkp) {
-      count = await (db as any).laporanPkp.count()
+    if (modelClient) {
+      count = await modelClient.count()
     }
 
     if (count === 0) {
@@ -22,8 +24,8 @@ export async function GET(request: NextRequest) {
     }
 
     let records: any[] = []
-    if ((db as any).laporanPkp) {
-      records = await (db as any).laporanPkp.findMany({
+    if (modelClient) {
+      records = await modelClient.findMany({
         orderBy: { createdAt: 'desc' },
       })
     }

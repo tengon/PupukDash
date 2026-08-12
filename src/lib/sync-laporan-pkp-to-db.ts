@@ -50,6 +50,8 @@ export async function syncLaporanPkpToDb() {
     return { success: false, syncedCount: 0 }
   }
 
+  const modelClient = (db as any).tablePkp || (db as any).laporanPkp
+
   for (const item of dataList) {
     if (!item.noPkp) continue
 
@@ -59,8 +61,8 @@ export async function syncLaporanPkpToDb() {
     const tglSo = item.tglSo || orderMap.get((item.noPenebusan || '').trim()) || orderMap.get((item.kodeSo || '').trim()) || item.tglPenyaluran || ''
 
     try {
-      if ((db as any).laporanPkp) {
-        await (db as any).laporanPkp.upsert({
+      if (modelClient) {
+        await modelClient.upsert({
           where: {
             noPkp_noPenebusan_kodePengecer_productName: {
               noPkp: item.noPkp,
@@ -120,11 +122,11 @@ export async function syncLaporanPkpToDb() {
         syncedCount++
       }
     } catch (err: any) {
-      console.warn(`[Sync Laporan PKP Warn] Gagal upsert ${item.noPkp}:`, err.message)
+      console.warn(`[Sync Table PKP Warn] Gagal upsert ${item.noPkp}:`, err.message)
     }
   }
 
-  console.log(`✅ Sukses sync ${syncedCount} record Laporan Item Penyaluran PKP ke database.`)
+  console.log(`✅ Sukses sync ${syncedCount} record Laporan Item Penyaluran PKP ke tabel table_pkp di database.`)
   return {
     success: true,
     syncedCount,

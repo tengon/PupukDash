@@ -8,7 +8,7 @@ const prisma = new PrismaClient({
 });
 
 async function populateLaporanPkp() {
-  console.log('🚀 Memulai pengisian data ke tabel LaporanPkp di database SQLite...');
+  console.log('🚀 Memulai pengisian data ke tabel table_pkp di database SQLite...');
 
   let filePath = path.join(__dirname, 'laporan_item_penyaluran_pkp_full.json');
   if (!fs.existsSync(filePath)) {
@@ -51,6 +51,8 @@ async function populateLaporanPkp() {
 
   console.log(`📦 Memproses ${dataList.length} record Laporan Item Penyaluran (No. PKP)...`);
 
+  const modelClient = prisma.tablePkp || prisma.laporanPkp;
+
   let count = 0;
   for (const item of dataList) {
     if (!item.noPkp) continue;
@@ -61,7 +63,7 @@ async function populateLaporanPkp() {
     const tglSo = item.tglSo || orderMap.get((item.noPenebusan || '').trim()) || orderMap.get((item.kodeSo || '').trim()) || item.tglPenyaluran || '';
 
     try {
-      await prisma.laporanPkp.upsert({
+      await modelClient.upsert({
         where: {
           noPkp_noPenebusan_kodePengecer_productName: {
             noPkp: item.noPkp,
@@ -124,7 +126,7 @@ async function populateLaporanPkp() {
     }
   }
 
-  console.log(`✅ SUKSES! Terisi ${count} record ke tabel LaporanPkp di database (${dbPath}).`);
+  console.log(`✅ SUKSES! Terisi ${count} record ke tabel table_pkp di database (${dbPath}).`);
   await prisma.$disconnect();
 }
 

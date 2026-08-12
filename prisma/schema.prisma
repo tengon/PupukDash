@@ -393,7 +393,7 @@ model DistribusiPo {
 }
 
 // 6. Tabel Laporan Item Penyaluran PKP (GOW CM Laporan >> Item Penyaluran)
-model LaporanPkp {
+model TablePkp {
   id              String   @id @default(cuid())
   noPkp           String   // No. PKP (e.g. PKP0007094512)
   produsen        String?  // Nama Produsen
@@ -427,4 +427,5 @@ model LaporanPkp {
   @@index([kodeSo])
   @@index([kodePengecer])
   @@index([kecamatan])
+  @@map("table_pkp")
 }
