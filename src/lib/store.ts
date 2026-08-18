@@ -34,12 +34,8 @@ export const useAppStore = create<AppState>((set) => ({
   setPrefillFarmerId: (id) => set({ prefillFarmerId: id }),
   commandPaletteOpen: false,
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
-  isAuthenticated: true, // Default logged-in for smooth dev, can be toggled
-  user: {
-    name: 'Budi Santoso',
-    email: 'admin@anugerahmakmur.co.id',
-    role: 'Administrator Distributor',
-  },
+  isAuthenticated: false, // Default unauthenticated until user logs in
+  user: null,
   login: (credentials) =>
     set({
       isAuthenticated: true,
