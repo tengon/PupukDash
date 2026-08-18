@@ -96,7 +96,7 @@ export function FarmersView() {
 
   const { data: ordersData } = useQuery({
     queryKey: ['orders', refreshKey],
-    queryFn: fetchOrders,
+    queryFn: () => fetchOrders(),
     enabled: detailOpen && !!detailFarmer,
   })
 
@@ -468,7 +468,7 @@ export function FarmersView() {
                   type="file"
                   accept=".csv"
                   className="hidden"
-                  onChange={(e) => { const file = e.target.files[0]; if (file) handleFileSelect(file) }}
+                  onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFileSelect(file) }}
                 />
                 <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                 <p className="text-sm font-medium">Seret & letakkan file CSV di sini</p>
