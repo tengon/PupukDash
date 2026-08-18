@@ -609,6 +609,7 @@ export function OrdersView() {
                       <TableHead className="text-xs">No. Pesanan</TableHead>
                       <TableHead className="text-xs">PPTS</TableHead>
                       <TableHead className="text-xs hidden md:table-cell">Gudang</TableHead>
+                      <TableHead className="text-xs text-right">Quantity (kg)</TableHead>
                       <TableHead className="text-xs text-right">Total (Rp)</TableHead>
                       <TableHead className="text-xs text-right hidden sm:table-cell">Subsidi (Rp)</TableHead>
                       <TableHead className="text-xs">Status</TableHead>
@@ -619,7 +620,7 @@ export function OrdersView() {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-12">
+                        <TableCell colSpan={9} className="text-center py-12">
                           <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <ShoppingCart className="h-10 w-10 opacity-30" />
                             <p className="text-sm font-medium">Tidak ada data pesanan</p>
@@ -630,13 +631,18 @@ export function OrdersView() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      paged.map((order) => (
-                        <TableRow key={order.id} className="transition-transform duration-200 hover:-translate-y-px">
-                          <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
-                          <TableCell className="text-sm font-medium">{order.farmer.name}</TableCell>
-                          <TableCell className="text-xs hidden md:table-cell">{order.warehouse.name}</TableCell>
-                          <TableCell className="text-sm text-right font-medium">{formatRupiah(order.totalAmount)}</TableCell>
-                          <TableCell className="text-xs text-right hidden sm:table-cell text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
+                      paged.map((order) => {
+                        const totalQty = (order.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0)
+                        return (
+                          <TableRow key={order.id} className="transition-transform duration-200 hover:-translate-y-px">
+                            <TableCell className="text-xs font-mono">{order.orderNumber}</TableCell>
+                            <TableCell className="text-sm font-medium">{order.farmer.name}</TableCell>
+                            <TableCell className="text-xs hidden md:table-cell">{order.warehouse.name}</TableCell>
+                            <TableCell className="text-xs text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                              {formatNumber(totalQty)} <span className="text-[10px] font-normal text-muted-foreground">kg</span>
+                            </TableCell>
+                            <TableCell className="text-sm text-right font-medium">{formatRupiah(order.totalAmount)}</TableCell>
+                            <TableCell className="text-xs text-right hidden sm:table-cell text-primary">{formatRupiah(order.totalSubsidy)}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1.5">
                               <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${order.status === 'PENDING' ? 'bg-green-500 pulse-dot' : order.status === 'CONFIRMED' ? 'bg-blue-500' : order.status === 'PICKED_UP' ? 'bg-emerald-500' : 'bg-red-400'}`} />
@@ -659,7 +665,8 @@ export function OrdersView() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))
+                        )
+                      })
                     )}
                   </TableBody>
                 </Table>

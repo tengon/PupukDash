@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
@@ -16,6 +16,7 @@ function getSettings() {
   return {
     spjb_operasional: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     spjb_ppts: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
+    realisasi_stok_kios: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
   }
 }
 
@@ -49,18 +50,22 @@ export async function POST(request: Request) {
         ...current.spjb_ppts,
         ...(body.spjb_ppts || {}),
       },
+      realisasi_stok_kios: {
+        ...current.realisasi_stok_kios,
+        ...(body.realisasi_stok_kios || {}),
+      },
     }
 
     saveSettings(updated)
 
     return NextResponse.json({
       success: true,
-      message: 'Pengaturan jadwal scraper berhasil disimpan.',
+      message: 'Pengaturan jadwal scraper GOW CM berhasil disimpan.',
       settings: updated,
     })
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: 'Gagal menyimpan pengaturan jadwal', details: error.message },
+      { success: false, error: 'Gagal menyimpan pengaturan jadwal scraper', details: error.message },
       { status: 500 }
     )
   }

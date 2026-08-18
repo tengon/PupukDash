@@ -51,7 +51,7 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   distributions: { title: 'Distribusi', description: 'Kelola distribusi pupuk ke kelompok tani' },
   orders: { title: 'Penjualan (ke PPTS)', description: 'Kelola pesanan penjualan pupuk ke Kios PPTS' },
   purchases: { title: 'Pembelian (dari Supplier)', description: 'Pencatatan pasokan pupuk masuk dari PT Pupuk Indonesia / Produsen' },
-  rpkp: { title: 'RPKP', description: 'Rencana Kebutuhan Pupuk — Perencanaan alokasi tahunan' },
+  rpkp: { title: 'Logbook Penjualan Pupuk', description: 'Logbook dan pencatatan riwayat transaksi penjualan pupuk bersubsidi' },
   reports: { title: 'Laporan', description: 'Laporan bulanan penjualan pupuk bersubsidi' },
   activity: { title: 'Aktivitas', description: 'Riwayat aktivitas sistem penjualan pupuk' },
 }

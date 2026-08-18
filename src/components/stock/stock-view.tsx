@@ -5,8 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppStore } from '@/lib/store'
 import {
   fetchStock, addStock, updateStock, deleteStock,
-  fetchWarehouses, fetchProducts, fetchPptsStock,
-  type StockWithProductAndWarehouse, type PptsStockItem
+  fetchWarehouses, fetchProducts,
+  type StockWithProductAndWarehouse,
 } from '@/lib/api'
 import { formatNumber, getTypeBadgeColor, getProductImage } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   Table,
   TableBody,
@@ -233,466 +232,7 @@ function StockCard({ stock, onEdit, onDelete, onRestock }: {
   )
 }
 
-interface GroupedKiosStock {
-  kodeKios: string
-  namaKios: string
-  lastSyncAt: string
-  isNew?: boolean
-  isUpdated?: boolean
-  totalKg: number
-  products: {
-    urea?: PptsStockItem
-    npk?: PptsStockItem
-    organikGranul?: PptsStockItem
-    organikCair?: PptsStockItem
-    npkFk?: PptsStockItem
-    others: PptsStockItem[]
-  }
-}
 
-function groupStockByKios(items: PptsStockItem[]): GroupedKiosStock[] {
-  const map = new Map<string, GroupedKiosStock>()
-
-  items.forEach((item) => {
-    if (!map.has(item.kodeKios)) {
-      map.set(item.kodeKios, {
-        kodeKios: item.kodeKios,
-        namaKios: item.namaKios,
-        lastSyncAt: item.syncnAt || '',
-        isNew: !!item.added_at,
-        isUpdated: !!item.updated_at,
-        totalKg: 0,
-        products: { others: [] }
-      })
-    }
-
-    const kios = map.get(item.kodeKios)!
-    const stokNum = parseFloat(item.stokKg.replace(/\./g, '').replace(',', '.')) || 0
-    kios.totalKg += stokNum
-
-    if (!kios.lastSyncAt && item.syncnAt) {
-      kios.lastSyncAt = item.syncnAt
-    }
-    if (item.added_at) kios.isNew = true
-    if (item.updated_at) kios.isUpdated = true
-
-    const prodName = (item.namaProduct || '').toLowerCase()
-    const prodCode = (item.kodeProduct || '').toUpperCase()
-
-    if (prodCode === 'UN46' || prodName.includes('urea')) {
-      kios.products.urea = item
-    } else if (prodCode === 'NPKP' || (prodName.includes('npk') && !prodName.includes('khusus') && !prodName.includes('fk'))) {
-      kios.products.npk = item
-    } else if (prodCode === 'ORGR' || prodName.includes('granul')) {
-      kios.products.organikGranul = item
-    } else if (prodCode === 'ORCR' || prodName.includes('cair')) {
-      kios.products.organikCair = item
-    } else if (prodCode === 'NPKFK' || prodName.includes('khusus') || prodName.includes('fk')) {
-      kios.products.npkFk = item
-    } else {
-      kios.products.others.push(item)
-    }
-  })
-
-  return Array.from(map.values())
-}
-
-function GroupedKiosCard({ kios }: { kios: GroupedKiosStock }) {
-  const standardProducts = [
-    { key: 'urea', label: 'Urea (N 46%)', code: 'UN46', data: kios.products.urea, badgeBg: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20' },
-    { key: 'npk', label: 'NPK Phonska', code: 'NPKP', data: kios.products.npk, badgeBg: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20' },
-    { key: 'organikGranul', label: 'Organik Granul', code: 'ORGR', data: kios.products.organikGranul, badgeBg: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20' },
-    { key: 'organikCair', label: 'Organik Cair', code: 'ORCR', data: kios.products.organikCair, badgeBg: 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20' },
-    { key: 'npkFk', label: 'NPK FK', code: 'NPKFK', data: kios.products.npkFk, badgeBg: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20' },
-  ]
-
-  let hasStock = kios.totalKg > 0
-
-  return (
-    <Card className="card-highlight border-t-2 border-t-blue-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ease-out" style={{ boxShadow: 'var(--shadow-sm)' }}>
-      <CardContent className="p-4 space-y-3">
-        {/* Header: Nama Kios & Kode */}
-        <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-border/50">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Store className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-              <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 bg-background/80 shrink-0 font-semibold">
-                {kios.kodeKios}
-              </Badge>
-              {kios.isNew ? (
-                <Badge className="bg-blue-500 text-white text-[9px] px-1.5 py-0">Baru</Badge>
-              ) : kios.isUpdated ? (
-                <Badge className="bg-amber-500 text-white text-[9px] px-1.5 py-0">Updated</Badge>
-              ) : null}
-            </div>
-            <h4 className="text-sm font-bold truncate leading-snug" title={kios.namaKios}>
-              {kios.namaKios}
-            </h4>
-          </div>
-          <div className="text-right shrink-0">
-            <span className="text-[10px] text-muted-foreground block">Total Stok</span>
-            <span className="text-sm font-extrabold tabular-nums text-primary">{formatNumber(kios.totalKg)} kg</span>
-          </div>
-        </div>
-
-        {/* 5 Standard Products in 1 Card */}
-        <div className="space-y-1.5">
-          {standardProducts.map((prod) => {
-            const item = prod.data
-            const stokVal = item ? item.stokKg : '0'
-            const stokNum = parseFloat(stokVal.replace(/\./g, '').replace(',', '.')) || 0
-
-            let stokBadgeClass = 'bg-muted text-muted-foreground border-border/40'
-            if (stokNum > 1000) {
-              stokBadgeClass = 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300 border-green-200 dark:border-green-800'
-            } else if (stokNum > 0) {
-              stokBadgeClass = 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-            }
-
-            return (
-              <div
-                key={prod.key}
-                className="flex items-center justify-between p-2 rounded-lg bg-background/60 border border-border/40 hover:bg-background/90 transition-colors"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-bold shrink-0 ${prod.badgeBg}`}>
-                    {prod.code}
-                  </Badge>
-                  <span className="text-xs font-medium truncate">{prod.label}</span>
-                </div>
-                <span className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-md border ${stokBadgeClass}`}>
-                  {stokVal} kg
-                </span>
-              </div>
-            )
-          })}
-
-          {/* Any extra products */}
-          {kios.products.others.map((item, idx) => (
-            <div
-              key={`other_${idx}`}
-              className="flex items-center justify-between p-2 rounded-lg bg-background/60 border border-border/40"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-bold shrink-0">
-                  {item.kodeProduct}
-                </Badge>
-                <span className="text-xs font-medium truncate">{item.namaProduct}</span>
-              </div>
-              <span className="text-xs font-bold tabular-nums px-2 py-0.5 rounded-md border bg-muted">
-                {item.stokKg} kg
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Footer info */}
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/40">
-          <span className="flex items-center gap-1 font-medium">
-            <span className={`h-1.5 w-1.5 rounded-full ${hasStock ? 'bg-green-500' : 'bg-red-500'}`} />
-            {hasStock ? 'Stok Aktif' : 'Stok Kosong'}
-          </span>
-          <span className="truncate tabular-nums opacity-80" title={kios.lastSyncAt}>
-            Sync: {kios.lastSyncAt || '-'}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function StokPptsSection() {
-  const [search, setSearch] = useState('')
-  const [productFilter, setProductFilter] = useState('ALL')
-  const [page, setPage] = useState(1)
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('table')
-  const [sortField, setSortField] = useState<'kodeKios' | 'namaKios' | 'namaProduct' | 'stokKg' | 'syncnAt'>('namaKios')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-
-  const { data: pptsStockRes, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['pptsStock', search, productFilter],
-    queryFn: () => fetchPptsStock({ search, product: productFilter }),
-  })
-
-  const items = pptsStockRes?.data || []
-  const totalKios = pptsStockRes?.total_kios || 0
-  const totalRecords = pptsStockRes?.total_records || 0
-  const scrapedAt = pptsStockRes?.scraped_at ? new Date(pptsStockRes.scraped_at).toLocaleString('id-ID') : '-'
-
-  const totalKg = items.reduce((acc, r) => acc + (parseFloat(r.stokKg.replace(/\./g, '').replace(',', '.')) || 0), 0)
-
-  // Dynamic sorting logic
-  const sortedItems = [...items].sort((a, b) => {
-    let valA: any = a[sortField] || ''
-    let valB: any = b[sortField] || ''
-
-    if (sortField === 'stokKg') {
-      valA = parseFloat((a.stokKg || '0').replace(/\./g, '').replace(',', '.')) || 0
-      valB = parseFloat((b.stokKg || '0').replace(/\./g, '').replace(',', '.')) || 0
-    } else {
-      valA = String(valA).toLowerCase()
-      valB = String(valB).toLowerCase()
-    }
-
-    if (valA < valB) return sortOrder === 'asc' ? -1 : 1
-    if (valA > valB) return sortOrder === 'asc' ? 1 : -1
-    return 0
-  })
-
-  const handleSortColumn = (field: 'kodeKios' | 'namaKios' | 'namaProduct' | 'stokKg' | 'syncnAt') => {
-    if (sortField === field) {
-      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortField(field)
-      setSortOrder('asc')
-    }
-    setPage(1)
-  }
-
-  const renderSortIcon = (field: 'kodeKios' | 'namaKios' | 'namaProduct' | 'stokKg' | 'syncnAt') => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50 shrink-0" />
-    }
-    return sortOrder === 'asc' ? (
-      <ArrowUp className="h-3 w-3 ml-1 text-primary shrink-0" />
-    ) : (
-      <ArrowDown className="h-3 w-3 ml-1 text-primary shrink-0" />
-    )
-  }
-
-  // Group items by Kios
-  const groupedKiosList = groupStockByKios(items)
-
-  const KIOS_PER_PAGE = 9
-  const totalPages = Math.max(1, Math.ceil(groupedKiosList.length / KIOS_PER_PAGE))
-  const safePage = Math.min(page, totalPages)
-  const pagedKios = groupedKiosList.slice((safePage - 1) * KIOS_PER_PAGE, safePage * KIOS_PER_PAGE)
-
-  // Table pagination
-  const TABLE_PER_PAGE = 12
-  const totalTablePages = Math.max(1, Math.ceil(sortedItems.length / TABLE_PER_PAGE))
-  const pagedTableItems = sortedItems.slice((safePage - 1) * TABLE_PER_PAGE, safePage * TABLE_PER_PAGE)
-
-  const productOptions = ['ALL', 'Urea', 'NPK', 'Organik Granul', 'Organik Cair', 'NPK FK']
-
-  return (
-    <Card className="border-l-2 border-l-blue-500" style={{ boxShadow: 'var(--shadow-sm)' }}>
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Store className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            Stok Kios iPubers (PPTS)
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300">
-              GOW CM iPubers
-            </Badge>
-          </CardTitle>
-
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari kios / produk..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                className="pl-9 h-9 w-full sm:w-56"
-              />
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
-              <Button
-                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setViewMode('table')}
-                title="Tampilan Tabel Detail"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setViewMode('card')}
-                title="Tampilan Card per Kios"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <Button onClick={() => refetch()} size="sm" variant="outline" className="h-9 gap-1 shrink-0">
-              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-        </div>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3">
-          <div className="glass rounded-xl p-3 border border-border/50">
-            <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Kios Terdaftar</p>
-            <p className="text-lg font-bold tabular-nums">{totalKios} <span className="text-xs font-normal text-muted-foreground">kios</span></p>
-          </div>
-          <div className="glass rounded-xl p-3 border border-border/50">
-            <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Record Produk</p>
-            <p className="text-lg font-bold tabular-nums">{totalRecords} <span className="text-xs font-normal text-muted-foreground">item</span></p>
-          </div>
-          <div className="glass rounded-xl p-3 border border-border/50">
-            <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Estimasi Stok</p>
-            <p className="text-lg font-bold tabular-nums">{formatNumber(totalKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-          </div>
-          <div className="glass rounded-xl p-3 border border-border/50">
-            <p className="text-[10px] text-muted-foreground uppercase font-medium">Sync Terakhir</p>
-            <p className="text-xs font-semibold truncate mt-1 text-primary">{scrapedAt}</p>
-          </div>
-        </div>
-
-        {/* Product Filter Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-2">
-          {productOptions.map((prod) => (
-            <button
-              key={prod}
-              onClick={() => { setProductFilter(prod); setPage(1) }}
-              className={`filter-pill ${productFilter === prod ? 'active' : ''}`}
-            >
-              {prod === 'ALL' ? 'Semua Produk' : prod}
-            </button>
-          ))}
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-64 w-full rounded-xl" />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <Store className="h-12 w-12 opacity-30 mb-3" />
-            <p className="text-sm font-medium">Belum ada data stok Kios iPubers yang sesuai</p>
-            <p className="text-xs opacity-70 mt-1">Pastikan scraper stok_kios_ipuber.js sudah pernah dijalankan</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {viewMode === 'card' ? (
-              /* CARD GRID VIEW (1 Card per PPTS containing all 5 products) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pagedKios.map((kios) => (
-                  <GroupedKiosCard key={kios.kodeKios} kios={kios} />
-                ))}
-              </div>
-            ) : (
-              /* TABLE VIEW WITH SORTABLE HEADERS */
-              <div className="rounded-xl border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 text-xs">
-                      <TableHead className="w-[140px] cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('kodeKios')}>
-                        <div className="flex items-center font-bold">
-                          Kode Kios {renderSortIcon('kodeKios')}
-                        </div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('namaKios')}>
-                        <div className="flex items-center font-bold">
-                          Nama Kios (PPTS) {renderSortIcon('namaKios')}
-                        </div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('namaProduct')}>
-                        <div className="flex items-center font-bold">
-                          Produk {renderSortIcon('namaProduct')}
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-right cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('stokKg')}>
-                        <div className="flex items-center justify-end font-bold">
-                          Stok (Kg) {renderSortIcon('stokKg')}
-                        </div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer select-none hover:text-foreground" onClick={() => handleSortColumn('syncnAt')}>
-                        <div className="flex items-center font-bold">
-                          Sync At (GOW CM) {renderSortIcon('syncnAt')}
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-center w-[100px] font-bold">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pagedTableItems.map((item, idx) => {
-                      const stokNum = parseFloat(item.stokKg.replace(/\./g, '').replace(',', '.')) || 0
-                      let stokBadgeClass = 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                      if (stokNum === 0) {
-                        stokBadgeClass = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-                      } else if (stokNum < 1000) {
-                        stokBadgeClass = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
-                      }
-
-                      return (
-                        <TableRow key={`${item.kodeKios}_${item.kodeProduct}_${idx}`} className="hover:bg-muted/30">
-                          <TableCell className="font-mono text-xs font-semibold">{item.kodeKios}</TableCell>
-                          <TableCell className="font-medium">{item.namaKios}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className={`text-[10px] ${getTypeBadgeColor(item.namaProduct)}`}>
-                                {item.kodeProduct}
-                              </Badge>
-                              <span className="text-xs truncate max-w-[180px]">{item.namaProduct}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right font-semibold tabular-nums">
-                            <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-bold ${stokBadgeClass}`}>
-                              {item.stokKg} kg
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground tabular-nums">{item.syncnAt || '-'}</TableCell>
-                          <TableCell className="text-center">
-                            {item.added_at ? (
-                              <Badge className="bg-blue-500 text-white text-[9px] px-1.5 py-0">Baru</Badge>
-                            ) : item.updated_at ? (
-                              <Badge className="bg-amber-500 text-white text-[9px] px-1.5 py-0">Updated</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Sync</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-
-            {/* Pagination */}
-            {((viewMode === 'card' && totalPages > 1) || (viewMode === 'table' && totalTablePages > 1)) && (
-              <div className="flex items-center justify-between pt-2">
-                <p className="text-xs text-muted-foreground">
-                  {viewMode === 'card' ? (
-                    <>Menampilkan {(safePage - 1) * KIOS_PER_PAGE + 1} - {Math.min(safePage * KIOS_PER_PAGE, groupedKiosList.length)} dari {groupedKiosList.length} kios</>
-                  ) : (
-                    <>Menampilkan {(safePage - 1) * TABLE_PER_PAGE + 1} - {Math.min(safePage * TABLE_PER_PAGE, items.length)} dari {items.length} record</>
-                  )}
-                </p>
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
-                    </PaginationItem>
-                    <PaginationItem>
-                      <span className="text-xs px-2 font-medium">Hal {safePage} dari {viewMode === 'card' ? totalPages : totalTablePages}</span>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationNext onClick={() => setPage((p) => Math.min(viewMode === 'card' ? totalPages : totalTablePages, p + 1))} className={safePage >= (viewMode === 'card' ? totalPages : totalTablePages) ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
 
 export function StockView() {
   const { refreshKey, triggerRefresh } = useAppStore()
@@ -839,148 +379,127 @@ export function StockView() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Tabs defaultValue="pud" className="w-full space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList className="bg-muted/70 p-1 border">
-            <TabsTrigger value="pud" className="gap-2 px-4 py-2 text-xs sm:text-sm font-semibold">
-              <WarehouseIcon className="h-4 w-4 text-emerald-600" />
-              Stok PUD (Gudang Distributor)
-            </TabsTrigger>
-            <TabsTrigger value="ppts" className="gap-2 px-4 py-2 text-xs sm:text-sm font-semibold">
-              <Store className="h-4 w-4 text-blue-600" />
-              Stok PPTS (Kios iPubers)
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <Card className="border-l-2 border-l-teal-500" style={{ boxShadow: 'var(--shadow-sm)' }}>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Boxes className="h-5 w-5" />
+              Manajemen Stok Gudang PUD
+              {alertCount > 0 && (
+                <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 text-[10px] gap-1 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800">
+                  <AlertTriangle className="h-3 w-3" />
+                  {alertCount} peringatan
+                </Badge>
+              )}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari stok..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                  className="pl-9 h-9 w-full sm:w-48"
+                />
+              </div>
+              <Button onClick={handleOpenAdd} size="sm" className="shrink-0 btn-gradient">
+                <Plus className="h-4 w-4 mr-1" />
+                Tambah Stok
+              </Button>
+              <Button onClick={() => setTransferOpen(true)} size="sm" variant="outline" className="shrink-0 border-primary/30 text-primary hover:bg-primary/10">
+                <ArrowLeftRight className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Transfer Stok</span>
+              </Button>
+            </div>
+          </div>
+          {/* Total stock summary + warehouse filter pills */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+            <div className="glass rounded-lg px-4 py-2.5 flex items-center gap-3 border border-border/50">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0 ring-1 ring-black/5 dark:ring-white/5">
+                <Layers className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Stok Semua Gudang PUD</p>
+                <p className="text-lg font-bold tabular-nums leading-tight">{formatNumber(totalStockKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => { setWarehouseFilter('all'); setPage(1) }}
+                className={`filter-pill ${warehouseFilter === 'all' ? 'active' : ''}`}
+              >
+                Semua
+              </button>
+              {(warehouses || []).map((w) => (
+                <button
+                  key={w.id}
+                  onClick={() => { setWarehouseFilter(w.id); setPage(1) }}
+                  className={`filter-pill ${warehouseFilter === w.id ? 'active' : ''}`}
+                >
+                  {w.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-52 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Boxes className="h-12 w-12 opacity-30 mb-3" />
+              <p className="text-sm font-medium">
+                {warehouseFilter !== 'all' || search ? 'Tidak ada stok yang cocok' : 'Belum ada data stok'}
+              </p>
+              {(warehouseFilter !== 'all' || search) && (
+                <Button variant="ghost" size="sm" onClick={() => { setWarehouseFilter('all'); setSearch('') }} className="mt-2 text-xs">
+                  Reset Filter
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {paged.map((stock) => (
+                  <StockCard
+                    key={stock.id}
+                    stock={stock}
+                    onEdit={handleOpenEdit}
+                    onDelete={(id) => { setDeletingId(id); setDeleteOpen(true) }}
+                    onRestock={handleQuickRestock}
+                  />
+                ))}
+              </div>
 
-        <TabsContent value="pud" className="space-y-4 mt-0">
-          <Card className="border-l-2 border-l-teal-500" style={{ boxShadow: 'var(--shadow-sm)' }}>
-            <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Boxes className="h-5 w-5" />
-                  Manajemen Stok Gudang PUD
-                  {alertCount > 0 && (
-                    <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 text-[10px] gap-1 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800">
-                      <AlertTriangle className="h-3 w-3" />
-                      {alertCount} peringatan
-                    </Badge>
-                  )}
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Cari stok..."
-                      value={search}
-                      onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                      className="pl-9 h-9 w-full sm:w-48"
-                    />
-                  </div>
-                  <Button onClick={handleOpenAdd} size="sm" className="shrink-0 btn-gradient">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Tambah Stok
-                  </Button>
-                  <Button onClick={() => setTransferOpen(true)} size="sm" variant="outline" className="shrink-0 border-primary/30 text-primary hover:bg-primary/10">
-                    <ArrowLeftRight className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">Transfer Stok</span>
-                  </Button>
-                </div>
-              </div>
-              {/* Total stock summary + warehouse filter pills */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-                <div className="glass rounded-lg px-4 py-2.5 flex items-center gap-3 border border-border/50">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0 ring-1 ring-black/5 dark:ring-white/5">
-                    <Layers className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Stok Semua Gudang PUD</p>
-                    <p className="text-lg font-bold tabular-nums leading-tight">{formatNumber(totalStockKg)} <span className="text-xs font-normal text-muted-foreground">kg</span></p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    onClick={() => { setWarehouseFilter('all'); setPage(1) }}
-                    className={`filter-pill ${warehouseFilter === 'all' ? 'active' : ''}`}
-                  >
-                    Semua
-                  </button>
-                  {(warehouses || []).map((w) => (
-                    <button
-                      key={w.id}
-                      onClick={() => { setWarehouseFilter(w.id); setPage(1) }}
-                      className={`filter-pill ${warehouseFilter === w.id ? 'active' : ''}`}
-                    >
-                      {w.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="h-52 w-full rounded-lg" />
-                  ))}
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <Boxes className="h-12 w-12 opacity-30 mb-3" />
-                  <p className="text-sm font-medium">
-                    {warehouseFilter !== 'all' || search ? 'Tidak ada stok yang cocok' : 'Belum ada data stok'}
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    Menampilkan {startIndex} - {endIndex} dari {filtered.length} stok
                   </p>
-                  {(warehouseFilter !== 'all' || search) && (
-                    <Button variant="ghost" size="sm" onClick={() => { setWarehouseFilter('all'); setSearch('') }} className="mt-2 text-xs">
-                      Reset Filter
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {paged.map((stock) => (
-                      <StockCard
-                        key={stock.id}
-                        stock={stock}
-                        onEdit={handleOpenEdit}
-                        onDelete={(id) => { setDeletingId(id); setDeleteOpen(true) }}
-                        onRestock={handleQuickRestock}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between pt-2">
-                      <p className="text-xs text-muted-foreground">
-                        Menampilkan {startIndex} - {endIndex} dari {filtered.length} stok
-                      </p>
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
-                          </PaginationItem>
-                          <PaginationItem>
-                            <span className="text-xs px-2 font-medium">Hal {safePage} dari {totalPages}</span>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    </div>
-                  )}
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span className="text-xs px-2 font-medium">Hal {safePage} dari {totalPages}</span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={safePage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="ppts" className="space-y-4 mt-0">
-          <StokPptsSection />
-        </TabsContent>
-      </Tabs>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Add Stock Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

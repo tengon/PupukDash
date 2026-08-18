@@ -27,12 +27,11 @@ import {
   Bot,
   RefreshCw,
   Clock,
-  CheckCircle2,
-  Sparkles,
   Zap,
   Save,
   Building2,
   Store,
+  Boxes,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -46,6 +45,7 @@ interface ScraperScheduleItem {
 interface ScheduleSettings {
   spjb_operasional: ScraperScheduleItem
   spjb_ppts: ScraperScheduleItem
+  realisasi_stok_kios: ScraperScheduleItem
 }
 
 const INTERVAL_OPTIONS = [
@@ -66,7 +66,7 @@ export function ScraperDialog({
 }) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<'operasional' | 'ppts'>('operasional')
+  const [activeTab, setActiveTab] = useState<'operasional' | 'ppts' | 'realisasi'>('operasional')
 
   // Local settings state
   const [opEnabled, setOpEnabled] = useState(true)
@@ -77,8 +77,13 @@ export function ScraperDialog({
   const [pptsStartTime, setPptsStartTime] = useState('06:00')
   const [pptsInterval, setPptsInterval] = useState('6')
 
+  const [realisasiEnabled, setRealisasiEnabled] = useState(true)
+  const [realisasiStartTime, setRealisasiStartTime] = useState('06:00')
+  const [realisasiInterval, setRealisasiInterval] = useState('6')
+
   const [isSyncingOp, setIsSyncingOp] = useState(false)
   const [isSyncingPpts, setIsSyncingPpts] = useState(false)
+  const [isSyncingRealisasi, setIsSyncingRealisasi] = useState(false)
 
   // Fetch current schedule settings
   const { data: scheduleData, isLoading, refetch } = useQuery<{ success: boolean; settings: ScheduleSettings }>({
@@ -104,6 +109,11 @@ export function ScraperDialog({
         setPptsStartTime(s.spjb_ppts.startTime || '06:00')
         setPptsInterval(String(s.spjb_ppts.intervalHours || 6))
       }
+      if (s.realisasi_stok_kios) {
+        setRealisasiEnabled(s.realisasi_stok_kios.enabled ?? true)
+        setRealisasiStartTime(s.realisasi_stok_kios.startTime || '06:00')
+        setRealisasiInterval(String(s.realisasi_stok_kios.intervalHours || 6))
+      }
     }
   }, [scheduleData])
 
@@ -120,6 +130,11 @@ export function ScraperDialog({
           enabled: pptsEnabled,
           startTime: pptsStartTime,
           intervalHours: parseInt(pptsInterval) || 6,
+        },
+        realisasi_stok_kios: {
+          enabled: realisasiEnabled,
+          startTime: realisasiStartTime,
+          intervalHours: parseInt(realisasiInterval) || 6,
         },
       }
 
@@ -191,16 +206,38 @@ export function ScraperDialog({
     }
   }
 
+  // Manual Trigger Realisasi Stok Kios
+  const triggerRealisasiSync = async () => {
+    setIsSyncingRealisasi(true)
+    try {
+      const res = await fetch('/api/gowcm/sync-realisasi-stok-kios', { method: 'POST' })
+      const json = await res.json()
+      toast({
+        title: 'Sync Realisasi Stok Kios Selesai',
+        description: json.message || 'Scraping Realisasi Stok Kios IPubers berhasil dijalankan.',
+      })
+      queryClient.invalidateQueries()
+    } catch (e: any) {
+      toast({
+        title: 'Sync Gagal',
+        description: e.message || 'Terjadi kesalahan saat sync Realisasi Stok Kios',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSyncingRealisasi(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Bot className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            Pengaturan Jadwal Scraper GOW CM
+            Penjadwalan Scraper Automatic GOW CM
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Atur jam mulai eksekusi & durasi pengulangan (interval) secara mandiri untuk SPJB Operasional & SPJB PPTS
+            Atur status aktif, jam mulai eksekusi & durasi pengulangan (interval) secara mandiri untuk seluruh modul scraper GOW CM
           </DialogDescription>
         </DialogHeader>
 
@@ -211,15 +248,19 @@ export function ScraperDialog({
           </div>
         ) : (
           <div className="space-y-4 text-xs pt-1">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'operasional' | 'ppts')} className="w-full">
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="operasional" className="gap-1.5 text-xs font-bold">
-                  <Building2 className="h-3.5 w-3.5 text-emerald-600" />
-                  SPJB Operasional (PUD)
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+              <TabsList className="grid grid-cols-3 w-full">
+                <TabsTrigger value="operasional" className="gap-1 text-[11px] font-bold truncate">
+                  <Building2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  <span className="truncate">SPJB Operasional</span>
                 </TabsTrigger>
-                <TabsTrigger value="ppts" className="gap-1.5 text-xs font-bold">
-                  <Store className="h-3.5 w-3.5 text-blue-600" />
-                  SPJB PPTS (Kios)
+                <TabsTrigger value="ppts" className="gap-1 text-[11px] font-bold truncate">
+                  <Store className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                  <span className="truncate">SPJB PPTS</span>
+                </TabsTrigger>
+                <TabsTrigger value="realisasi" className="gap-1 text-[11px] font-bold truncate">
+                  <Boxes className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                  <span className="truncate">Realisasi Stok</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -254,7 +295,7 @@ export function ScraperDialog({
                     <div className="space-y-1">
                       <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
                         <Zap className="h-3 w-3 text-amber-500" />
-                        Durasi / Interval Pengulangan
+                        Interval Pengulangan
                       </Label>
                       <Select value={opInterval} onValueChange={setOpInterval} disabled={!opEnabled}>
                         <SelectTrigger className="h-8 text-xs">
@@ -290,7 +331,7 @@ export function ScraperDialog({
                     onClick={triggerOpSync}
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingOp ? 'animate-spin' : ''}`} />
-                    {isSyncingOp ? 'Syncing...' : 'Sync DB Operasional Sekarang'}
+                    {isSyncingOp ? 'Syncing...' : 'Run Scraper Operasional Sekarang'}
                   </Button>
                 </div>
               </TabsContent>
@@ -326,7 +367,7 @@ export function ScraperDialog({
                     <div className="space-y-1">
                       <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
                         <Zap className="h-3 w-3 text-amber-500" />
-                        Durasi / Interval Pengulangan
+                        Interval Pengulangan
                       </Label>
                       <Select value={pptsInterval} onValueChange={setPptsInterval} disabled={!pptsEnabled}>
                         <SelectTrigger className="h-8 text-xs">
@@ -362,7 +403,79 @@ export function ScraperDialog({
                     onClick={triggerPptsSync}
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingPpts ? 'animate-spin' : ''}`} />
-                    {isSyncingPpts ? 'Syncing...' : 'Sync DB PPTS Sekarang'}
+                    {isSyncingPpts ? 'Syncing...' : 'Run Scraper PPTS Sekarang'}
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* TAB 3: REALISASI STOK KIOS */}
+              <TabsContent value="realisasi" className="space-y-3 pt-3">
+                <div className="p-3.5 rounded-xl border bg-card space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-bold flex items-center gap-1.5">
+                        Status Auto-Sync Realisasi Stok Kios
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">Aktifkan pengulangan otomatis scraping stok kios IPubers</p>
+                    </div>
+                    <Switch checked={realisasiEnabled} onCheckedChange={setRealisasiEnabled} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-purple-600" />
+                        Jam Mulai Eksekusi
+                      </Label>
+                      <Input
+                        type="time"
+                        value={realisasiStartTime}
+                        onChange={(e) => setRealisasiStartTime(e.target.value)}
+                        className="h-8 text-xs font-mono"
+                        disabled={!realisasiEnabled}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-amber-500" />
+                        Interval Pengulangan
+                      </Label>
+                      <Select value={realisasiInterval} onValueChange={setRealisasiInterval} disabled={!realisasiEnabled}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Pilih Interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INTERVAL_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {scheduleData?.settings?.realisasi_stok_kios?.lastRun && (
+                    <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
+                      <span>Eksekusi Terakhir:</span>
+                      <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                        {new Date(scheduleData.settings.realisasi_stok_kios.lastRun).toLocaleString('id-ID')}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1 text-xs border-purple-500/40 text-purple-700 dark:text-purple-300 hover:bg-purple-50"
+                    disabled={isSyncingRealisasi}
+                    onClick={triggerRealisasiSync}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingRealisasi ? 'animate-spin' : ''}`} />
+                    {isSyncingRealisasi ? 'Syncing...' : 'Run Scraper Realisasi Sekarang'}
                   </Button>
                 </div>
               </TabsContent>
@@ -387,7 +500,7 @@ export function ScraperDialog({
                 onClick={() => saveScheduleMutation.mutate()}
               >
                 <Save className="h-4 w-4" />
-                {saveScheduleMutation.isPending ? 'Menyimpan...' : 'Simpan Pengaturan Jadwal'}
+                {saveScheduleMutation.isPending ? 'Menyimpan...' : 'Simpan Penjadwalan Scraping'}
               </Button>
             </div>
           </div>
@@ -396,4 +509,3 @@ export function ScraperDialog({
     </Dialog>
   )
 }
-

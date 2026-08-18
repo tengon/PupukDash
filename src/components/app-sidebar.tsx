@@ -46,6 +46,7 @@ import {
   Bot,
   Layers,
   PackageCheck,
+  CalendarRange,
 } from 'lucide-react'
 
 const navGroups = [
@@ -77,7 +78,7 @@ const navGroups = [
   {
     label: 'LAPORAN & REKAP',
     items: [
-      { id: 'rpkp', label: 'RPKP', icon: ClipboardList },
+      { id: 'rpkp', label: 'Logbook Penjualan Pupuk', icon: ClipboardList },
       { id: 'reports', label: 'Laporan', icon: FileBarChart },
       { id: 'stock-confirmation-report', label: 'Konfirmasi Stok', icon: ClipboardCheck },
     ],
@@ -90,6 +91,12 @@ const navGroups = [
       { id: 'ppts', label: 'PPTS (Kios)', icon: Store },
       { id: 'warehouses', label: 'Gudang', icon: Warehouse },
       { id: 'products', label: 'Produk Pupuk', icon: Package },
+    ],
+  },
+  {
+    label: 'PENGATURAN',
+    items: [
+      { id: 'schedule-settings', label: 'Penjadwalan Scraping', icon: CalendarRange },
     ],
   },
 ]
@@ -126,7 +133,11 @@ export function AppSidebar() {
   const wibTime = useWIBClock()
 
   const handleNavClick = (tabId: string) => {
-    setActiveTab(tabId)
+    if (tabId === 'schedule-settings') {
+      setShowScraperDialog(true)
+    } else {
+      setActiveTab(tabId)
+    }
     if (isMobile) {
       setOpenMobile(false)
     }

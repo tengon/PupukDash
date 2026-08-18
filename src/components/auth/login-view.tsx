@@ -87,12 +87,10 @@ export function LoginView() {
       >
         {/* Header Branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 text-white shadow-lg shadow-emerald-500/25 mb-1">
-            <Leaf className="h-7 w-7" />
+          <div className="inline-flex items-center justify-center h-40 w-40 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-500/30 shadow-lg shadow-emerald-500/10 mb-1 p-1.5 overflow-hidden">
+            <img src="/images/sipupuk-icon.png" alt="SiPUPUK" className="h-full w-full object-contain" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-500 dark:from-emerald-400 dark:to-emerald-200 bg-clip-text text-transparent">
-            CV. Anugerah Makmur
-          </h1>
+
           <p className="text-xs sm:text-sm text-muted-foreground font-medium flex items-center justify-center gap-1.5">
             <Building2 className="h-3.5 w-3.5" /> Sistem Informasi Alokasi Pupuk Bersubsidi
           </p>
@@ -124,11 +122,10 @@ export function LoginView() {
                       key={r.id}
                       type="button"
                       onClick={() => setSelectedRole(r.id)}
-                      className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all truncate flex items-center justify-center gap-1 ${
-                        selectedRole === r.id
-                          ? 'bg-background text-emerald-700 dark:text-emerald-300 shadow-xs border border-border/50'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all truncate flex items-center justify-center gap-1 ${selectedRole === r.id
+                        ? 'bg-background text-emerald-700 dark:text-emerald-300 shadow-xs border border-border/50'
+                        : 'text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       {selectedRole === r.id && <CheckCircle2 className="h-3 w-3 shrink-0" />}
                       {r.title.split(' ')[0]}
@@ -241,7 +238,7 @@ export function LoginView() {
 
         {/* Footer Note */}
         <p className="text-[11px] text-center text-muted-foreground font-mono">
-          &copy; {new Date().getFullYear()} CV. Anugerah Makmur — Distributor Resmi Pupuk Indonesia
+          &copy; {new Date().getFullYear()} SiPUPUK — Distributor Resmi Pupuk Indonesia
         </p>
       </motion.div>
     </div>

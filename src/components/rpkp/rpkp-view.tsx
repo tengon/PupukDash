@@ -83,10 +83,10 @@ export function RPKPView() {
       <motion.div variants={itemVariants} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Perencanaan Kebutuhan Pupuk (RPKP)
+            Logbook Penjualan Pupuk
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Berdasarkan alokasi luas lahan petani terdaftar
+            Buku log pencatatan dan rekapitulasi penjualan pupuk bersubsidi
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -320,7 +320,7 @@ export function RPKPView() {
             <div className="rounded-lg border border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/30 p-4 flex gap-3">
               <Info className="h-5 w-5 text-teal-600 dark:text-teal-400 mt-0.5 shrink-0" />
               <div className="text-sm text-teal-800 dark:text-teal-300 leading-relaxed">
-                <span className="font-semibold">Data RPKP</span> dihitung berdasarkan luas lahan petani aktif &times; alokasi per hektar sesuai Permentan.{' '}
+                <span className="font-semibold">Data Logbook Penjualan Pupuk</span> mencatat alokasi dan realisasi penjualan pupuk bersubsidi per wilayah kecamatan &amp; kios pengecer.{' '}
                 <span className="font-medium">Alokasi/ha:</span> UREA 250kg, NPK 300kg, SP-36 250kg, ZA 150kg, ORGANIK 500kg
               </div>
             </div>
