@@ -49,6 +49,12 @@ dev.out.log
 test
 prompt
 
+# Database & Scraper Data
+/db/custom.db
+/db/*.db-journal
+/scraper/*.json
+!/scraper/credentials.json
+
 server.log
 # Skills directory
 /skills/
