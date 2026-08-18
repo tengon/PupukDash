@@ -1,13 +1,11 @@
 {
-  "scraped_at": "2026-08-12T11:01:17.827Z",
-  "source": "GOW CM - Alokasi >> SPJB PPTS",
-  "total": 18,
-  "last_sync_summary": {
-    "scraped_records": 18,
-    "added_new": 0,
-    "updated": 18,
-    "unchanged": 0
+  "scraped_at": "2026-08-18T16:50:49.605Z",
+  "source": "GOW CM — Alokasi >> SPJB PPTS",
+  "filter": {
+    "show": "Lihat Semua",
+    "status": "Active"
   },
+  "total": 18,
   "data": [
     {
       "nomorSpjb": "03/SPJB/AM-PPTS/XII/25-rev",
@@ -20,83 +18,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/03*SPJB*AM-PPTS*XII*25-rev/RT0000088748",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/03*SPJB*AM-PPTS*XII*25-rev/RT0000088748",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 226,
+          "realisasi": 151,
+          "sisaAlokasi": 75,
+          "progress": "66.814%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "210",
-              "151",
-              "59",
-              "71.905%"
-            ],
-            [
-              "",
-              "NPK",
-              "170",
-              "160",
-              "10",
-              "94.118%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "03/SPJB/AM-PPTS/XII/25-rev",
-              "SPJB Awal",
-              "",
-              "2026-02-20 14:32:28.110",
-              "",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "03/SPJB/AM-PPTS/XII/25-rev",
-                "SPJB Awal",
-                "",
-                "2026-02-20 14:32:28.110",
-                "",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": []
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 190,
+          "realisasi": 160,
+          "sisaAlokasi": 30,
+          "progress": "84.211%"
+        }
+      ]
     },
     {
       "nomorSpjb": "02/SPJB/AM-PPTS/XII/25.",
@@ -109,85 +48,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/02*SPJB*AM-PPTS*XII*25./RT0000021104",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/02*SPJB*AM-PPTS*XII*25./RT0000021104",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 205,
+          "realisasi": 130,
+          "sisaAlokasi": 75,
+          "progress": "63.415%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "198",
-              "130",
-              "68",
-              "65.657%"
-            ],
-            [
-              "",
-              "NPK",
-              "165",
-              "130",
-              "35",
-              "78.788%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "02/SPJB/AM-PPTS/XII/25.",
-              "SPJB Awal",
-              "",
-              "2026-02-20 14:29:20.487",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "02/SPJB/AM-PPTS/XII/25.",
-                "SPJB Awal",
-                "",
-                "2026-02-20 14:29:20.487",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_02/SPJB/AM-PPTS/XII/25._RT0000021104.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 185,
+          "realisasi": 130,
+          "sisaAlokasi": 55,
+          "progress": "70.270%"
+        }
+      ]
     },
     {
       "nomorSpjb": "11/SPJB/AM-PPTS/XII/25",
@@ -200,85 +78,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/11*SPJB*AM-PPTS*XII*25/RT0000021083",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/11*SPJB*AM-PPTS*XII*25/RT0000021083",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 215,
+          "realisasi": 211,
+          "sisaAlokasi": 4,
+          "progress": "98.140%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "215",
-              "191",
-              "24",
-              "88.837%"
-            ],
-            [
-              "",
-              "NPK",
-              "210",
-              "126",
-              "84",
-              "60.000%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "11/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-20 10:57:58.343",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "11/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-20 10:57:58.343",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_11/SPJB/AM-PPTS/XII/25_RT0000021083.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 205,
+          "realisasi": 126,
+          "sisaAlokasi": 79,
+          "progress": "61.463%"
+        }
+      ]
     },
     {
       "nomorSpjb": "10/SPJB/AM-PPTS/XII/25",
@@ -291,85 +108,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/10*SPJB*AM-PPTS*XII*25/RT0000021058",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/10*SPJB*AM-PPTS*XII*25/RT0000021058",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 224,
+          "realisasi": 188,
+          "sisaAlokasi": 36,
+          "progress": "83.929%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "224",
-              "188",
-              "36",
-              "83.929%"
-            ],
-            [
-              "",
-              "NPK",
-              "260",
-              "131",
-              "129",
-              "50.385%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "10/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-20 10:55:38.937",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "10/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-20 10:55:38.937",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_10/SPJB/AM-PPTS/XII/25_RT0000021058.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 225,
+          "realisasi": 136,
+          "sisaAlokasi": 89,
+          "progress": "60.444%"
+        }
+      ]
     },
     {
       "nomorSpjb": "09/SPJB/AM-PPTS/XII/25",
@@ -382,85 +138,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/09*SPJB*AM-PPTS*XII*25/RT0000085298",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/09*SPJB*AM-PPTS*XII*25/RT0000085298",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 256,
+          "realisasi": 122,
+          "sisaAlokasi": 134,
+          "progress": "47.656%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "256",
-              "122",
-              "134",
-              "47.656%"
-            ],
-            [
-              "",
-              "NPK",
-              "350",
-              "111",
-              "239",
-              "31.714%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "09/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-18 18:39:42.240",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "09/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-18 18:39:42.240",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_09/SPJB/AM-PPTS/XII/25_RT0000085298.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 210,
+          "realisasi": 116,
+          "sisaAlokasi": 94,
+          "progress": "55.238%"
+        }
+      ]
     },
     {
       "nomorSpjb": "18/SPJB/AM-PPTS/XII/25",
@@ -473,85 +168,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/18*SPJB*AM-PPTS*XII*25/RT0000094478",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/18*SPJB*AM-PPTS*XII*25/RT0000094478",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 132.5,
+          "realisasi": 32,
+          "sisaAlokasi": 100.5,
+          "progress": "24.151%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "73",
-              "32",
-              "41",
-              "43.836%"
-            ],
-            [
-              "",
-              "NPK",
-              "55",
-              "21",
-              "34",
-              "38.182%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "18/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-17 00:32:17.130",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "18/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-17 00:32:17.130",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_18/SPJB/AM-PPTS/XII/25_RT0000094478.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 88.5,
+          "realisasi": 21,
+          "sisaAlokasi": 67.5,
+          "progress": "23.729%"
+        }
+      ]
     },
     {
       "nomorSpjb": "17/SPJB/AM-PPTS/XII/25",
@@ -564,85 +198,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/17*SPJB*AM-PPTS*XII*25/RT0000094477",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/17*SPJB*AM-PPTS*XII*25/RT0000094477",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 50,
+          "realisasi": 14,
+          "sisaAlokasi": 36,
+          "progress": "28.000%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "52",
-              "14",
-              "38",
-              "26.923%"
-            ],
-            [
-              "",
-              "NPK",
-              "35",
-              "13",
-              "22",
-              "37.143%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "17/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-17 00:29:46.130",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "17/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-17 00:29:46.130",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_17/SPJB/AM-PPTS/XII/25_RT0000094477.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 25,
+          "realisasi": 13,
+          "sisaAlokasi": 12,
+          "progress": "52.000%"
+        }
+      ]
     },
     {
       "nomorSpjb": "16/SPJB/AM-PPTS/XII/25",
@@ -655,85 +228,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/16*SPJB*AM-PPTS*XII*25/RT0000021094",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/16*SPJB*AM-PPTS*XII*25/RT0000021094",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 205,
+          "realisasi": 76.5,
+          "sisaAlokasi": 128.5,
+          "progress": "37.317%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "205",
-              "76.5",
-              "128.5",
-              "37.317%"
-            ],
-            [
-              "",
-              "NPK",
-              "155",
-              "53",
-              "102",
-              "34.194%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "16/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-17 00:27:18.483",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "16/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-17 00:27:18.483",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_16/SPJB/AM-PPTS/XII/25_RT0000021094.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 100,
+          "realisasi": 53,
+          "sisaAlokasi": 47,
+          "progress": "53.000%"
+        }
+      ]
     },
     {
       "nomorSpjb": "15/SPJB/AM-PPTS/XII/25",
@@ -746,85 +258,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/15*SPJB*AM-PPTS*XII*25/RT0000021093",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/15*SPJB*AM-PPTS*XII*25/RT0000021093",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 105,
+          "realisasi": 47,
+          "sisaAlokasi": 58,
+          "progress": "44.762%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "105",
-              "47",
-              "58",
-              "44.762%"
-            ],
-            [
-              "",
-              "NPK",
-              "75",
-              "41",
-              "34",
-              "54.667%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "15/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-17 00:24:55.627",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "15/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-17 00:24:55.627",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_15/SPJB/AM-PPTS/XII/25_RT0000021093.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 75,
+          "realisasi": 41,
+          "sisaAlokasi": 34,
+          "progress": "54.667%"
+        }
+      ]
     },
     {
       "nomorSpjb": "14/SPJB/AM-PPTS/XII/25",
@@ -837,85 +288,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/14*SPJB*AM-PPTS*XII*25/RT0000021079",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/14*SPJB*AM-PPTS*XII*25/RT0000021079",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 75,
+          "realisasi": 52,
+          "sisaAlokasi": 23,
+          "progress": "69.333%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "78",
-              "50",
-              "28",
-              "64.103%"
-            ],
-            [
-              "",
-              "NPK",
-              "60",
-              "24",
-              "36",
-              "40.000%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "14/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-17 00:21:28.293",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "14/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-17 00:21:28.293",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_14/SPJB/AM-PPTS/XII/25_RT0000021079.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 50,
+          "realisasi": 24,
+          "sisaAlokasi": 26,
+          "progress": "48.000%"
+        }
+      ]
     },
     {
       "nomorSpjb": "13/SPJB/AM-PPTS/XII/25",
@@ -928,85 +318,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/13*SPJB*AM-PPTS*XII*25/RT0000021064",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/13*SPJB*AM-PPTS*XII*25/RT0000021064",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 83,
+          "realisasi": 43,
+          "sisaAlokasi": 40,
+          "progress": "51.807%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "83",
-              "43",
-              "40",
-              "51.807%"
-            ],
-            [
-              "",
-              "NPK",
-              "60",
-              "28",
-              "32",
-              "46.667%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "13/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-17 00:17:46.203",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "13/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-17 00:17:46.203",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_13/SPJB/AM-PPTS/XII/25_RT0000021064.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 65,
+          "realisasi": 28,
+          "sisaAlokasi": 37,
+          "progress": "43.077%"
+        }
+      ]
     },
     {
       "nomorSpjb": "12/SPJB/AM-PPTS/XII/25",
@@ -1019,85 +348,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/12*SPJB*AM-PPTS*XII*25/RT0000091576",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/12*SPJB*AM-PPTS*XII*25/RT0000091576",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 90,
+          "realisasi": 28.5,
+          "sisaAlokasi": 61.5,
+          "progress": "31.667%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "90",
-              "28.5",
-              "61.5",
-              "31.667%"
-            ],
-            [
-              "",
-              "NPK",
-              "70",
-              "16.5",
-              "53.5",
-              "23.571%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "12/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-17 00:14:04.143",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "12/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-17 00:14:04.143",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_12/SPJB/AM-PPTS/XII/25_RT0000091576.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 70,
+          "realisasi": 16.5,
+          "sisaAlokasi": 53.5,
+          "progress": "23.571%"
+        }
+      ]
     },
     {
       "nomorSpjb": "08/SPJB/AM-PPTS/XII/25",
@@ -1110,85 +378,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/08*SPJB*AM-PPTS*XII*25/RT0000089485",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/08*SPJB*AM-PPTS*XII*25/RT0000089485",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 102,
+          "realisasi": 77,
+          "sisaAlokasi": 25,
+          "progress": "75.490%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "103",
-              "77",
-              "26",
-              "74.757%"
-            ],
-            [
-              "",
-              "NPK",
-              "60",
-              "40",
-              "20",
-              "66.667%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "08/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-16 23:58:12.233",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "08/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-16 23:58:12.233",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_08/SPJB/AM-PPTS/XII/25_RT0000089485.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 60,
+          "realisasi": 40,
+          "sisaAlokasi": 20,
+          "progress": "66.667%"
+        }
+      ]
     },
     {
       "nomorSpjb": "07/SPJB/AM-PPTS/XII/25",
@@ -1201,85 +408,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/07*SPJB*AM-PPTS*XII*25/RT0000017846",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/07*SPJB*AM-PPTS*XII*25/RT0000017846",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 508,
+          "realisasi": 304.5,
+          "sisaAlokasi": 203.5,
+          "progress": "59.941%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "490",
-              "294.5",
-              "195.5",
-              "60.102%"
-            ],
-            [
-              "",
-              "NPK",
-              "350",
-              "330",
-              "20",
-              "94.286%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "07/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-16 23:55:34.817",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "07/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-16 23:55:34.817",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_07/SPJB/AM-PPTS/XII/25_RT0000017846.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 370,
+          "realisasi": 340,
+          "sisaAlokasi": 30,
+          "progress": "91.892%"
+        }
+      ]
     },
     {
       "nomorSpjb": "06/SPJB/AM-PPTS/XII/25",
@@ -1292,85 +438,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/06*SPJB*AM-PPTS*XII*25/RT0000021111",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/06*SPJB*AM-PPTS*XII*25/RT0000021111",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 130,
+          "realisasi": 88,
+          "sisaAlokasi": 42,
+          "progress": "67.692%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "137",
-              "88",
-              "49",
-              "64.234%"
-            ],
-            [
-              "",
-              "NPK",
-              "130",
-              "76",
-              "54",
-              "58.462%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "06/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-16 23:53:02.407",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "06/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-16 23:53:02.407",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_06/SPJB/AM-PPTS/XII/25_RT0000021111.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 130,
+          "realisasi": 76,
+          "sisaAlokasi": 54,
+          "progress": "58.462%"
+        }
+      ]
     },
     {
       "nomorSpjb": "05/SPJB/AM-PPTS/XII/25",
@@ -1383,85 +468,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/05*SPJB*AM-PPTS*XII*25/RT0000021109",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/05*SPJB*AM-PPTS*XII*25/RT0000021109",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 340,
+          "realisasi": 262.5,
+          "sisaAlokasi": 77.5,
+          "progress": "77.206%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "330",
-              "262.5",
-              "67.5",
-              "79.545%"
-            ],
-            [
-              "",
-              "NPK",
-              "275",
-              "275",
-              "0",
-              "100.000%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "05/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-16 23:49:31.430",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "05/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-16 23:49:31.430",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_05/SPJB/AM-PPTS/XII/25_RT0000021109.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 379.998,
+          "realisasi": 275,
+          "sisaAlokasi": 104.998,
+          "progress": "72.369%"
+        }
+      ]
     },
     {
       "nomorSpjb": "04/SPJB/AM-PPTS/XII/25",
@@ -1474,85 +498,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/04*SPJB*AM-PPTS*XII*25/RT0000021108",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/04*SPJB*AM-PPTS*XII*25/RT0000021108",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 129,
+          "realisasi": 82.5,
+          "sisaAlokasi": 46.5,
+          "progress": "63.953%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "131",
-              "79.5",
-              "51.5",
-              "60.687%"
-            ],
-            [
-              "",
-              "NPK",
-              "125",
-              "89",
-              "36",
-              "71.200%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "04/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-16 23:45:33.080",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "04/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-16 23:45:33.080",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_04/SPJB/AM-PPTS/XII/25_RT0000021108.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 125,
+          "realisasi": 93,
+          "sisaAlokasi": 32,
+          "progress": "74.400%"
+        }
+      ]
     },
     {
       "nomorSpjb": "01/SPJB/AM-PPTS/XII/25",
@@ -1565,85 +528,24 @@
       "status": "Active",
       "tanggalAwal": "01-01-2026",
       "tanggalAkhir": "31-12-2026",
-      "href": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/01*SPJB*AM-PPTS*XII*25/RT0000088746",
-      "detailUrl": "https://gowcm.pupuk-indonesia.com/#/U2FsdGVkX184jac5uGKxJKEfjAhFj8FnT%2F9Byk7GcKA%3D/alokasi/contract-distributor-ppts/01*SPJB*AM-PPTS*XII*25/RT0000088746",
-      "detail": {
-        "header": {
-          "judul": "WCM",
-          "status": "Rejected"
+      "alokasiDetail": [
+        {
+          "kecamatan": "",
+          "produk": "Urea",
+          "alokasiSpjb": 101,
+          "realisasi": 46,
+          "sisaAlokasi": 55,
+          "progress": "45.545%"
         },
-        "infoFields": {},
-        "alokasiTable": {
-          "headers": [
-            "#",
-            "Kacamatan",
-            "Alokasi SPJB",
-            "Realisasi",
-            "Sisa Alokasi SPJB",
-            "Progress"
-          ],
-          "rows": [
-            [
-              "",
-              "Urea",
-              "101",
-              "46",
-              "55",
-              "45.545%"
-            ],
-            [
-              "",
-              "NPK",
-              "70",
-              "45",
-              "25",
-              "64.286%"
-            ]
-          ],
-          "structured": []
-        },
-        "riwayatTable": {
-          "headers": [
-            "Nomor Dokument",
-            "Jenis Dokument",
-            "Alasan",
-            "Tanggal Buat",
-            "Evidence",
-            "Status",
-            "Aksi"
-          ],
-          "rows": [
-            [
-              "01/SPJB/AM-PPTS/XII/25",
-              "SPJB Awal",
-              "",
-              "2026-02-16 23:31:33.493",
-              "Lihat file",
-              "Active",
-              ""
-            ]
-          ],
-          "structured": [
-            {
-              "kecamatan": "SPJB Awal",
-              "data": [
-                "01/SPJB/AM-PPTS/XII/25",
-                "SPJB Awal",
-                "",
-                "2026-02-16 23:31:33.493",
-                "Lihat file",
-                "Active",
-                ""
-              ],
-              "subRows": []
-            }
-          ]
-        },
-        "pdfLinks": [
-          "https://gowcm.pupuk-indonesia.com/storage/adendum-spjb-kios/1000001601_01/SPJB/AM-PPTS/XII/25_RT0000088746.pdf"
-        ]
-      },
-      "updated_at": "2026-08-12T11:01:17.827Z"
+        {
+          "kecamatan": "",
+          "produk": "NPK",
+          "alokasiSpjb": 70,
+          "realisasi": 45,
+          "sisaAlokasi": 25,
+          "progress": "64.286%"
+        }
+      ]
     }
   ]
 }

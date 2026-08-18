@@ -1,516 +1,418 @@
 /**
- * GOW CM Pupuk Indonesia
- * Scraper: Alokasi >> SPJB Operasional + Detail setiap SPJB
+ * spjb_operasional.js — GOW CM Scraper: Alokasi >> SPJB Operasional
  *
- * URL List  : /#/{prefix}/alokasi/spjb/operasional
- * URL Detail: via href link dari tabel list
+ * Schema target (dari gambar):
+ *   Alokasi → SPJB Operasional
+ *     └── Nomor SPJB (key) → Detail:
+ *           Kecamatan | Produk (NPK/UREA) | Total Alokasi | Total SO | Total SO Approve | Total Sisa
  *
- * Kolom tabel list (col[0] = checkbox, data mulai col[1]):
- *   [1] Nomor SPJB  [2] Tahun  [3] Distributor  [4] Produsen
- *   [5] Tgl Buat    [6] Tgl Ganti  [7] Status
+ * Filter: Show = Lihat Semua
  */
 
 const { chromium } = require('playwright');
 const fs = require('fs');
-
 const path = require('path');
 
-const CONFIG = {
-  baseUrl: 'https://gowcm.pupuk-indonesia.com',
+const CREDENTIALS = {
   username: '1000001601',
   password: 'A@makmur25',
-  outputFile: path.join(__dirname, 'spjb_operasional_full.json'),
 };
 
-// ─── Login & ambil prefix dari sidebar ──────────────────────────────────────
-async function login(page) {
-  console.log('🔐 Login ke GOW CM...');
-  await page.goto(`${CONFIG.baseUrl}/#/login`, { waitUntil: 'networkidle', timeout: 30000 });
-  await page.fill('input[placeholder="Your Username"]', CONFIG.username);
-  await page.fill('input[placeholder="Enter Password"]', CONFIG.password);
+const OUTPUT_FILE = path.join(__dirname, 'spjb_operasional_full.json');
+const DELAY_MS = 1500;
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function parseNumber(str) {
+  if (str === null || str === undefined || str === '') return 0;
+  if (typeof str === 'number') return str;
+  const s = String(str).trim();
+  if (!s || s === '-') return 0;
+
+  if (s.includes('.') && s.includes(',')) {
+    return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+  if (s.includes(',')) {
+    return parseFloat(s.replace(',', '.')) || 0;
+  }
+  if (s.includes('.')) {
+    const parts = s.split('.');
+    if (parts.length === 2 && parts[1].length <= 2) {
+      return parseFloat(s) || 0;
+    }
+    return parseFloat(s.replace(/\./g, '')) || 0;
+  }
+  return parseFloat(s) || 0;
+}
+
+/** Login dan ambil encrypted prefix dari sidebar */
+async function loginAndGetPrefix(page) {
+  console.log('[LOGIN] Navigasi ke halaman login...');
+  await page.goto('https://gowcm.pupuk-indonesia.com/#/login', { waitUntil: 'networkidle', timeout: 30000 });
+  await page.fill('input[placeholder="Your Username"]', CREDENTIALS.username);
+  await page.fill('input[placeholder="Enter Password"]', CREDENTIALS.password);
   await page.click('button:has-text("Masuk")');
 
-  await page.waitForFunction(
-    () => !window.location.href.includes('/login'),
-    { timeout: 15000 }
-  ).catch(() => { });
-  await page.waitForTimeout(4000); // tunggu lebih lama agar sidebar render
+  await page.waitForFunction(() => !window.location.href.includes('/login'), { timeout: 15000 });
+  await sleep(3000);
 
-  const homeUrl = page.url();
-  console.log(`✅ Login berhasil. URL: ${homeUrl}`);
-
-  // Strategi 1: Ambil prefix dari href sidebar links
-  let prefix = await page.evaluate(() => {
-    const links = [...document.querySelectorAll('a[href], [href], a[to], router-link')];
+  const prefix = await page.evaluate(() => {
+    const links = [...document.querySelectorAll('a[href], [href]')];
     for (const link of links) {
-      const href = link.getAttribute('href') || link.getAttribute('to') || '';
+      const href = link.getAttribute('href') || '';
       const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
       if (match) return match[1];
     }
     return null;
   });
 
-  // Strategi 2: Tunggu lebih lama, coba lagi
-  if (!prefix) {
-    console.log('  ⏳ Sidebar belum siap, tunggu 3 detik lagi...');
-    await page.waitForTimeout(3000);
-    prefix = await page.evaluate(() => {
-      const links = [...document.querySelectorAll('a[href], [href]')];
-      for (const link of links) {
-        const href = link.href || link.getAttribute('href') || link.getAttribute('to') || '';
-        const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
-        if (match) return match[1];
-      }
-      return null;
-    });
-  }
-
-  // Strategi 3: Klik menu Alokasi dan capture prefix dari URL
-  if (!prefix) {
-    console.log('  🖱️  Klik menu Alokasi untuk capture prefix dari URL...');
-    const clicked = await page.click(
-      'a:has-text("Alokasi"), li:has-text("Alokasi"), .sidebar a[href*="alokasi"]'
-    ).then(() => true).catch(() => false);
-
-    if (clicked) {
-      await page.waitForTimeout(3000);
-      const currentUrl = page.url();
-      console.log(`  URL setelah klik Alokasi: ${currentUrl}`);
-      // Ekstrak prefix dari URL hash
-      const hash = decodeURIComponent(currentUrl.split('#/')[1] || '');
-      const parts = hash.split('/');
-      if (parts[0] && parts[0].length > 20) {
-        prefix = encodeURIComponent(parts[0]);
-      }
-    }
-  }
-
-  console.log(`🔑 Route Prefix: ${prefix || '(tidak terdeteksi)'}`);
+  if (!prefix) throw new Error('Gagal mendapatkan encrypted prefix dari sidebar!');
+  console.log('[LOGIN] Prefix OK:', prefix.substring(0, 30) + '...');
   return prefix;
 }
 
-// ─── Navigasi ke list SPJB Operasional ──────────────────────────────────────
-async function getSpjbList(page, prefix) {
-  console.log('\n📋 Navigasi ke menu Alokasi >> SPJB Operasional...');
-
-  if (prefix) {
-    const listUrl = `${CONFIG.baseUrl}/#/${prefix}/alokasi/spjb/operasional`;
-    console.log(`  URL: ${listUrl}`);
-    await page.goto(listUrl, { waitUntil: 'networkidle', timeout: 30000 });
-    await page.waitForTimeout(3000);
-  }
-
-  // Fallback klik menu
-  let rowCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
-  if (rowCount === 0) {
-    console.log('  ⚠️  Tabel kosong, coba klik menu...');
-    await page.click('a:has-text("Alokasi"), li:has-text("Alokasi")')
-      .catch(() => { });
-    await page.waitForTimeout(1000);
-    await page.click('a:has-text("SPJB Operasional"), li:has-text("SPJB Operasional"), text=SPJB Operasional')
-      .catch(() => { });
-    await page.waitForTimeout(3000);
-    console.log(`  URL setelah klik menu: ${page.url()}`);
-  }
-
-  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => { });
-  rowCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
-  console.log(`  Rows ditemukan di DOM: ${rowCount}`);
-
-  // ── Filter: Show = Semua ────────────────────────────────────────────────
-  console.log('  🔧 Setting filter: Lihat Semua + Status Active...');
-
-  await page.evaluate(() => {
-    const showSelects = [...document.querySelectorAll('select')].filter(s => {
-      const opts = [...s.options].map(o => o.value);
-      return opts.includes('-1') || s.name?.includes('length') ||
-        [...s.options].some(o =>
-          o.text.toLowerCase().includes('semua') || o.text.toLowerCase().includes('all')
-        );
-    });
-    if (showSelects.length > 0) {
-      const sel = showSelects[0];
-      const allOpt = [...sel.options].find(o =>
-        o.value === '-1' ||
+/** Set filter Show = Lihat Semua */
+async function setFilterShowAll(page) {
+  try {
+    const showSelects = await page.$$('select');
+    for (const sel of showSelects) {
+      const options = await sel.evaluate(el => [...el.options].map(o => ({ value: o.value, text: o.text })));
+      const allOpt = options.find(o =>
         o.text.toLowerCase().includes('semua') ||
-        o.text.toLowerCase().includes('all')
+        o.text.toLowerCase().includes('all') ||
+        o.value === '-1' || o.value === '0' || parseInt(o.value) >= 100
       );
       if (allOpt) {
-        sel.value = allOpt.value;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-      } else {
-        const maxOpt = [...sel.options].reduce((a, b) => (+a.value > +b.value ? a : b));
-        sel.value = maxOpt.value;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        await sel.selectOption(allOpt.value);
+        console.log('[FILTER] Show set ke:', allOpt.text);
+        await sleep(1500);
+        break;
       }
     }
-  });
+  } catch (e) {
+    console.warn('[FILTER] Warning set filter:', e.message);
+  }
+}
 
-  await page.waitForTimeout(1000);
+/** Scrape list halaman SPJB Operasional & Filter HANYA Tahun 2026 */
+async function scrapeListPage(page) {
+  await page.waitForSelector('table tbody tr', { timeout: 15000 }).catch(() => {});
+  await sleep(1000);
 
-  // ── Filter: Status = Active ─────────────────────────────────────────────
-  await page.evaluate(() => {
-    const statusSelects = [...document.querySelectorAll('select')].filter(s => {
-      const opts = [...s.options].map(o => o.text.trim().toLowerCase());
-      return opts.includes('active') || opts.includes('actived');
-    });
-    if (statusSelects.length > 0) {
-      const sel = statusSelects[0];
-      const activeOpt = [...sel.options].find(o =>
-        o.text.trim().toLowerCase() === 'active' ||
-        o.text.trim().toLowerCase() === 'actived'
-      );
-      if (activeOpt) {
-        sel.value = activeOpt.value;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }
-    // Vue custom dropdown fallback
-    const statusBtn = [...document.querySelectorAll('button, .dropdown-item, li')]
-      .find(el => el.innerText?.trim()?.toLowerCase() === 'active' ||
-        el.innerText?.trim()?.toLowerCase() === 'actived');
-    if (statusBtn) statusBtn.click();
-  });
+  return await page.evaluate(() => {
+    const table = document.querySelector('#tableSpjbOp') || document.querySelector('table');
+    if (!table) return [];
 
-  await page.waitForTimeout(1000);
-
-  // ── Filter: Tahun yang berlaku sekarang (2026) ───────────────────────────
-  const currentYear = String(new Date().getFullYear());
-  console.log(`  🔧 Setting filter: Tahun ${currentYear}...`);
-
-  await page.evaluate((targetYear) => {
-    const yearSelects = [...document.querySelectorAll('select')].filter(s => {
-      const opts = [...s.options].map(o => o.text.trim());
-      return opts.includes(targetYear);
-    });
-    if (yearSelects.length > 0) {
-      const sel = yearSelects[0];
-      const targetOpt = [...sel.options].find(o => o.text.trim() === targetYear);
-      if (targetOpt) {
-        sel.value = targetOpt.value;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }
-  }, currentYear);
-
-  await page.waitForTimeout(2000);
-  rowCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
-  console.log(`  Rows setelah filter: ${rowCount}`);
-
-  // ── Scrape daftar ─────────────────────────────────────────────────────
-  const rawList = await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('table tbody tr')];
+    const rows = [...table.querySelectorAll('tbody tr')];
     return rows.map(row => {
-      // col[0] = checkbox (skip) → data mulai col[1]
       const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
-      const link = row.querySelector('td:nth-child(2) a') || row.querySelector('a');
-      const href = link ? (link.href || link.getAttribute('href') || '') : '';
-      return {
-        nomorSpjb: cells[1] || '',
-        tahun: cells[2] || '',
-        distributor: cells[3] || '',
-        produsen: cells[4] || '',
-        tanggalBuat: cells[5] || '',
-        tanggalGanti: cells[6] || '',
-        status: cells[7] || '',
-        href,
-      };
-    }).filter(r => r.nomorSpjb !== '');
-  });
+      if (cells.length < 3) return null;
 
-  // Filter hanya untuk tahun yang berlaku sekarang (2026) & status Active
-  const list = rawList.filter(r =>
-    (r.tahun === currentYear || r.tahun === '' || !r.tahun) &&
-    (r.status.toLowerCase() === 'active' || r.status.toLowerCase() === 'actived')
-  );
-  console.log(`✅ Ditemukan ${list.length} SPJB Operasional (Tahun: ${currentYear} & Status: Active)`);
-  return list;
-}
+      // Cari elemen link <a> untuk URL detail SPJB
+      const aEl = row.querySelector('a');
+      const href = aEl ? aEl.getAttribute('href') || '' : '';
 
-// ─── Ambil detail setiap SPJB ──────────────────────────────────────────────
-async function getSpjbDetail(page, spjb) {
-  let detailUrl = '';
-  if (spjb.href && spjb.href.includes('http')) {
-    detailUrl = spjb.href;
-  } else if (spjb.href && spjb.href.startsWith('/')) {
-    detailUrl = `${CONFIG.baseUrl}/#${spjb.href}`;
-  }
+      // Tentukan posisi kolom berdasarkan isi text (robust fallback)
+      let nomorSpjb = '';
+      let tahun = '';
+      let namaPud = '';
+      let produsen = '';
+      let tanggalBuat = '';
+      let status = 'Active';
 
-  if (!detailUrl) {
-    console.log(`  ⚠️  [${spjb.status}] ${spjb.nomorSpjb} → tidak ada href, skip`);
-    return { ...spjb, detail: null };
-  }
-
-  console.log(`  📄 [${spjb.status}] ${spjb.nomorSpjb} → ${spjb.distributor}`);
-
-  await page.goto(detailUrl, { waitUntil: 'networkidle', timeout: 30000 });
-  await page.waitForSelector('table, .card, .form-group', { timeout: 8000 }).catch(() => { });
-  await page.waitForTimeout(1500);
-
-  // Reload jika belum ada tabel
-  const tableCount = await page.$$eval('table', t => t.length).catch(() => 0);
-  if (tableCount === 0) {
-    console.log(`    ⚠️  Tabel belum muncul, reload...`);
-    await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
-    await page.waitForSelector('table, .card', { timeout: 8000 }).catch(() => { });
-    await page.waitForTimeout(2000);
-  }
-
-  const detail = await page.evaluate(() => {
-    const header = {
-      judul: document.querySelector('h4, h3, h2, .page-title, .card-title')?.innerText?.trim() || '',
-      status: document.querySelector('[class*="badge"], [class*="label-status"]')?.innerText?.trim() || '',
-    };
-
-    // Info fields
-    const infoFields = {};
-    document.querySelectorAll('.form-group, .row > [class*="col"]').forEach(group => {
-      const label = group.querySelector('label')?.innerText?.trim();
-      const value = group.querySelector('input')?.value?.trim()
-        || group.querySelector('p, span:not(label span)')?.innerText?.trim() || '';
-      if (label && value && value !== label && value.length < 300) {
-        infoFields[label] = value;
+      for (let i = 0; i < cells.length; i++) {
+        const c = cells[i];
+        if (!nomorSpjb && (c.includes('/SP/') || c.includes('/A/') || c.includes('SPJB') || c.includes('Pelaporan'))) {
+          nomorSpjb = c;
+        }
+        if (!tahun && (c === '2026' || c === '2025' || c === '2024' || c === '2023' || c === '2022' || c === '2021' || c === '2020')) {
+          tahun = c;
+        }
+        if (c.toLowerCase().includes('active') || c.toLowerCase().includes('aktif') || c.toLowerCase().includes('inactive')) {
+          status = c;
+        }
       }
+
+      // Fallback index jika regex tidak kena
+      if (!nomorSpjb) nomorSpjb = cells[1] || cells[2] || cells[0] || '';
+      if (!tahun) tahun = cells[2] || '';
+
+      return {
+        nomorSpjb,
+        tahun,
+        namaPud: namaPud || 'CV. ANUGERAH MAKMUR',
+        produsen: produsen || 'PT Pupuk Sriwidjaja',
+        tanggalBuat,
+        status,
+        href,
+        rawCells: cells,
+      };
+    })
+    .filter(r => r && r.nomorSpjb && r.nomorSpjb !== '')
+    // 🎯 FILTER EKSKLUSIF: HANYA SPJB TAHUN 2026
+    .filter(r => {
+      const is2026 = r.tahun === '2026' ||
+                     r.nomorSpjb.includes('/2026') ||
+                     r.nomorSpjb.includes('2026') ||
+                     r.rawCells.some(c => c.includes('2026'));
+      return is2026;
     });
-
-    const tables = [...document.querySelectorAll('table')];
-    const parseTable = (table) => {
-      if (!table) return { headers: [], rows: [] };
-      const headers = [...table.querySelectorAll('thead th, thead td')]
-        .map(th => th.innerText.trim()).filter(Boolean);
-
-      const trs = [...table.querySelectorAll('tbody tr')];
-      const rows = [];
-      let currentKecamatan = '';
-
-      trs.forEach(tr => {
-        const ths = [...tr.querySelectorAll('th')].map(th => th.innerText.trim()).filter(Boolean);
-        const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-
-        // Identifikasi header kecamatan/wilayah (ada di tag <th>)
-        if (ths.length > 0) {
-          const kecName = ths.find(t => t !== '-' && t !== '#') || '';
-          if (kecName) {
-            currentKecamatan = kecName;
-          }
-        }
-
-        if (tds.length > 0 && tds.some(c => c !== '')) {
-          const rowCopy = [...tds];
-          if (currentKecamatan && rowCopy[1]) {
-            if (!rowCopy[1].toLowerCase().includes(currentKecamatan.toLowerCase())) {
-              rowCopy[1] = `${currentKecamatan} - ${rowCopy[1]}`;
-            }
-          }
-
-          // Perhitungan Ulang Sisa Bulan Ini = Sisa Bulan Lalu - SO Approve Bulan Ini
-          const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-          const parseVal = (v) => {
-            if (!v) return 0;
-            const clean = String(v).replace(/\./g, '').replace(',', '.');
-            return parseFloat(clean) || 0;
-          };
-          const fmtVal = (num) => num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-          let runningSisa = 0;
-          months.forEach((m, mIdx) => {
-            const alokIdx = headers.indexOf(`Alokasi ${m}`);
-            const approveIdx = headers.indexOf(`SO Approve ${m}`);
-            const sisaIdx = headers.indexOf(`Sisa ${m}`);
-
-            if (sisaIdx !== -1) {
-              const alok = alokIdx !== -1 ? parseVal(rowCopy[alokIdx]) : 0;
-              const approve = approveIdx !== -1 ? parseVal(rowCopy[approveIdx]) : 0;
-
-              if (mIdx === 0) {
-                runningSisa = alok - approve;
-              } else {
-                runningSisa = (runningSisa + alok) - approve;
-              }
-              rowCopy[sisaIdx] = fmtVal(runningSisa);
-            }
-          });
-
-          const totalSisaIdx = headers.indexOf('Total Sisa');
-          if (totalSisaIdx !== -1) {
-            rowCopy[totalSisaIdx] = fmtVal(runningSisa);
-          }
-
-          rows.push(rowCopy);
-        }
-      });
-
-      return { headers, rows };
-    };
-
-    // Identifikasi tabel berdasarkan header
-    const alokasiTableEl = tables.find(t => {
-      const hdrs = [...t.querySelectorAll('thead th')].map(h => h.innerText.trim().toLowerCase());
-      return hdrs.some(h =>
-        h.includes('alokasi') || h.includes('kacamatan') ||
-        h.includes('urea') || h.includes('npk') || h.includes('realisasi')
-      );
-    });
-
-    const riwayatTableEl = tables.find(t => {
-      const hdrs = [...t.querySelectorAll('thead th')].map(h => h.innerText.trim().toLowerCase());
-      return hdrs.some(h =>
-        h.includes('dokument') || h.includes('jenis') ||
-        h.includes('alasan') || h.includes('riwayat')
-      );
-    });
-
-    const allParsed = tables.map(t => parseTable(t));
-
-    const fileLinks = [...document.querySelectorAll('a[href*=".pdf"], a[href*="storage"], a[download]')]
-      .map(a => a.href).filter(Boolean);
-
-    return {
-      header,
-      infoFields,
-      alokasiTable: parseTable(alokasiTableEl),
-      riwayatTable: parseTable(riwayatTableEl),
-      allTables: allParsed,
-      fileLinks,
-    };
   });
-
-  return { ...spjb, detailUrl, detail };
 }
 
-// ─── Print ringkasan ────────────────────────────────────────────────────────
-function printSummary(results) {
-  const line = '='.repeat(100);
-  console.log(`\n${line}`);
-  console.log('📊 HASIL SCRAPING: Alokasi >> SPJB Operasional');
-  console.log(line);
-
-  for (const r of results) {
-    const alokasiRows = r.detail?.alokasiTable?.rows?.length || 0;
-    const riwayatDocs = r.detail?.riwayatTable?.rows?.length || 0;
-    const files = r.detail?.fileLinks?.length || 0;
-
-    console.log(`\n  [${r.status.padEnd(8)}] ${r.nomorSpjb}`);
-    console.log(`           Distributor: ${r.distributor} | Produsen: ${r.produsen}`);
-    console.log(`           Tahun: ${r.tahun} | Tgl Buat: ${r.tanggalBuat}`);
-    console.log(`           Alokasi rows: ${alokasiRows} | Riwayat: ${riwayatDocs} | Files: ${files}`);
-
-    if (alokasiRows > 0) {
-      const hdrs = r.detail.alokasiTable.headers.join(' | ');
-      console.log(`           Kolom: ${hdrs}`);
-      r.detail.alokasiTable.rows.slice(0, 4).forEach(row => {
-        console.log(`             →  ${row.join(' | ')}`);
-      });
+/** Scrape detail SPJB Operasional — tabel per Kecamatan & Produk */
+async function scrapeDetail(page, spjb, prefix) {
+  try {
+    let detailUrl;
+    if (spjb.href && spjb.href.startsWith('/#/')) {
+      // href sudah berisi /#/ — jangan prepend # lagi
+      detailUrl = `https://gowcm.pupuk-indonesia.com${spjb.href}`;
+    } else if (spjb.href && spjb.href.startsWith('/')) {
+      detailUrl = `https://gowcm.pupuk-indonesia.com/#${spjb.href}`;
+    } else {
+      const decodedPrefix = decodeURIComponent(prefix);
+      const spjbRoute = spjb.nomorSpjb.replace(/\//g, '*');
+      detailUrl = `https://gowcm.pupuk-indonesia.com/#/${decodedPrefix}/alokasi/spjb/operasional/${spjbRoute}`;
     }
+
+    await page.goto(detailUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.waitForSelector('table', { timeout: 8000 }).catch(() => {});
+    await sleep(500);
+
+    // 🎯 KLIK SEMUA BUTTON COLLAPSE / FA-PLUS UNTUK MENG-EXPAND KECAMATAN
+    await page.evaluate(() => {
+      const selectors = ['.buttonCollapse', '.fa-plus', 'i[class*="plus"]', '[class*="collapse"]', 'tr button'];
+      selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          try { el.click(); } catch(e){}
+        });
+      });
+    });
+    await sleep(800);
+
+    const detail = await page.evaluate(() => {
+      const tables = [...document.querySelectorAll('table')];
+
+      const parseTable = (t) => {
+        if (!t) return { headers: [], rows: [] };
+        const headers = [...t.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim()).filter(Boolean);
+        const rows = [...t.querySelectorAll('tbody tr')]
+          .map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText.trim()))
+          .filter(r => r.some(c => c !== ''));
+        return { headers, rows };
+      };
+
+      let targetTable = null;
+      for (const t of tables) {
+        const headers = [...t.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim().toLowerCase());
+        if (headers.some(h => h.includes('kecamatan') || h.includes('kacamatan') || h.includes('produk') || h.includes('alokasi'))) {
+          targetTable = t;
+          break;
+        }
+      }
+
+      if (!targetTable && tables.length > 1) targetTable = tables[1];
+      if (!targetTable && tables.length > 0) targetTable = tables[0];
+
+      const parsed = parseTable(targetTable);
+      const detailRows = [];
+
+      const trElements = targetTable ? [...targetTable.querySelectorAll('tbody tr')] : [];
+      let currentKecamatan = 'Kab. Semarang';
+      let isTotalGroup = false;
+
+      for (let i = 0; i < trElements.length; i++) {
+        const tr = trElements[i];
+        const isLastChild = tr.classList.contains('lastChild');
+        const text = tr.innerText.replace(/\s+/g, ' ').trim();
+
+        if (!text) continue;
+
+        // Baris Parent (Non-lastChild): Header Provinsi / Kabupaten / Kecamatan / Total Produk
+        if (!isLastChild) {
+          const cleanText = text.replace(/-$/, '').trim();
+          const cleanLower = cleanText.toLowerCase();
+
+          if (cleanLower.includes('total produk') || cleanLower.includes('total')) {
+            isTotalGroup = true;
+          } else if (cleanLower.includes('jawa tengah') || cleanLower.includes('kab.')) {
+            isTotalGroup = true;
+          } else if (cleanText) {
+            isTotalGroup = false;
+            currentKecamatan = cleanText;
+          }
+          continue;
+        }
+
+        // Abaikan seluruh baris child di bawah grup Total Produk / Provinsi / Kabupaten
+        if (isTotalGroup) continue;
+
+        // Baris Child (lastChild): Baris Produk (UREA, NPK, ORGANIK, ZA, dsb.)
+        const cells = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
+        if (cells.length < 5) continue;
+
+        const cell0 = cells[0] || '';
+        const cell1 = cells[1] || '';
+        const produk = cell1 || cell0 || 'UREA';
+
+        // Abaikan baris rekap total
+        if (produk.toUpperCase().includes('TOTAL') || cell0.toUpperCase().includes('TOTAL')) continue;
+
+        const totalAlokasi = cells[cells.length - 4] || '0';
+        const totalSo = cells[cells.length - 3] || '0';
+        const totalSoApprove = cells[cells.length - 2] || '0';
+        const totalSisa = cells[cells.length - 1] || '0';
+
+        detailRows.push({
+          kecamatan: currentKecamatan,
+          produk: produk,
+          totalAlokasi,
+          totalSo,
+          totalSoApprove,
+          totalSisa,
+        });
+      }
+
+      return {
+        headers: parsed.headers,
+        rawRows: parsed.rows,
+        detailRows,
+      };
+    });
+
+    return detail;
+  } catch (e) {
+    console.warn(`  [DETAIL] Error untuk ${spjb.nomorSpjb}:`, e.message);
+    return { headers: [], rawRows: [], detailRows: [] };
   }
-
-  const byStatus = results.reduce((acc, r) => {
-    acc[r.status] = (acc[r.status] || 0) + 1;
-    return acc;
-  }, {});
-
-  console.log(`\n${line}`);
-  console.log(`TOTAL: ${results.length} SPJB Operasional`);
-  Object.entries(byStatus).forEach(([s, n]) => console.log(`  - ${s}: ${n}`));
-  console.log(line);
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
-(async () => {
+/** Cek apakah ada halaman berikutnya */
+async function hasNextPage(page) {
+  return await page.evaluate(() => {
+    const nextBtn = document.querySelector(
+      'li.paginate_button.next:not(.disabled) a, ' +
+      'button[aria-label="Next"]:not([disabled]), ' +
+      '.pagination .next:not(.disabled) a'
+    );
+    return !!nextBtn;
+  });
+}
+
+async function clickNextPage(page) {
+  await page.evaluate(() => {
+    const nextBtn = document.querySelector(
+      'li.paginate_button.next:not(.disabled) a, ' +
+      '.pagination .next:not(.disabled) a'
+    );
+    if (nextBtn) nextBtn.click();
+  });
+  await sleep(2000);
+}
+
+async function main() {
+  const startTime = Date.now();
+  console.log('='.repeat(60));
+  console.log('GOW CM Scraper: SPJB Operasional (Alokasi)');
+  console.log('Filter: Show=Lihat Semua');
+  console.log('='.repeat(60));
+
   const browser = await chromium.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    executablePath: undefined,
   });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const page = await context.newPage();
+
+  const page = await browser.newPage();
+  page.setDefaultTimeout(30000);
 
   try {
-    const prefix = await login(page);
-    const list = await getSpjbList(page, prefix);
+    const prefix = await loginAndGetPrefix(page);
 
-    if (list.length === 0) {
-      console.error('❌ Tidak ada data SPJB Operasional ditemukan');
-      return;
-    }
+    // Navigasi ke daftar SPJB Operasional (route persis di DOM navigation)
+    const listUrl = `https://gowcm.pupuk-indonesia.com/#/${prefix}/alokasi/spjb/operasional`;
+    console.log('\n[NAVIGATE] Ke halaman list SPJB Operasional:', listUrl);
+    await page.goto(listUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await sleep(2000);
 
-    console.log(`\n🔍 Mengambil detail untuk ${list.length} SPJB...`);
-    const results = [];
-    for (const spjb of list) {
-      const detail = await getSpjbDetail(page, spjb);
-      results.push(detail);
-    }
+    // Set filter Show = Lihat Semua
+    await setFilterShowAll(page);
+    await sleep(2000);
 
-    printSummary(results);
+    // Scrape semua halaman list
+    const allList = [];
+    let pageNum = 1;
 
-    // Merging dengan data eksisting jika ada data baru
-    let existingMap = new Map();
-    let existingCount = 0;
+    while (true) {
+      console.log(`\n[LIST] Halaman ${pageNum}...`);
+      const rows = await scrapeListPage(page);
+      console.log(`  Ditemukan ${rows.length} baris`);
+      allList.push(...rows);
 
-    if (fs.existsSync(CONFIG.outputFile)) {
-      try {
-        const fileContent = fs.readFileSync(CONFIG.outputFile, 'utf8');
-        const parsed = JSON.parse(fileContent);
-        const listData = Array.isArray(parsed.data) ? parsed.data : (Array.isArray(parsed) ? parsed : []);
-        existingCount = listData.length;
-        listData.forEach(item => {
-          const key = item.nomorSpjb || item.spjbNo || JSON.stringify(item);
-          existingMap.set(key, item);
-        });
-        console.log(`\n📂 Ditemukan data eksisting: ${existingCount} record.`);
-      } catch (e) {
-        console.log('⚠️ File eksisting tidak valid / gagal dibaca.');
+      if (!(await hasNextPage(page))) {
+        console.log('  [PAGING] Tidak ada halaman berikutnya.');
+        break;
       }
+      await clickNextPage(page);
+      pageNum++;
     }
 
-    let addedCount = 0;
-    let updatedCount = 0;
-    let unchangedCount = 0;
+    console.log(`\n[LIST] Total SPJB Operasional: ${allList.length}`);
 
-    results.forEach(newItem => {
-      const key = newItem.nomorSpjb || newItem.spjbNo || JSON.stringify(newItem);
-      if (existingMap.has(key)) {
-        const oldItem = existingMap.get(key);
-        if (JSON.stringify(oldItem) !== JSON.stringify(newItem)) {
-          existingMap.set(key, { ...newItem, updated_at: new Date().toISOString() });
-          updatedCount++;
-        } else {
-          unchangedCount++;
-        }
-      } else {
-        existingMap.set(key, { ...newItem, added_at: new Date().toISOString() });
-        addedCount++;
-      }
-    });
+    // Scrape detail setiap SPJB
+    const result = [];
+    for (let i = 0; i < allList.length; i++) {
+      const spjb = allList[i];
+      console.log(`\n[DETAIL] ${i + 1}/${allList.length} — ${spjb.nomorSpjb}`);
 
-    const finalMergedData = Array.from(existingMap.values());
+      const detail = await scrapeDetail(page, spjb, prefix);
+      console.log(`  Detail rows: ${detail.detailRows.length} | Headers: ${detail.headers.join(', ')}`);
 
-    console.log(`\n📈 RINGKASAN PERUBAHAN DATA (SPJB Operasional):`);
-    console.log(`  ✨ Data Baru (Added)     : ${addedCount} record`);
-    console.log(`  🔄 Data Diubah (Updated)  : ${updatedCount} record`);
-    console.log(`  ✅ Data Tetap (Unchanged) : ${unchangedCount} record`);
-    console.log(`  📊 Total Akhir Record    : ${finalMergedData.length} record`);
+      result.push({
+        nomorSpjb:   spjb.nomorSpjb,
+        kodePud:     spjb.kodePud,
+        namaPud:     spjb.namaPud,
+        provinsi:    spjb.provinsi,
+        kabupaten:   spjb.kabupaten,
+        tanggalAwal: spjb.tanggalAwal,
+        tanggalAkhir:spjb.tanggalAkhir,
+        status:      spjb.status,
+        // Kolom sesuai skema gambar
+        detailPerKecamatan: detail.detailRows.map(r => ({
+          kecamatan:      r.kecamatan,
+          produk:         r.produk,         // NPK / UREA
+          totalAlokasi:   parseNumber(r.totalAlokasi),
+          totalSo:        parseNumber(r.totalSo),
+          totalSoApprove: parseNumber(r.totalSoApprove),
+          totalSisa:      parseNumber(r.totalSisa),
+        })),
+        rawHeaders: detail.headers,
+      });
+    }
 
-    const outputObj = {
+    const output = {
       scraped_at: new Date().toISOString(),
-      source: "GOW CM - Alokasi >> SPJB Operasional",
-      total_records: finalMergedData.length,
-      last_sync_summary: {
-        scraped_records: results.length,
-        added_new: addedCount,
-        updated: updatedCount,
-        unchanged: unchangedCount
-      },
-      data: finalMergedData,
+      source: 'GOW CM — Alokasi >> SPJB Operasional',
+      filter: { show: 'Lihat Semua' },
+      total: result.length,
+      data: result,
     };
 
-    fs.writeFileSync(CONFIG.outputFile, JSON.stringify(outputObj, null, 2), 'utf8');
-    console.log(`\n💾 Disimpan ke: ${CONFIG.outputFile}`);
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf-8');
 
-  } catch (err) {
-    console.error('❌ Error:', err.message);
-    console.error(err.stack);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`✅ Selesai! ${result.length} SPJB Operasional discrape dalam ${elapsed}s`);
+    console.log(`📁 Output: ${OUTPUT_FILE}`);
+    console.log('='.repeat(60));
+
+  } catch (e) {
+    console.error('\n❌ ERROR:', e.message);
+    process.exit(1);
   } finally {
-    try { await page.waitForTimeout(1000); } catch (_) { }
-    try { await browser.close(); } catch (_) { }
+    await browser.close();
   }
-})();
+}
+
+main();

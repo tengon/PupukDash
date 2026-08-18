@@ -33,27 +33,24 @@ export async function GET(request: NextRequest) {
 
     const enrichedList = pptsList.map((item) => {
       const wcm = wcmMap.get(item.code)
-      if (wcm) {
-        const alokUrea = item.alokasiUrea ?? wcm.alokasiUrea
-        const realUrea = (item.realisasiUrea && item.realisasiUrea > 0) ? item.realisasiUrea : wcm.realisasiUrea
-        const sisaUrea = item.sisaUrea ?? (alokUrea - realUrea)
+      const alokUrea = item.alokasiUrea !== null && item.alokasiUrea !== undefined ? item.alokasiUrea : (wcm?.alokasiUrea ?? 0)
+      const realUrea = item.realisasiUrea !== null && item.realisasiUrea !== undefined ? item.realisasiUrea : (wcm?.realisasiUrea ?? 0)
+      const sisaUrea = item.sisaUrea !== null && item.sisaUrea !== undefined ? item.sisaUrea : Math.max(0, alokUrea - realUrea)
 
-        const alokNpk = item.alokasiNpk ?? wcm.alokasiNpk
-        const realNpk = (item.realisasiNpk && item.realisasiNpk > 0) ? item.realisasiNpk : wcm.realisasiNpk
-        const sisaNpk = item.sisaNpk ?? (alokNpk - realNpk)
+      const alokNpk = item.alokasiNpk !== null && item.alokasiNpk !== undefined ? item.alokasiNpk : (wcm?.alokasiNpk ?? 0)
+      const realNpk = item.realisasiNpk !== null && item.realisasiNpk !== undefined ? item.realisasiNpk : (wcm?.realisasiNpk ?? 0)
+      const sisaNpk = item.sisaNpk !== null && item.sisaNpk !== undefined ? item.sisaNpk : Math.max(0, alokNpk - realNpk)
 
-        return {
-          ...item,
-          spjbNumber: item.spjbNumber || wcm.spjbNumber,
-          alokasiUrea: alokUrea,
-          realisasiUrea: realUrea,
-          sisaUrea: sisaUrea,
-          alokasiNpk: alokNpk,
-          realisasiNpk: realNpk,
-          sisaNpk: sisaNpk,
-        }
+      return {
+        ...item,
+        spjbNumber: item.spjbNumber || wcm?.spjbNumber || '',
+        alokasiUrea: alokUrea,
+        realisasiUrea: realUrea,
+        sisaUrea: sisaUrea,
+        alokasiNpk: alokNpk,
+        realisasiNpk: realNpk,
+        sisaNpk: sisaNpk,
       }
-      return item
     })
 
     return NextResponse.json(enrichedList)

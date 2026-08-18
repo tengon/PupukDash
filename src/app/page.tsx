@@ -12,6 +12,7 @@ import { FarmersView } from '@/components/farmers/farmers-view'
 import { PptsView } from '@/components/ppts/ppts-view'
 import { MonitoringPptsView } from '@/components/ppts/monitoring-ppts-view'
 import { MonitoringPudView } from '@/components/pud/monitoring-pud-view'
+import { MonitoringRealisasiView } from '@/components/realisasi/monitoring-realisasi-view'
 import { WarehousesView } from '@/components/warehouses/warehouses-view'
 import { StockView } from '@/components/stock/stock-view'
 import { DistributionsView } from '@/components/distributions/distributions-view'
@@ -40,6 +41,7 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   allocation: { title: 'Data Alokasi', description: 'Kelola dan monitor alokasi pupuk bersubsidi SPJB Operasional & SPJB PPTS' },
   'monitoring-ppts': { title: 'Monitoring PPTS', description: 'Monitor alokasi SPJB dan realisasi tebusan pupuk bersubsidi per Kios PPTS' },
   'monitoring-pud': { title: 'Monitoring PUD', description: 'Monitor SPJB Operasional Distributor PUD dan Alokasi Bulanan dari Produsen' },
+  'monitoring-realisasi': { title: 'Realisasi Stok Kios IPubers', description: 'Monitor data realisasi stok pupuk bersubsidi di Kios Pengecer dari GOW CM' },
   'monitoring-order': { title: 'Monitoring Order & DO', description: 'Monitor data order penebusan dan Delivery Order (DO) dari GOW CM Pupuk Indonesia' },
   warehouses: { title: 'Gudang', description: 'Kelola data gudang penyimpanan pupuk' },
   'monitoring-warehouses': { title: 'Gudang', description: 'Monitoring data gudang penyimpanan pupuk' },
@@ -289,6 +291,7 @@ export default function HomePage() {
                 {activeTab === 'ppts' && <PptsView />}
                 {activeTab === 'monitoring-ppts' && <MonitoringPptsView />}
                 {activeTab === 'monitoring-pud' && <MonitoringPudView />}
+                {activeTab === 'monitoring-realisasi' && <MonitoringRealisasiView />}
                 {activeTab === 'warehouses' && <WarehousesView hideAddButton={false} />}
                 {activeTab === 'monitoring-warehouses' && <WarehousesView hideAddButton={true} />}
                 {activeTab === 'stock' && <StockView />}

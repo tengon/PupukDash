@@ -1,130 +1,140 @@
 /**
- * Auto-Sync Cron Runner untuk GOW CM Scraper
- * Berjalan otomatis setiap 6 jam: 06:00, 12:00, 18:00, 00:00 WIB
+ * cron-runner.js — Automated Cron Runner for GOW CM Scrapers
+ * Reads schedule_settings.json for SPJB Operasional, SPJB PPTS & Realisasi Stok Kios
  */
 
-const { exec } = require('child_process')
-const path = require('path')
-const fs = require('fs')
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
+const { promisify } = require('util');
 
-function logMessage(msg) {
-  const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
-  const text = `[${time} WIB] ${msg}\n`
-  console.log(text.trim())
-  try {
-    fs.appendFileSync(path.join(__dirname, 'cron-runner.log'), text)
-  } catch (e) {}
-}
+const execAsync = promisify(exec);
+const settingsPath = path.join(__dirname, 'schedule_settings.json');
+const testGetNodeModules = path.join('d:', 'testGet', 'node_modules');
+const nodePath = `${testGetNodeModules};${process.env.NODE_PATH || ''}`;
+const execEnv = { ...process.env, NODE_PATH: nodePath };
 
-function runScrapers() {
-  logMessage('🚀 Memulai eksekusi scraper otomatis GOW CM...')
-  
-  const testGetNodeModules = path.join('d:', 'testGet', 'node_modules')
-  const nodePath = `${testGetNodeModules};${path.join(__dirname, 'node_modules')};${process.env.NODE_PATH || ''}`
-  const execEnv = { ...process.env, NODE_PATH: nodePath }
-
-  // 1. Run SPJB Operasional
-  exec('node spjb_operasional.js', { cwd: __dirname, env: execEnv }, (error, stdout, stderr) => {
-    if (error) {
-      logMessage(`❌ Gagal eksekusi SPJB Operasional: ${error.message}`)
-    } else {
-      logMessage('✅ SPJB Operasional Scraper berhasil!')
+function getSettings() {
+  if (fs.existsSync(settingsPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    } catch (e) {
+      console.error('[CRON] Error reading settings:', e.message);
     }
-
-    // 2. Run SPJB PPTS Scraper
-    exec('node spjb_ppts.js', { cwd: __dirname, env: execEnv }, (err2, stdout2, stderr2) => {
-      if (err2) {
-        logMessage(`❌ Gagal eksekusi SPJB PPTS: ${err2.message}`)
-      } else {
-        logMessage('✅ SPJB PPTS Scraper berhasil!')
-      }
-
-      // 3. Run Penyaluran Order Scraper
-      exec('node penyaluran_monitoring_order_kios.js', { cwd: __dirname, env: execEnv }, (err3, stdout3, stderr3) => {
-        if (err3) {
-          logMessage(`❌ Gagal eksekusi Penyaluran Order: ${err3.message}`)
-        } else {
-          logMessage('✅ Penyaluran Order Scraper berhasil!')
-        }
-
-        // 4. Run Stok Kios iPuber Scraper
-        exec('node stok_kios_ipuber.js', { cwd: __dirname, env: execEnv }, (err4, stdout4, stderr4) => {
-          if (err4) {
-            logMessage(`❌ Gagal eksekusi Stok Kios iPuber: ${err4.message}`)
-          } else {
-            logMessage('✅ Stok Kios iPuber Scraper berhasil!')
-          }
-
-          // 5. Run Monitoring Order Scraper
-          exec('node monitoring_order.js', { cwd: __dirname, env: execEnv }, (err5) => {
-            if (err5) {
-              logMessage(`❌ Gagal eksekusi Monitoring Order: ${err5.message}`)
-            } else {
-              logMessage('✅ Monitoring Order Scraper berhasil!')
-            }
-
-            // 6. Run Monitoring DO Scraper
-            exec('node monitoring_do.js', { cwd: __dirname, env: execEnv }, (err6) => {
-              if (err6) {
-                logMessage(`❌ Gagal eksekusi Monitoring DO: ${err6.message}`)
-              } else {
-                logMessage('✅ Monitoring DO Scraper berhasil!')
-              }
-
-              // 7. Run Gabung Order (Merge Order + DO)
-              exec('node gabung_order.js', { cwd: __dirname, env: execEnv }, (err7) => {
-                if (err7) {
-                  logMessage(`❌ Gagal menggabungkan Order & DO: ${err7.message}`)
-                } else {
-                  logMessage('✅ Gabung Order & DO berhasil!')
-                }
-
-                // 8. Run Laporan Item Penyaluran PKP Scraper
-                exec('node laporan_item_penyaluran_pkp.js', { cwd: __dirname, env: execEnv }, (err8) => {
-                  if (err8) {
-                    logMessage(`❌ Gagal eksekusi Laporan PKP: ${err8.message}`)
-                  } else {
-                    logMessage('✅ Laporan Item Penyaluran PKP Scraper berhasil!')
-                  }
-                  logMessage('🎉 Seluruh proses auto-sync scraper GOW CM selesai!')
-                })
-              })
-            })
-          })
-        })
-      })
-    })
-  })
-}
-
-function getMsUntilNextSchedule() {
-  const now = new Date()
-  const currentHour = now.getHours()
-  
-  // Schedule hours: 0, 6, 12, 18
-  const scheduleHours = [0, 6, 12, 18]
-  let nextHour = scheduleHours.find(h => h > currentHour)
-  
-  const nextDate = new Date(now)
-  if (nextHour === undefined) {
-    nextHour = 0
-    nextDate.setDate(nextDate.getDate() + 1)
   }
-  
-  nextDate.setHours(nextHour, 0, 0, 0)
-  return nextDate.getTime() - now.getTime()
+  return {
+    spjb_operasional: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
+    spjb_ppts: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
+    realisasi_stok_kios: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
+  };
 }
 
-function scheduleNextRun() {
-  const ms = getMsUntilNextSchedule()
-  const minutes = Math.round(ms / 60000)
-  logMessage(`⏰ Auto-Sync berikutnya dijadwalkan dalam ${minutes} menit (Pukul 06:00 / 12:00 / 18:00 / 00:00 WIB).`)
-
-  setTimeout(() => {
-    runScrapers()
-    scheduleNextRun()
-  }, ms)
+function updateLastRun(target, isoString) {
+  const current = getSettings();
+  if (!current[target]) current[target] = {};
+  current[target].lastRun = isoString;
+  fs.writeFileSync(settingsPath, JSON.stringify(current, null, 2), 'utf-8');
 }
 
-logMessage('🟢 GOW CM Scraper Background Service Diaktifkan!')
-scheduleNextRun()
+function shouldRunNow(config) {
+  if (!config || !config.enabled) return false;
+
+  const now = new Date();
+  const lastRun = config.lastRun ? new Date(config.lastRun) : null;
+  const intervalMs = (config.intervalHours || 6) * 3600 * 1000;
+
+  if (!lastRun) return true;
+
+  const diffMs = now.getTime() - lastRun.getTime();
+  return diffMs >= intervalMs;
+}
+
+let isRunningOp = false;
+let isRunningPpts = false;
+let isRunningRealisasi = false;
+
+async function runOpScraper() {
+  if (isRunningOp) return;
+  isRunningOp = true;
+  console.log(`\n[CRON] ${new Date().toLocaleString('id-ID')} — Memulai scraper SPJB Operasional...`);
+
+  try {
+    const { stdout, stderr } = await execAsync('node spjb_operasional.js', { cwd: __dirname, env: execEnv, timeout: 300000 });
+    console.log(stdout);
+    if (stderr) console.error(stderr);
+
+    const projectRoot = path.join(__dirname, '..');
+    await execAsync('npx tsx -e "import { syncSpjbOperasionalToDb } from \'./src/lib/sync-spjb-operasional-to-db\'; syncSpjbOperasionalToDb();"', { cwd: projectRoot, env: execEnv, timeout: 120000 });
+
+    updateLastRun('spjb_operasional', new Date().toISOString());
+    console.log('[CRON] SPJB Operasional Selesai & Database Ter-sync!');
+  } catch (err) {
+    console.error('[CRON] Error SPJB Operasional:', err.message);
+  } finally {
+    isRunningOp = false;
+  }
+}
+
+async function runPptsScraper() {
+  if (isRunningPpts) return;
+  isRunningPpts = true;
+  console.log(`\n[CRON] ${new Date().toLocaleString('id-ID')} — Memulai scraper SPJB PPTS...`);
+
+  try {
+    const { stdout, stderr } = await execAsync('node spjb_ppts.js', { cwd: __dirname, env: execEnv, timeout: 300000 });
+    console.log(stdout);
+    if (stderr) console.error(stderr);
+
+    const projectRoot = path.join(__dirname, '..');
+    await execAsync('npx tsx -e "import { syncSpjbPptsToDb } from \'./src/lib/sync-spjb-ppts-to-db\'; syncSpjbPptsToDb();"', { cwd: projectRoot, env: execEnv, timeout: 120000 });
+
+    updateLastRun('spjb_ppts', new Date().toISOString());
+    console.log('[CRON] SPJB PPTS Selesai & Database Ter-sync!');
+  } catch (err) {
+    console.error('[CRON] Error SPJB PPTS:', err.message);
+  } finally {
+    isRunningPpts = false;
+  }
+}
+
+async function runRealisasiScraper() {
+  if (isRunningRealisasi) return;
+  isRunningRealisasi = true;
+  console.log(`\n[CRON] ${new Date().toLocaleString('id-ID')} — Memulai scraper Realisasi Stok Kios...`);
+
+  try {
+    const { stdout, stderr } = await execAsync('node realisasi_stok_kios.js', { cwd: __dirname, env: execEnv, timeout: 300000 });
+    console.log(stdout);
+    if (stderr) console.error(stderr);
+
+    updateLastRun('realisasi_stok_kios', new Date().toISOString());
+    console.log('[CRON] Realisasi Stok Kios Selesai!');
+  } catch (err) {
+    console.error('[CRON] Error Realisasi Stok Kios:', err.message);
+  } finally {
+    isRunningRealisasi = false;
+  }
+}
+
+async function checkAndRun() {
+  const settings = getSettings();
+
+  if (shouldRunNow(settings.spjb_operasional)) {
+    console.log('[CRON] Executing SPJB Operasional...');
+    await runOpScraper();
+  }
+
+  if (shouldRunNow(settings.spjb_ppts)) {
+    console.log('[CRON] Executing SPJB PPTS...');
+    await runPptsScraper();
+  }
+
+  if (shouldRunNow(settings.realisasi_stok_kios)) {
+    console.log('[CRON] Executing Realisasi Stok Kios...');
+    await runRealisasiScraper();
+  }
+}
+
+console.log('🚀 [CRON RUNNER] Service Cron Scraper GOW CM Aktif...');
+checkAndRun();
+setInterval(checkAndRun, 5 * 60 * 1000);

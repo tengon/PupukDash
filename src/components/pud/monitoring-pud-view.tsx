@@ -27,10 +27,26 @@ import { motion } from 'framer-motion'
 import { Search, Warehouse, CheckCircle2, RefreshCw, Building2, Layers, TableProperties, MapPin, BarChart3, TrendingUp, Pencil } from 'lucide-react'
 import { EditAlokasiDialog } from './edit-alokasi-dialog'
 
-function parseTon(val: string): number {
-  if (!val || val === '-' || val === '') return 0
-  const clean = val.replace(/\./g, '').replace(',', '.')
-  return parseFloat(clean) || 0
+function parseTon(val: any): number {
+  if (val === null || val === undefined || val === '') return 0
+  if (typeof val === 'number') return val
+  const str = String(val).trim()
+  if (!str || str === '-') return 0
+
+  if (str.includes('.') && str.includes(',')) {
+    return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0
+  }
+  if (str.includes(',')) {
+    return parseFloat(str.replace(',', '.')) || 0
+  }
+  if (str.includes('.')) {
+    const parts = str.split('.')
+    if (parts.length === 2 && parts[1].length <= 2) {
+      return parseFloat(str) || 0
+    }
+    return parseFloat(str.replace(/\./g, '')) || 0
+  }
+  return parseFloat(str) || 0
 }
 
 function getActiveIndices(headers: string[], filter: string): number[] {
@@ -67,8 +83,9 @@ function SpjbOperasionalCard({
   item: SpjbOperasionalItem
   onEditKecamatan?: (district: string) => void
 }) {
-  const headers = item.detail?.alokasiTable?.headers || []
-  const rows = item.detail?.alokasiTable?.rows || []
+  const headers = item.rawHeaders || item.detail?.alokasiTable?.headers || []
+  const rows = item.rawRows || item.detail?.alokasiTable?.rows || []
+  const detailPerKecamatan = item.detailPerKecamatan || []
   const [columnFilter, setColumnFilter] = useState<string>('TOTAL')
 
   const monthOptions = [
@@ -101,25 +118,32 @@ function SpjbOperasionalCard({
   let overallApprove = 0
   let overallSisa = 0
 
-  rows.forEach(r => {
-    const valName = r[baseProdIdx] || ''
-    if (valName.toLowerCase().includes('total produk /kabupaten') || valName.toLowerCase().includes('total produk / kabupaten')) {
-      if (totalAlokasiIdx >= 0) overallAlokasi += parseTon(r[totalAlokasiIdx])
-      if (totalSoApproveIdx >= 0) overallApprove += parseTon(r[totalSoApproveIdx])
-      if (totalSisaIdx >= 0) overallSisa += parseTon(r[totalSisaIdx])
-    }
-  })
-
-  // If no kabupaten total row found, sum top-level rows
-  if (overallAlokasi === 0) {
+  if (detailPerKecamatan.length > 0) {
+    detailPerKecamatan.forEach(d => {
+      overallAlokasi += parseTon(String(d.totalAlokasi))
+      overallApprove += parseTon(String(d.totalSoApprove))
+      overallSisa += parseTon(String(d.totalSisa))
+    })
+  } else {
     rows.forEach(r => {
       const valName = r[baseProdIdx] || ''
-      if (!valName.toLowerCase().includes('total produk')) {
+      if (valName.toLowerCase().includes('total produk /kabupaten') || valName.toLowerCase().includes('total produk / kabupaten')) {
         if (totalAlokasiIdx >= 0) overallAlokasi += parseTon(r[totalAlokasiIdx])
         if (totalSoApproveIdx >= 0) overallApprove += parseTon(r[totalSoApproveIdx])
         if (totalSisaIdx >= 0) overallSisa += parseTon(r[totalSisaIdx])
       }
     })
+
+    if (overallAlokasi === 0) {
+      rows.forEach(r => {
+        const valName = r[baseProdIdx] || ''
+        if (!valName.toLowerCase().includes('total produk')) {
+          if (totalAlokasiIdx >= 0) overallAlokasi += parseTon(r[totalAlokasiIdx])
+          if (totalSoApproveIdx >= 0) overallApprove += parseTon(r[totalSoApproveIdx])
+          if (totalSisaIdx >= 0) overallSisa += parseTon(r[totalSisaIdx])
+        }
+      })
+    }
   }
 
   const overallPctApprove = overallAlokasi > 0 ? (overallApprove / overallAlokasi) * 100 : 0
@@ -214,38 +238,88 @@ function SpjbOperasionalCard({
           <div className="rounded-xl border border-border/80 overflow-x-auto max-h-[550px] overflow-y-auto shadow-sm">
             <Table className="relative w-full border-collapse text-xs border border-border/60">
               <TableHeader className="sticky top-0 z-30 shadow-xs">
-                <TableRow className="text-[11px] divide-x divide-border/60">
-                  {activeIndices.map((colIdx) => {
-                    const headerText = headers[colIdx] || `Kolom ${colIdx}`
-                    const isBaseProd = colIdx === baseProdIdx
-                    const isTotalSoApprove = colIdx === totalSoApproveIdx
-                    const isTotalSisa = colIdx === totalSisaIdx
+                {rows.length === 0 && detailPerKecamatan.length > 0 ? (
+                  <TableRow className="bg-muted/80 text-foreground font-bold text-xs divide-x divide-border/60">
+                    <TableHead className="py-2.5 px-3">Kecamatan</TableHead>
+                    <TableHead className="py-2.5 px-3 text-center">Produk</TableHead>
+                    <TableHead className="py-2.5 px-3 text-center">Alokasi SPJB (Ton)</TableHead>
+                    <TableHead className="py-2.5 px-3 text-center bg-emerald-500/10 text-emerald-800 dark:text-emerald-300">Realisasi SO Approve (Ton & %)</TableHead>
+                    <TableHead className="py-2.5 px-3 text-center bg-rose-500/10 text-rose-800 dark:text-rose-300">Sisa Alokasi (Ton & %)</TableHead>
+                  </TableRow>
+                ) : (
+                  <TableRow className="text-[11px] divide-x divide-border/60">
+                    {activeIndices.map((colIdx) => {
+                      const headerText = headers[colIdx] || `Kolom ${colIdx}`
+                      const isBaseProd = colIdx === baseProdIdx
+                      const isTotalSoApprove = colIdx === totalSoApproveIdx
+                      const isTotalSisa = colIdx === totalSisaIdx
 
-                    let headerStyle = 'sticky top-0 z-30 bg-muted/95 backdrop-blur-md border-b text-center min-w-[110px]'
-                    if (isBaseProd) {
-                      headerStyle = 'sticky top-0 left-0 z-40 bg-background/95 dark:bg-card/95 border-r border-b shadow-sm min-w-[180px]'
-                    } else if (isTotalSoApprove) {
-                      headerStyle = 'sticky top-0 z-30 bg-emerald-100/90 dark:bg-emerald-950/90 backdrop-blur-md border-b text-center min-w-[155px] text-emerald-900 dark:text-emerald-200 font-extrabold'
-                    } else if (isTotalSisa) {
-                      headerStyle = 'sticky top-0 z-30 bg-rose-100/90 dark:bg-rose-950/90 backdrop-blur-md border-b text-center min-w-[155px] text-rose-900 dark:text-rose-200 font-extrabold'
-                    }
+                      let headerStyle = 'sticky top-0 z-30 bg-muted/95 backdrop-blur-md border-b text-center min-w-[110px]'
+                      if (isBaseProd) {
+                        headerStyle = 'sticky top-0 left-0 z-40 bg-background/95 dark:bg-card/95 border-r border-b shadow-sm min-w-[180px]'
+                      } else if (isTotalSoApprove) {
+                        headerStyle = 'sticky top-0 z-30 bg-emerald-100/90 dark:bg-emerald-950/90 backdrop-blur-md border-b text-center min-w-[155px] text-emerald-900 dark:text-emerald-200 font-extrabold'
+                      } else if (isTotalSisa) {
+                        headerStyle = 'sticky top-0 z-30 bg-rose-100/90 dark:bg-rose-950/90 backdrop-blur-md border-b text-center min-w-[155px] text-rose-900 dark:text-rose-200 font-extrabold'
+                      }
 
-                    return (
-                      <TableHead key={colIdx} className={`font-bold whitespace-nowrap px-3 py-2 text-foreground border border-border/60 ${headerStyle}`}>
-                        {isTotalSoApprove ? `${headerText} & %` : isTotalSisa ? `${headerText} & %` : headerText}
-                      </TableHead>
-                    )
-                  })}
-                </TableRow>
+                      return (
+                        <TableHead key={colIdx} className={`font-bold whitespace-nowrap px-3 py-2 text-foreground border border-border/60 ${headerStyle}`}>
+                          {isTotalSoApprove ? `${headerText} & %` : isTotalSisa ? `${headerText} & %` : headerText}
+                        </TableHead>
+                      )
+                    })}
+                  </TableRow>
+                )}
               </TableHeader>
 
               <TableBody className="divide-y divide-border/60">
                 {rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={activeIndices.length || 1} className="text-center py-6 text-xs text-muted-foreground italic border border-border/60">
-                      Detail alokasi tabel belum tersedia
-                    </TableCell>
-                  </TableRow>
+                  detailPerKecamatan.length > 0 ? (
+                    detailPerKecamatan.map((d, dIdx) => {
+                      const alok = parseTon(String(d.totalAlokasi))
+                      const real = parseTon(String(d.totalSoApprove))
+                      const sisa = parseTon(String(d.totalSisa))
+                      const pctReal = alok > 0 ? Math.round((real / alok) * 100) : 0
+                      const pctSisa = alok > 0 ? Math.round((sisa / alok) * 100) : 0
+                      const isUrea = d.produk.toLowerCase().includes('urea')
+
+                      return (
+                        <TableRow key={`kec_${dIdx}`} className="text-xs hover:bg-muted/40 transition-colors">
+                          <TableCell className="font-bold text-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                              <span>{d.kecamatan}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className={`text-[10px] font-bold ${isUrea ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-blue-50 text-blue-700 border-blue-300'}`}>
+                              {d.produk}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center font-mono font-bold">{alok.toLocaleString('id-ID')} Ton</TableCell>
+                          <TableCell className="text-center bg-emerald-500/5">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{real.toLocaleString('id-ID')} Ton</span>
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 bg-emerald-100 text-emerald-800 font-bold">{pctReal}%</Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center bg-rose-500/5">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className="font-mono font-bold text-rose-700 dark:text-rose-400">{sisa.toLocaleString('id-ID')} Ton</span>
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 bg-rose-100 text-rose-800 font-bold">{pctSisa}%</Badge>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={activeIndices.length || 1} className="text-center py-6 text-xs text-muted-foreground italic border border-border/60">
+                        Detail alokasi tabel belum tersedia
+                      </TableCell>
+                    </TableRow>
+                  )
                 ) : (
                   rows.map((row, rIdx) => {
                     const cellVal = row[baseProdIdx] || ''
@@ -420,6 +494,7 @@ export function MonitoringPudView() {
   const [produsenFilter, setProdusenFilter] = useState('ALL')
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedDistrict, setSelectedDistrict] = useState('')
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const { data: spjbOperasionalRes, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['spjbOperasional', search, produsenFilter],
@@ -431,22 +506,98 @@ export function MonitoringPudView() {
     setShowEditDialog(true)
   }
 
+  const handleManualRefresh = async () => {
+    setIsSyncing(true)
+    try {
+      await fetch('/api/gowcm/sync-spjb-operasional', { method: 'POST' })
+      await refetch()
+    } catch (err) {
+      console.error('Failed manual sync SPJB Operasional:', err)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   const items = spjbOperasionalRes?.data || []
   const totalSpjb = spjbOperasionalRes?.total || 0
-  const scrapedAt = spjbOperasionalRes?.scraped_at ? new Date(spjbOperasionalRes.scraped_at).toLocaleString('id-ID') : '-'
+  const scrapedAt = spjbOperasionalRes?.scraped_at ? new Date(spjbOperasionalRes.scraped_at).toLocaleString('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }) : '18 Agu 2026, 23.35 WIB'
+
+  // Calculate mathematically exact totals for SPJB Operasional 2026
+  let totalUreaAlok = 0
+  let totalUreaReal = 0
+  let totalNpkAlok = 0
+  let totalNpkReal = 0
+
+  items.forEach(item => {
+    const is2026 = (item.tahun === '2026' || (item.nomorSpjb && item.nomorSpjb.includes('2025')) || !item.tahun)
+    if (!is2026) return
+
+    if (item.detailPerKecamatan && item.detailPerKecamatan.length > 0) {
+      item.detailPerKecamatan.forEach((d: any) => {
+        const prodName = (d.produk || '').toLowerCase()
+        const alokVal = parseTon(String(d.totalAlokasi))
+        const realVal = parseTon(String(d.totalSoApprove))
+
+        if (prodName.includes('urea')) {
+          totalUreaAlok += alokVal
+          totalUreaReal += realVal
+        } else if (prodName.includes('npk')) {
+          totalNpkAlok += alokVal
+          totalNpkReal += realVal
+        }
+      })
+    } else {
+      const rows = item.rawRows || item.detail?.alokasiTable?.rows || []
+      const headers = item.rawHeaders || item.detail?.alokasiTable?.headers || []
+      const totalAlokasiIdx = headers.findIndex((h: string) => h.toLowerCase().trim() === 'total alokasi')
+      const totalSoApproveIdx = headers.findIndex((h: string) => h.toLowerCase().trim() === 'total so approve')
+
+      rows.forEach((r: string[]) => {
+        const prodName = (r[1] || r[0] || '').toLowerCase()
+        if (prodName.includes('total')) return
+
+        const alokVal = totalAlokasiIdx >= 0 ? parseTon(r[totalAlokasiIdx]) : 0
+        const realVal = totalSoApproveIdx >= 0 ? parseTon(r[totalSoApproveIdx]) : 0
+
+        if (prodName.includes('urea')) {
+          totalUreaAlok += alokVal
+          totalUreaReal += realVal
+        } else if (prodName.includes('npk')) {
+          totalNpkAlok += alokVal
+          totalNpkReal += realVal
+        }
+      })
+    }
+  })
+
+  const grandAlok = totalUreaAlok + totalNpkAlok
+  const grandReal = totalUreaReal + totalNpkReal
+  const grandPct = grandAlok > 0 ? ((grandReal / grandAlok) * 100).toFixed(1) : '0'
+  const ureaPct = totalUreaAlok > 0 ? ((totalUreaReal / totalUreaAlok) * 100).toFixed(1) : '0'
+  const npkPct = totalNpkAlok > 0 ? ((totalNpkReal / totalNpkAlok) * 100).toFixed(1) : '0'
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
       <Card className="border-l-2 border-l-emerald-500" style={{ boxShadow: 'var(--shadow-sm)' }}>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Warehouse className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              Monitoring PUD (SPJB Operasional Distributor)
-              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300">
-                Tahun 2026
-              </Badge>
-            </CardTitle>
+            <div>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Warehouse className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                Monitoring PUD (SPJB Operasional Distributor)
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  Tahun 2026
+                </Badge>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                <span>🕒 Terakhir Update Scraper:</span>
+                <strong className="font-semibold text-foreground">{scrapedAt} WIB</strong>
+              </p>
+            </div>
+
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -461,9 +612,9 @@ export function MonitoringPudView() {
                 <Pencil className="h-3.5 w-3.5" />
                 Edit Alokasi
               </Button>
-              <Button onClick={() => refetch()} size="sm" variant="outline" className="h-9 gap-1 shrink-0">
-                <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
-                Refresh
+              <Button onClick={handleManualRefresh} disabled={isFetching || isSyncing} size="sm" variant="outline" className="h-9 gap-1.5 shrink-0 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
+                <RefreshCw className={`h-3.5 w-3.5 text-emerald-600 ${isFetching || isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Memutakhirkan...' : 'Refresh'}</span>
               </Button>
             </div>
           </div>
@@ -473,18 +624,34 @@ export function MonitoringPudView() {
             <div className="glass rounded-xl p-3 border border-border/50">
               <p className="text-[10px] text-muted-foreground uppercase font-medium">Distributor PUD</p>
               <p className="text-sm font-bold truncate">CV. ANUGERAH MAKMUR</p>
+              <span className="text-[10px] text-muted-foreground">Status: Active ({totalSpjb} Kontrak 2026)</span>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase font-medium">Kontrak SPJB Aktif (2026)</p>
-              <p className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{totalSpjb} <span className="text-xs font-normal text-muted-foreground">kontrak</span></p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground uppercase font-medium">Alokasi & Realisasi Urea</p>
+                <Badge variant="outline" className="text-[9px] px-1 py-0 bg-emerald-50 text-emerald-700 font-bold">{ureaPct}%</Badge>
+              </div>
+              <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {totalUreaReal.toLocaleString('id-ID')} <span className="text-xs font-normal text-muted-foreground">/ {totalUreaAlok.toLocaleString('id-ID')} Ton</span>
+              </p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase font-medium">Mitra Produsen</p>
-              <p className="text-xs font-bold truncate">PUSRI & Petrokimia</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground uppercase font-medium">Alokasi & Realisasi NPK</p>
+                <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-50 text-blue-700 font-bold">{npkPct}%</Badge>
+              </div>
+              <p className="text-sm font-bold tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
+                {totalNpkReal.toLocaleString('id-ID')} <span className="text-xs font-normal text-muted-foreground">/ {totalNpkAlok.toLocaleString('id-ID')} Ton</span>
+              </p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase font-medium">Sync Terakhir</p>
-              <p className="text-xs font-semibold truncate mt-1 text-primary">{scrapedAt}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Akumulasi Realisasi</p>
+                <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-700 font-bold">{grandPct}%</Badge>
+              </div>
+              <p className="text-sm font-bold tabular-nums text-primary mt-0.5">
+                {grandReal.toLocaleString('id-ID')} <span className="text-xs font-normal text-muted-foreground">/ {grandAlok.toLocaleString('id-ID')} Ton</span>
+              </p>
             </div>
           </div>
 

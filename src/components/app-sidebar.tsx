@@ -45,6 +45,7 @@ import {
   Building2,
   Bot,
   Layers,
+  PackageCheck,
 } from 'lucide-react'
 
 const navGroups = [
@@ -66,6 +67,7 @@ const navGroups = [
     items: [
       { id: 'monitoring-ppts', label: 'PPTS', icon: Store },
       { id: 'monitoring-pud', label: 'PUD', icon: Warehouse },
+      { id: 'monitoring-realisasi', label: 'Realisasi (Stok Kios)', icon: PackageCheck },
       { id: 'monitoring-order', label: 'Order (Monitoring)', icon: ShoppingBag },
       { id: 'stock', label: 'Stok', icon: Boxes },
       { id: 'stock-confirmation', label: 'Konfirmasi Stok', icon: ClipboardCheck },

@@ -581,6 +581,14 @@ export interface SpjbPptsItem {
   status: string
   tanggalAwal: string
   tanggalAkhir: string
+  alokasiDetail?: Array<{
+    kecamatan: string
+    produk: string
+    alokasiSpjb: number | string
+    realisasi: number | string
+    sisaAlokasi: number | string
+    progress: string
+  }>
   detail?: {
     header?: { judul?: string; status?: string }
     alokasiTable?: {
@@ -692,8 +700,35 @@ export const fetchGowcmPenyaluran = (params?: { search?: string; status?: string
   if (params?.status && params.status !== 'ALL') query.append('status', params.status)
   if (params?.kecamatan && params.kecamatan !== 'ALL') query.append('kecamatan', params.kecamatan)
   if (params?.produk && params.produk !== 'ALL') query.append('produk', params.produk)
-  const qs = query.toString()
-  return apiFetch<GowcmPenyaluranResponse>(`/api/gowcm/penyaluran${qs ? `?${qs}` : ''}`)
+
+  return apiFetch<GowcmPenyaluranResponse>(`/api/gowcm/monitoring-order?${query.toString()}`)
+}
+
+export const fetchAlokasiTahunanKecamatan = async () => {
+  return apiFetch<{ success: boolean; total: number; data: Array<{ id: string; district: string; productName: string; totalAlokasi: number; totalSo: number; totalSoApprove: number; totalSisa: number }> }>('/api/alokasi/tahunan-kecamatan')
+}
+
+export interface RealisasiStokKiosItem {
+  kodeKios: string
+  namaKios: string
+  kodeProduk: string
+  namaProduk: string
+  stokKg: number
+  syncAt: string
+}
+
+export const fetchRealisasiStokKios = (params?: { search?: string; kodeKios?: string; produk?: string }) => {
+  const query = new URLSearchParams()
+  if (params?.search) query.append('search', params.search)
+  if (params?.kodeKios) query.append('kodeKios', params.kodeKios)
+  if (params?.produk) query.append('produk', params.produk)
+
+  return apiFetch<{
+    success: boolean
+    total: number
+    scraped_at: string | null
+    data: RealisasiStokKiosItem[]
+  }>(`/api/gowcm/realisasi-stok-kios?${query.toString()}`)
 }
 
 

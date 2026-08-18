@@ -1,560 +1,388 @@
 /**
- * GOW CM Pupuk Indonesia
- * Scraper: Alokasi >> SPJB PPTS + Detail setiap SPJB
+ * spjb_ppts.js — GOW CM Scraper: Alokasi >> SPJB PPTS
  *
- * Fix v2:
- *  - routePrefix diambil DINAMIS dari URL setelah login
- *  - Daftar SPJB diambil via API (credential dari cookies sesi)
- *  - Detail setiap SPJB diambil via navigasi ke halaman detail
+ * Schema target (dari gambar):
+ *   Alokasi → SPJB PPTS
+ *     ├── Nomor SPJB
+ *     ├── Kode PPTS  (key)
+ *     ├── Nama PPTS  (key)
+ *     └── Detail per SPJB:
+ *           Kecamatan | Alokasi SPJB | Realisasi | Sisa Alokasi
+ *
+ * Filter: Show = Lihat Semua, Status = Active
  */
 
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const CONFIG = {
-  baseUrl: 'https://gowcm.pupuk-indonesia.com',
+// Playwright dari d:\testGet\node_modules
+const playwrightPath = path.join('d:', 'testGet', 'node_modules', 'playwright');
+
+const CREDENTIALS = {
   username: '1000001601',
   password: 'A@makmur25',
 };
 
-// Konversi nomor SPJB ke format URL (ganti "/" dengan "*")
-function spjbToRoute(nomorSpjb) {
-  return nomorSpjb.replace(/\//g, '*');
+const OUTPUT_FILE = path.join(__dirname, 'spjb_ppts_full.json');
+const DELAY_MS = 1500;
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
 }
 
-// Ekstrak encrypted prefix dari URL hash
-// Contoh: /#/U2FsdGVk.../alokasi/...  →  "U2FsdGVk..."
-function extractPrefix(url) {
-  const hash = decodeURIComponent(url.split('#/')[1] || '');
-  const parts = hash.split('/');
-  // Prefix adalah segmen pertama yang panjangnya > 20 karakter (base64 encrypted)
-  return parts[0] && parts[0].length > 20 ? encodeURIComponent(parts[0]) : null;
+function parseNumber(val) {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') return val;
+  const str = String(val).trim();
+  if (!str || str === '-') return 0;
+
+  // Jika ada koma dan titik (misal "1.250,50")
+  if (str.includes('.') && str.includes(',')) {
+    return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+  // Jika hanya ada koma (misal "82,5" atau "82,50")
+  if (str.includes(',')) {
+    return parseFloat(str.replace(',', '.')) || 0;
+  }
+  // Jika hanya ada titik (misal "82.5" atau "1.753")
+  if (str.includes('.')) {
+    const parts = str.split('.');
+    // Jika bagian setelah titik bukan 3 digit (misal 82.5, 46.5, 82.50) -> itu desimal!
+    if (parts.length === 2 && parts[1].length !== 3) {
+      return parseFloat(str) || 0;
+    }
+  }
+  return parseFloat(str) || 0;
 }
 
-async function login(page) {
-  console.log('🔐 Login ke GOW CM...');
-  await page.goto(`${CONFIG.baseUrl}/#/login`, { waitUntil: 'networkidle', timeout: 30000 });
-  await page.fill('input[placeholder="Your Username"]', CONFIG.username);
-  await page.fill('input[placeholder="Enter Password"]', CONFIG.password);
+/** Login dan ambil encrypted prefix dari sidebar */
+async function loginAndGetPrefix(page) {
+  console.log('[LOGIN] Navigasi ke halaman login...');
+  await page.goto('https://gowcm.pupuk-indonesia.com/#/login', { waitUntil: 'networkidle', timeout: 30000 });
+  await page.fill('input[placeholder="Your Username"]', CREDENTIALS.username);
+  await page.fill('input[placeholder="Enter Password"]', CREDENTIALS.password);
   await page.click('button:has-text("Masuk")');
 
-  // Tunggu sampai URL berubah dari /login
-  await page.waitForFunction(
-    () => !window.location.href.includes('/login'),
-    { timeout: 15000 }
-  ).catch(() => { });
+  await page.waitForFunction(() => !window.location.href.includes('/login'), { timeout: 15000 });
+  await sleep(3000);
 
-  await page.waitForTimeout(4000);
-  const homeUrl = page.url();
-  console.log(`✅ Login berhasil. URL: ${homeUrl}`);
-
-  // Strategi 1: Ambil prefix dari href sidebar links
-  let prefix = await page.evaluate(() => {
-    const links = [...document.querySelectorAll('a[href], [href], a[to], router-link')];
+  // Ambil prefix dari href sidebar (BUKAN dari page.url())
+  const prefix = await page.evaluate(() => {
+    const links = [...document.querySelectorAll('a[href], [href]')];
     for (const link of links) {
-      const href = link.getAttribute('href') || link.getAttribute('to') || '';
+      const href = link.getAttribute('href') || '';
       const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
       if (match) return match[1];
     }
     return null;
   });
 
-  // Strategi 2: Tunggu lebih lama jika sidebar belum render
-  if (!prefix) {
-    console.log('  ⏳ Sidebar belum siap, tunggu 3 detik lagi...');
-    await page.waitForTimeout(3000);
-    prefix = await page.evaluate(() => {
-      const links = [...document.querySelectorAll('a[href], [href]')];
-      for (const link of links) {
-        const href = link.href || link.getAttribute('href') || link.getAttribute('to') || '';
-        const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
-        if (match) return match[1];
-      }
-      return null;
-    });
-  }
-
-  // Strategi 3: Klik menu Alokasi dan capture prefix dari URL
-  if (!prefix) {
-    console.log('  🖱️  Klik menu Alokasi untuk capture prefix dari URL...');
-    const clicked = await page.click(
-      'a:has-text("Alokasi"), li:has-text("Alokasi"), .sidebar a[href*="alokasi"]'
-    ).then(() => true).catch(() => false);
-
-    if (clicked) {
-      await page.waitForTimeout(3000);
-      const currentUrl = page.url();
-      console.log(`  URL setelah klik Alokasi: ${currentUrl}`);
-      const hash = decodeURIComponent(currentUrl.split('#/')[1] || '');
-      const parts = hash.split('/');
-      if (parts[0] && parts[0].length > 20) {
-        prefix = encodeURIComponent(parts[0]);
-      }
-    }
-  }
-
-  if (prefix && prefix.includes('%25')) {
-    prefix = decodeURIComponent(prefix);
-  }
-
-  console.log(`🔑 Route Prefix: ${prefix || '(tidak terdeteksi)'}`);
+  if (!prefix) throw new Error('Gagal mendapatkan encrypted prefix dari sidebar!');
+  console.log('[LOGIN] Prefix OK:', prefix.substring(0, 30) + '...');
   return prefix;
 }
 
-async function getSpjbListViaMenu(page, prefix) {
-  console.log('\n📋 Navigasi ke menu Alokasi >> SPJB PPTS...');
-
-  // Coba navigasi langsung dengan prefix dari URL sesi ini
-  if (prefix) {
-    const listUrl = `${CONFIG.baseUrl}/#/${prefix}/alokasi/contract-distributor-ppts`;
-    console.log(`  URL: ${listUrl}`);
-    await page.goto(listUrl, { waitUntil: 'networkidle', timeout: 30000 });
-    await page.waitForTimeout(3000);
-  }
-
-  // Jika tabel kosong, coba via klik menu
-  let rowCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
-
-  if (rowCount === 0) {
-    console.log('  ⚠️  Tabel kosong via URL langsung, coba via klik menu...');
-
-    // Klik menu Alokasi
-    await page.click('a:has-text("Alokasi"), li:has-text("Alokasi"), .menu-item:has-text("Alokasi")')
-      .catch(() => page.click('[class*="sidebar"] >> text=Alokasi').catch(() => { }));
-    await page.waitForTimeout(1000);
-
-    // Klik submenu SPJB PPTS
-    await page.click('a:has-text("SPJB PPTS"), li:has-text("SPJB PPTS")')
-      .catch(() => page.click('text=SPJB PPTS').catch(() => { }));
-    await page.waitForTimeout(3000);
-
-    console.log(`  URL setelah klik menu: ${page.url()}`);
-  }
-
-  // Tunggu tabel muncul
-  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => { });
-  rowCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
-  console.log(`  Rows ditemukan di DOM: ${rowCount}`);
-
-  // ============================
-  // Set Filter: Show = Semua & Status = Active
-  // ============================
-  console.log('  🔧 Setting filter: Lihat Semua + Status Active...');
-
-  await page.evaluate(() => {
-    // 1. Set "Show entries" ke nilai terbesar / semua
-    // DataTables biasanya punya select[name="...length"] atau select dengan option -1 / "All"
-    const showSelects = [...document.querySelectorAll('select')].filter(s => {
-      const opts = [...s.options].map(o => o.value);
-      return opts.includes('-1') || opts.includes('all') || opts.includes('All') || s.name?.includes('length');
-    });
-
-    if (showSelects.length > 0) {
-      const sel = showSelects[0];
-      // Pilih opsi -1 (All/Semua) atau nilai terbesar
-      const allOpt = [...sel.options].find(o => o.value === '-1' || o.text.toLowerCase().includes('semua') || o.text.toLowerCase().includes('all'));
+/** Set filter Show = Lihat Semua dan Status = Active */
+async function setFilters(page) {
+  try {
+    // Cari select "Show" (jumlah tampil) — set ke nilai terbesar / "All"
+    const showSelects = await page.$$('select');
+    for (const sel of showSelects) {
+      const options = await sel.evaluate(el => [...el.options].map(o => ({ value: o.value, text: o.text })));
+      const allOpt = options.find(o =>
+        o.text.toLowerCase().includes('semua') ||
+        o.text.toLowerCase().includes('all') ||
+        o.value === '-1' || o.value === '0' || parseInt(o.value) >= 100
+      );
       if (allOpt) {
-        sel.value = allOpt.value;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-        sel.dispatchEvent(new Event('input', { bubbles: true }));
-      } else {
-        // Pilih option dengan value terbesar
-        const maxOpt = [...sel.options].reduce((a, b) => (+a.value > +b.value ? a : b));
-        sel.value = maxOpt.value;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        await sel.selectOption(allOpt.value);
+        console.log('[FILTER] Show set ke:', allOpt.text);
+        await sleep(1000);
+        break;
       }
     }
-  });
 
-  await page.waitForTimeout(1000);
-
-  // Set Status filter ke "Active" jika ada
-  await page.evaluate(() => {
-    // Cari select yang punya options "Active" dan "Rejected"
-    const statusSelects = [...document.querySelectorAll('select')].filter(s => {
-      const opts = [...s.options].map(o => o.text.trim().toLowerCase());
-      return opts.includes('active') || opts.includes('actived');
-    });
-
-    if (statusSelects.length > 0) {
-      const sel = statusSelects[0];
-      const activeOpt = [...sel.options].find(o =>
-        o.text.trim().toLowerCase() === 'active' ||
-        o.text.trim().toLowerCase() === 'actived'
+    // Cari filter Status = Active
+    // Biasanya berupa select dropdown atau filter pill
+    const statusSelects = await page.$$('select');
+    for (const sel of statusSelects) {
+      const options = await sel.evaluate(el => [...el.options].map(o => ({ value: o.value, text: o.text })));
+      const activeOpt = options.find(o =>
+        o.text.toLowerCase().includes('active') ||
+        o.text.toLowerCase().includes('aktif') ||
+        o.value.toLowerCase() === 'active'
       );
       if (activeOpt) {
-        sel.value = activeOpt.value;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-        sel.dispatchEvent(new Event('input', { bubbles: true }));
+        await sel.selectOption(activeOpt.value);
+        console.log('[FILTER] Status set ke:', activeOpt.text);
+        await sleep(1000);
+        break;
       }
     }
 
-    // Juga coba klik tombol filter jika ada dropdown Vue custom
-    const statusBtn = [...document.querySelectorAll('button, .dropdown-item, li')]
-      .find(el => el.innerText?.trim()?.toLowerCase() === 'active' ||
-        el.innerText?.trim()?.toLowerCase() === 'actived');
-    if (statusBtn) statusBtn.click();
-  });
+    await sleep(DELAY_MS);
+  } catch (e) {
+    console.warn('[FILTER] Warning set filter:', e.message);
+  }
+}
 
-  await page.waitForTimeout(2000);
+/** Scrape satu halaman tabel list SPJB PPTS */
+async function scrapeListPage(page) {
+  await page.waitForSelector('table tbody tr', { timeout: 10000 }).catch(() => {});
+  await sleep(500);
 
-  // Hitung ulang row setelah filter
-  rowCount = await page.$$eval('table tbody tr', rows => rows.length).catch(() => 0);
-  console.log(`  Rows setelah filter: ${rowCount}`);
-
-  // Scrape daftar dari tabel
-  const list = await page.evaluate(() => {
+  return await page.evaluate(() => {
     const rows = [...document.querySelectorAll('table tbody tr')];
     return rows.map(row => {
-      // Kolom 0 = Checkbox (skip), data mulai dari kolom 1
       const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
-      const link = row.querySelector('td:nth-child(2) a');
-      // Gunakan link.href (absolute URL) bukan getAttribute (relative)
-      const href = link ? (link.href || link.getAttribute('href') || '') : '';
+      // cells[0] = checkbox (SKIP)
+      const href = row.querySelector('td a')?.getAttribute('href') ||
+                   row.querySelector('a')?.getAttribute('href') || '';
       return {
-        nomorSpjb: cells[1] || '',  // col 1: Nomor SPJB (col 0 = checkbox)
-        kodePpts: cells[2] || '',  // col 2: Kode PPTS
-        namaPpts: cells[3] || '',  // col 3: Nama PPTS
-        kodePud: cells[4] || '',  // col 4: Kode PUD
-        namaPud: cells[5] || '',  // col 5: Nama PUD
-        provinsi: cells[6] || '',  // col 6: Provinsi
-        kabupaten: cells[7] || '',  // col 7: Kabupaten
-        status: cells[8] || '',  // col 8: Status
-        tanggalAwal: cells[9] || '', // col 9: Tgl Awal
-        tanggalAkhir: cells[10] || '', // col 10: Tgl Akhir
+        nomorSpjb:   cells[1] || '',
+        kodePpts:    cells[2] || '',
+        namaPpts:    cells[3] || '',
+        kodePud:     cells[4] || '',
+        namaPud:     cells[5] || '',
+        provinsi:    cells[6] || '',
+        kabupaten:   cells[7] || '',
+        status:      cells[8] || '',
+        tanggalAwal: cells[9] || '',
+        tanggalAkhir:cells[10] || '',
         href,
       };
-    }).filter(r => r.nomorSpjb !== '');
+    }).filter(r => r.nomorSpjb && r.nomorSpjb !== '');
   });
-
-  console.log(`✅ Ditemukan ${list.length} SPJB dari tabel`);
-  return list;
 }
 
-async function getSpjbListViaApi(page) {
-  console.log('\n📡 Fallback: Mengambil daftar via API...');
-
-  const result = await page.evaluate(async (baseUrl) => {
-    const endpoints = [
-      '/api/alokasi/contract-distributor-ppts',
-      '/api/alokasi/spjb-ppts',
-      '/api/distributor/spjb',
-    ];
-
-    for (const ep of endpoints) {
-      try {
-        const res = await fetch(`${baseUrl}${ep}`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-        });
-        const text = await res.text();
-        if (res.ok && text.startsWith('[') || text.includes('"data"')) {
-          return { endpoint: ep, status: res.status, body: text };
-        }
-      } catch (_) { }
-    }
-    return null;
-  }, CONFIG.baseUrl);
-
-  if (!result) return [];
-
-  console.log(`  API: ${result.endpoint} [${result.status}]`);
+/** Navigasi ke halaman detail SPJB dan scrape tabel alokasi */
+async function scrapeDetail(page, spjb, prefix) {
   try {
-    const json = JSON.parse(result.body);
-    const rows = Array.isArray(json) ? json
-      : Array.isArray(json.data) ? json.data
-        : Array.isArray(json.result) ? json.result : [];
-
-    return rows.map(r => ({
-      nomorSpjb: r.no_spjb || r.nomorSpjb || r.contract_number || '',
-      kodePpts: r.kode_ppts || r.kodePpts || r.ppts_code || '',
-      namaPpts: r.nama_ppts || r.namaPpts || r.ppts_name || '',
-      kodePud: r.kode_pud || r.kodePud || r.pud_code || '',
-      namaPud: r.nama_pud || r.namaPud || r.pud_name || '',
-      provinsi: r.provinsi || r.province || '',
-      kabupaten: r.kabupaten || r.city || '',
-      status: r.status || '',
-      tanggalAwal: r.tanggal_awal || r.start_date || '',
-      tanggalAkhir: r.tanggal_akhir || r.end_date || '',
-    }));
-  } catch (_) {
-    console.log('  Raw:', result.body.substring(0, 300));
-    return [];
-  }
-}
-
-async function getSpjbDetail(page, spjb, prefix) {
-  // Gunakan href langsung dari list (sudah encode dengan benar)
-  // Fallback: rebuild URL dengan prefix yang di-decode
-  let detailUrl;
-  if (spjb.href && spjb.href.startsWith('/')) {
-    detailUrl = `${CONFIG.baseUrl}/#${spjb.href}`;
-  } else if (spjb.href && spjb.href.includes('http')) {
-    detailUrl = spjb.href;
-  } else {
-    const spjbRoute = spjbToRoute(spjb.nomorSpjb);
-    // Decode prefix (dari %252F menjadi %2F)
-    const decodedPrefix = decodeURIComponent(prefix);
-    detailUrl = `${CONFIG.baseUrl}/#/${decodedPrefix}/alokasi/contract-distributor-ppts/${spjbRoute}/${spjb.kodePpts}`;
-  }
-
-  console.log(`  📄 [${spjb.status}] ${spjb.nomorSpjb} → ${spjb.namaPpts}`);
-
-  await page.goto(detailUrl, { waitUntil: 'networkidle', timeout: 30000 });
-
-  // Tunggu tabel muncul (max 8 detik)
-  await page.waitForSelector('table', { timeout: 8000 }).catch(() => { });
-  await page.waitForTimeout(1500);
-
-  // Cek apakah tabel sudah ada; jika belum, reload sekali
-  const tableCount = await page.$$eval('table', t => t.length).catch(() => 0);
-  if (tableCount === 0) {
-    console.log(`    ⚠️  Tabel belum muncul, reload...`);
-    await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
-    await page.waitForSelector('table', { timeout: 8000 }).catch(() => { });
-    await page.waitForTimeout(2000);
-  }
-
-  // Scrape dari DOM
-  const domDetail = await page.evaluate(() => {
-    // Info header
-    const allText = document.body.innerText;
-    const statusMatch = allText.match(/Status[:\s]+(Active|Rejected|Ditolak|Pending)/i);
-
-    const header = {
-      judul: document.querySelector('h4, h3, h2, .page-title, .card-title')?.innerText?.trim() || '',
-      status: statusMatch ? statusMatch[1] : '',
-    };
-
-    // Key-value info fields — dari semua elemen dengan label
-    const infoFields = {};
-    const formRows = document.querySelectorAll('.form-group, .row > [class*="col"]');
-    formRows.forEach(group => {
-      const label = group.querySelector('label')?.innerText?.trim();
-      const value = group.querySelector('input')?.value?.trim()
-        || group.querySelector('p, span:not(label span)')?.innerText?.trim() || '';
-      if (label && value && value !== label && value.length < 200) {
-        infoFields[label] = value;
-      }
-    });
-
-    // Tabel Alokasi SPJB & Riwayat — identifikasi berdasarkan header content
-    const tables = [...document.querySelectorAll('table')];
-
-    const parseTable = (table) => {
-      if (!table) return { headers: [], rows: [], structured: [] };
-      const headers = [...table.querySelectorAll('thead th, thead td')]
-        .map(th => th.innerText.trim())
-        .filter(h => h !== '');
-
-      const rows = [...table.querySelectorAll('tbody tr')].map(tr => {
-        return [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-      }).filter(r => r.some(c => c !== ''));
-
-      // Pasangkan sub-row ke parent (untuk Urea/NPK per Kecamatan)
-      const structured = [];
-      let lastParent = null;
-      rows.forEach(row => {
-        const isEmpty = !row[0] || row[0].trim() === '' || row[0].trim() === '-';
-        if (!isEmpty) {
-          lastParent = { kecamatan: row[1] || row[0], data: row, subRows: [] };
-          structured.push(lastParent);
-        } else if (lastParent) {
-          lastParent.subRows.push(row.filter((_, i) => i > 0));
-        }
-      });
-
-      return { headers, rows, structured };
-    };
-
-    // Cari tabel alokasi: punya header "Kacamatan" atau "Alokasi SPJB"
-    const alokasiTableEl = tables.find(t => {
-      const hdrs = [...t.querySelectorAll('thead th')].map(h => h.innerText.trim());
-      return hdrs.some(h => h.toLowerCase().includes('kacamatan') || h.toLowerCase().includes('alokasi spjb'));
-    });
-
-    // Cari tabel riwayat: punya header "Dokument" atau "Jenis" atau "Riwayat"
-    const riwayatTableEl = tables.find(t => {
-      const hdrs = [...t.querySelectorAll('thead th')].map(h => h.innerText.trim());
-      return hdrs.some(h => h.toLowerCase().includes('dokument') || h.toLowerCase().includes('jenis') || h.toLowerCase().includes('alasan'));
-    });
-
-    const alokasiTable = parseTable(alokasiTableEl);
-    const riwayatTable = parseTable(riwayatTableEl);
-
-    console.log('Tables found:', tables.length,
-      '| Alokasi:', !!alokasiTableEl,
-      '| Riwayat:', !!riwayatTableEl,
-      '| Alokasi rows:', alokasiTable.rows.length);
-
-    // PDF links
-    const pdfLinks = [...document.querySelectorAll('a[href*=".pdf"], a[href*="storage"], button[class*="evidence"]')]
-      .map(a => a.href || a.getAttribute('onclick') || '');
-
-    return { header, infoFields, alokasiTable, riwayatTable, pdfLinks };
-  });
-
-  return {
-    ...spjb,
-    detailUrl,
-    detail: domDetail,
-  };
-}
-
-
-function printSummary(results) {
-  const divider = '='.repeat(110);
-  console.log('\n' + divider);
-  console.log('📊 HASIL SCRAPING: Alokasi >> SPJB PPTS');
-  console.log(divider);
-
-  const byStatus = {};
-  results.forEach((r) => {
-    byStatus[r.status] = (byStatus[r.status] || 0) + 1;
-    const alokasi = r.detail?.alokasiTable?.rows?.length || 0;
-    const riwayat = r.detail?.riwayatTable?.rows?.length || 0;
-    console.log(`\n  [${r.status?.padEnd(8)}] ${r.nomorSpjb}`);
-    console.log(`           PPTS: ${r.kodePpts} - ${r.namaPpts}`);
-    console.log(`           Berlaku: ${r.tanggalAwal} s/d ${r.tanggalAkhir}`);
-    console.log(`           Alokasi rows: ${alokasi}  |  Riwayat docs: ${riwayat}`);
-
-    if (r.detail?.alokasiTable?.rows?.length > 0) {
-      console.log(`           Kolom: ${r.detail.alokasiTable.headers.join(' | ')}`);
-      r.detail.alokasiTable.rows.slice(0, 2).forEach(row => {
-        console.log(`             → ${row.join(' | ')}`);
-      });
+    let detailUrl;
+    if (spjb.href && spjb.href.startsWith('/#/')) {
+      // href sudah berisi /#/ — jangan prepend # lagi
+      detailUrl = `https://gowcm.pupuk-indonesia.com${spjb.href}`;
+    } else if (spjb.href && spjb.href.startsWith('/')) {
+      detailUrl = `https://gowcm.pupuk-indonesia.com/#${spjb.href}`;
+    } else {
+      const decodedPrefix = decodeURIComponent(prefix);
+      const spjbRoute = spjb.nomorSpjb.replace(/\//g, '*');
+      detailUrl = `https://gowcm.pupuk-indonesia.com/#/${decodedPrefix}/alokasi/contract-distributor-ppts/${spjbRoute}/${spjb.kodePpts}`;
     }
-    if (r.error) console.log(`           ⚠️  Error: ${r.error}`);
-  });
 
-  console.log('\n' + divider);
-  console.log(`TOTAL: ${results.length} SPJB`);
-  Object.entries(byStatus).forEach(([s, c]) => console.log(`  - ${s}: ${c}`));
-  console.log(divider);
+    await page.goto(detailUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.waitForSelector('table', { timeout: 8000 }).catch(() => {});
+    await sleep(500);
+
+    // 🎯 KLIK SEMUA BUTTON COLLAPSE / FA-PLUS UNTUK MENG-EXPAND KECAMATAN / KIOS
+    await page.evaluate(() => {
+      const selectors = ['.buttonCollapse', '.fa-plus', 'i[class*="plus"]', '[class*="collapse"]', 'tr button'];
+      selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          try { el.click(); } catch(e){}
+        });
+      });
+    });
+    await sleep(800);
+
+    const detail = await page.evaluate(() => {
+      const tables = [...document.querySelectorAll('table')];
+
+      const parseTable = (t) => {
+        if (!t) return { headers: [], rows: [] };
+        const headers = [...t.querySelectorAll('thead th')].map(h => h.innerText.trim()).filter(Boolean);
+        const rows = [...t.querySelectorAll('tbody tr')]
+          .map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText.trim()))
+          .filter(r => r.some(c => c !== ''));
+        return { headers, rows };
+      };
+
+      // Cari tabel yang memiliki header "Alokasi SPJB" atau "Kacamatan"/"Kecamatan"
+      let targetTable = null;
+      for (const t of tables) {
+        const headers = [...t.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim().toLowerCase());
+        if (headers.some(h => h.includes('alokasi') || h.includes('kacamatan') || h.includes('kecamatan'))) {
+          targetTable = t;
+          break;
+        }
+      }
+      if (!targetTable && tables.length > 1) targetTable = tables[1];
+      if (!targetTable && tables.length > 0) targetTable = tables[0];
+
+      const alokasiTable = parseTable(targetTable);
+
+      // Extract rows
+      const alokasiRows = [];
+      let currentKecamatan = '';
+
+      for (const row of alokasiTable.rows) {
+        // Cek jika row adalah row kecamatan (biasanya kolom 0/1 berisi nama kecamatan, misal "Pringapus")
+        // Atau row produk (misal "Urea", "NPK")
+        const col0 = row[0] || '';
+        const col1 = row[1] || '';
+        const firstColText = col0 || col1;
+
+        if (!firstColText) continue;
+
+        if (firstColText.toLowerCase() === 'urea' || firstColText.toLowerCase() === 'npk' || firstColText.toLowerCase().includes('organik')) {
+          // Baris Produk
+          alokasiRows.push({
+            kecamatan: currentKecamatan,
+            produk: firstColText,
+            alokasiSpjb: row[2] || row[1] || '0',
+            realisasi: row[3] || row[2] || '0',
+            sisaAlokasi: row[4] || row[3] || '0',
+            progress: row[5] || row[4] || '0%',
+          });
+        } else {
+          // Baris Kecamatan / Main Row
+          currentKecamatan = firstColText;
+          // Jika di baris kecamatan ada total angka alokasi, opsional bisa disimpan jika tidak ada breakdown produk
+          if (row.length >= 5 && (row[2] || row[3])) {
+            alokasiRows.push({
+              kecamatan: currentKecamatan,
+              produk: 'TOTAL',
+              alokasiSpjb: row[2] || '0',
+              realisasi: row[3] || '0',
+              sisaAlokasi: row[4] || '0',
+              progress: row[5] || '0%',
+            });
+          }
+        }
+      }
+
+      return {
+        alokasiRows,
+        rawHeaders: alokasiTable.headers,
+        rawRows: alokasiTable.rows,
+      };
+    });
+
+    return detail;
+  } catch (e) {
+    console.warn(`  [DETAIL] Error untuk ${spjb.nomorSpjb} (${spjb.kodePpts}):`, e.message);
+    return { alokasiRows: [], rawHeaders: [], rawRows: [] };
+  }
 }
 
-// =====================
-// MAIN
-// =====================
-(async () => {
+/** Cek apakah ada halaman berikutnya */
+async function hasNextPage(page) {
+  return await page.evaluate(() => {
+    const nextBtn = document.querySelector('li.paginate_button.next:not(.disabled) a, button[aria-label="Next"]:not([disabled]), .pagination .next:not(.disabled)');
+    return !!nextBtn;
+  });
+}
+
+async function clickNextPage(page) {
+  await page.evaluate(() => {
+    const nextBtn = document.querySelector('li.paginate_button.next:not(.disabled) a, button[aria-label="Next"]:not([disabled]), .pagination .next:not(.disabled) a');
+    if (nextBtn) nextBtn.click();
+  });
+  await sleep(2000);
+}
+
+async function main() {
+  const startTime = Date.now();
+  console.log('='.repeat(60));
+  console.log('GOW CM Scraper: SPJB PPTS (Alokasi)');
+  console.log('Filter: Show=Lihat Semua | Status=Active');
+  console.log('='.repeat(60));
+
   const browser = await chromium.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    executablePath: undefined,
   });
 
-  const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-  });
-
-  const page = await context.newPage();
+  const page = await browser.newPage();
+  page.setDefaultTimeout(30000);
 
   try {
-    // Step 1: Login — ambil prefix dari URL sesi
-    const prefix = await login(page);
+    const prefix = await loginAndGetPrefix(page);
 
-    // Step 2: Ambil daftar SPJB (via menu → fallback API)
-    let spjbList = prefix ? await getSpjbListViaMenu(page, prefix) : [];
-    if (spjbList.length === 0) {
-      spjbList = await getSpjbListViaApi(page);
-    }
+    // Navigasi ke daftar SPJB PPTS
+    const listUrl = `https://gowcm.pupuk-indonesia.com/#/${prefix}/alokasi/contract-distributor-ppts`;
+    console.log('\n[NAVIGATE] Ke halaman list SPJB PPTS...');
+    await page.goto(listUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await sleep(2000);
 
-    if (spjbList.length === 0) {
-      console.log('❌ Tidak ada data SPJB ditemukan');
-      await browser.close();
-      return;
-    }
+    // Set filter
+    await setFilters(page);
+    await sleep(2000);
 
-    console.log(`\n🔍 Mengambil detail untuk ${spjbList.length} SPJB...`);
-    const results = [];
+    // Scrape semua halaman list
+    const allList = [];
+    let pageNum = 1;
 
-    for (const spjb of spjbList) {
-      try {
-        const r = await getSpjbDetail(page, spjb, prefix);
-        results.push(r);
-        await page.waitForTimeout(800);
-      } catch (err) {
-        console.log(`  ⚠️  Gagal: ${spjb.nomorSpjb} — ${err.message}`);
-        results.push({ ...spjb, detail: null, error: err.message });
+    while (true) {
+      console.log(`\n[LIST] Halaman ${pageNum}...`);
+      const rows = await scrapeListPage(page);
+      console.log(`  Ditemukan ${rows.length} baris`);
+      allList.push(...rows);
+
+      if (!(await hasNextPage(page))) {
+        console.log('  [PAGING] Tidak ada halaman berikutnya.');
+        break;
       }
+      await clickNextPage(page);
+      pageNum++;
     }
 
-    // Step 4: Ringkasan
-    printSummary(results);
+    console.log(`\n[LIST] Total SPJB PPTS: ${allList.length}`);
 
-    // Step 5: Incremental Merge dengan data eksisting
-    const outputFile = path.join(__dirname, 'spjb_ppts_full.json');
-    let existingMap = new Map();
-    let existingCount = 0;
+    // Scrape detail untuk setiap SPJB
+    const result = [];
+    for (let i = 0; i < allList.length; i++) {
+      const spjb = allList[i];
+      console.log(`\n[DETAIL] ${i + 1}/${allList.length} — ${spjb.nomorSpjb} (${spjb.kodePpts}) ${spjb.namaPpts}`);
 
-    if (fs.existsSync(outputFile)) {
-      try {
-        const fileContent = fs.readFileSync(outputFile, 'utf8');
-        const parsed = JSON.parse(fileContent);
-        const list = Array.isArray(parsed.data) ? parsed.data : (Array.isArray(parsed) ? parsed : []);
-        existingCount = list.length;
-        list.forEach(item => {
-          const key = `${item.nomorSpjb || ''}_${item.kodePpts || ''}`;
-          existingMap.set(key, item);
-        });
-        console.log(`\n📂 Ditemukan data eksisting: ${existingCount} record.`);
-      } catch (e) {
-        console.log('⚠️ File eksisting tidak valid / gagal dibaca.');
-      }
+      const detail = await scrapeDetail(page, spjb, prefix);
+      console.log(`  Alokasi rows: ${detail.alokasiRows.length}`);
+
+      result.push({
+        nomorSpjb:   spjb.nomorSpjb,
+        kodePpts:    spjb.kodePpts,
+        namaPpts:    spjb.namaPpts,
+        kodePud:     spjb.kodePud,
+        namaPud:     spjb.namaPud,
+        provinsi:    spjb.provinsi,
+        kabupaten:   spjb.kabupaten,
+        status:      spjb.status,
+        tanggalAwal: spjb.tanggalAwal,
+        tanggalAkhir:spjb.tanggalAkhir,
+        // Detail: array per kecamatan & produk
+        alokasiDetail: detail.alokasiRows.map(r => ({
+          kecamatan:   r.kecamatan,
+          produk:      r.produk,
+          alokasiSpjb: parseNumber(r.alokasiSpjb),
+          realisasi:   parseNumber(r.realisasi),
+          sisaAlokasi: parseNumber(r.sisaAlokasi),
+          progress:    r.progress,
+        })),
+      });
     }
-
-    let addedCount = 0;
-    let updatedCount = 0;
-    let unchangedCount = 0;
-
-    results.forEach(newItem => {
-      const key = `${newItem.nomorSpjb || ''}_${newItem.kodePpts || ''}`;
-      if (existingMap.has(key)) {
-        const oldItem = existingMap.get(key);
-        if (JSON.stringify(oldItem) !== JSON.stringify(newItem)) {
-          existingMap.set(key, { ...newItem, updated_at: new Date().toISOString() });
-          updatedCount++;
-        } else {
-          unchangedCount++;
-        }
-      } else {
-        existingMap.set(key, { ...newItem, added_at: new Date().toISOString() });
-        addedCount++;
-      }
-    });
-
-    const finalMergedData = Array.from(existingMap.values());
-
-    console.log(`\n📈 RINGKASAN PERUBAHAN DATA (SPJB PPTS):`);
-    console.log(`  ✨ Data Baru (Added)     : ${addedCount} record`);
-    console.log(`  🔄 Data Diubah (Updated)  : ${updatedCount} record`);
-    console.log(`  ✅ Data Tetap (Unchanged) : ${unchangedCount} record`);
-    console.log(`  📊 Total Akhir Record    : ${finalMergedData.length} record`);
 
     const output = {
       scraped_at: new Date().toISOString(),
-      source: 'GOW CM - Alokasi >> SPJB PPTS',
-      total: finalMergedData.length,
-      last_sync_summary: {
-        scraped_records: results.length,
-        added_new: addedCount,
-        updated: updatedCount,
-        unchanged: unchangedCount
-      },
-      data: finalMergedData,
+      source: 'GOW CM — Alokasi >> SPJB PPTS',
+      filter: { show: 'Lihat Semua', status: 'Active' },
+      total: result.length,
+      data: result,
     };
-    fs.writeFileSync(outputFile, JSON.stringify(output, null, 2));
-    console.log(`\n💾 Disimpan ke: ${outputFile}`);
 
-  } catch (err) {
-    console.error('❌ Error:', err.message);
-    console.error(err.stack);
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf-8');
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`✅ Selesai! ${result.length} SPJB PPTS discrape dalam ${elapsed}s`);
+    console.log(`📁 Output: ${OUTPUT_FILE}`);
+    console.log('='.repeat(60));
+
+  } catch (e) {
+    console.error('\n❌ ERROR:', e.message);
+    process.exit(1);
   } finally {
-    try { await page.waitForTimeout(1000); } catch (_) { }
-    try { await browser.close(); } catch (_) { }
+    await browser.close();
   }
-})();
+}
+
+main();

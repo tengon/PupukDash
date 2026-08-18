@@ -12,38 +12,50 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Progress } from '@/components/ui/progress'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Bot,
   RefreshCw,
   Clock,
   CheckCircle2,
-  AlertCircle,
-  Database,
-  Calendar,
   Sparkles,
   Zap,
+  Save,
+  Building2,
+  Store,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
-interface ScraperSyncResponse {
-  success: boolean
-  schedule: {
-    interval: string
-    times: string[]
-    cron: string
-  }
-  isRunning: boolean
-  lastSyncTime: string
-  lastSyncStatus: 'SUCCESS' | 'FAILED' | null
-  lastSyncMessage: string
-  files: {
-    spjb_operasional: string | null
-    spjb_ppts: string | null
-    penyaluran: string | null
-    stok_kios_ipuber: string | null
-  }
+interface ScraperScheduleItem {
+  enabled: boolean
+  startTime: string
+  intervalHours: number
+  lastRun: string | null
 }
+
+interface ScheduleSettings {
+  spjb_operasional: ScraperScheduleItem
+  spjb_ppts: ScraperScheduleItem
+}
+
+const INTERVAL_OPTIONS = [
+  { value: '1', label: 'Setiap 1 Jam' },
+  { value: '2', label: 'Setiap 2 Jam' },
+  { value: '3', label: 'Setiap 3 Jam' },
+  { value: '6', label: 'Setiap 6 Jam' },
+  { value: '12', label: 'Setiap 12 Jam' },
+  { value: '24', label: 'Setiap 24 Jam' },
+]
 
 export function ScraperDialog({
   open,
@@ -54,184 +66,310 @@ export function ScraperDialog({
 }) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [progressValue, setProgressValue] = useState(10)
+  const [activeTab, setActiveTab] = useState<'operasional' | 'ppts'>('operasional')
 
-  const { data, isLoading, refetch } = useQuery<ScraperSyncResponse>({
-    queryKey: ['scraper-sync-status'],
+  // Local settings state
+  const [opEnabled, setOpEnabled] = useState(true)
+  const [opStartTime, setOpStartTime] = useState('06:00')
+  const [opInterval, setOpInterval] = useState('6')
+
+  const [pptsEnabled, setPptsEnabled] = useState(true)
+  const [pptsStartTime, setPptsStartTime] = useState('06:00')
+  const [pptsInterval, setPptsInterval] = useState('6')
+
+  const [isSyncingOp, setIsSyncingOp] = useState(false)
+  const [isSyncingPpts, setIsSyncingPpts] = useState(false)
+
+  // Fetch current schedule settings
+  const { data: scheduleData, isLoading, refetch } = useQuery<{ success: boolean; settings: ScheduleSettings }>({
+    queryKey: ['scraper-schedule-settings'],
     queryFn: async () => {
-      const res = await fetch('/api/scraper/sync')
-      if (!res.ok) throw new Error('Gagal mengambil status scraper')
+      const res = await fetch('/api/scraper/schedule')
+      if (!res.ok) throw new Error('Gagal mengambil jadwal scraper')
       return res.json()
     },
     enabled: open,
-    refetchInterval: open ? 5000 : false,
   })
 
   useEffect(() => {
-    let interval: NodeJS.Timeout
-    const active = isSyncing || data?.isRunning
-    if (active) {
-      interval = setInterval(() => {
-        setProgressValue((prev) => {
-          if (prev < 35) return prev + 5
-          if (prev < 75) return prev + 3
-          if (prev < 96) return prev + 1
-          return prev
-        })
-      }, 1500)
-    } else {
-      setProgressValue(100)
-    }
-    return () => clearInterval(interval)
-  }, [isSyncing, data?.isRunning])
-
-  const triggerSyncMutation = useMutation({
-    mutationFn: async () => {
-      setIsSyncing(true)
-      const res = await fetch('/api/scraper/sync', { method: 'POST' })
-      if (!res.ok) {
-        const json = await res.json()
-        throw new Error(json.message || 'Gagal menjalankan sync')
+    if (scheduleData?.settings) {
+      const s = scheduleData.settings
+      if (s.spjb_operasional) {
+        setOpEnabled(s.spjb_operasional.enabled ?? true)
+        setOpStartTime(s.spjb_operasional.startTime || '06:00')
+        setOpInterval(String(s.spjb_operasional.intervalHours || 6))
       }
+      if (s.spjb_ppts) {
+        setPptsEnabled(s.spjb_ppts.enabled ?? true)
+        setPptsStartTime(s.spjb_ppts.startTime || '06:00')
+        setPptsInterval(String(s.spjb_ppts.intervalHours || 6))
+      }
+    }
+  }, [scheduleData])
+
+  // Save Schedule Mutation
+  const saveScheduleMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        spjb_operasional: {
+          enabled: opEnabled,
+          startTime: opStartTime,
+          intervalHours: parseInt(opInterval) || 6,
+        },
+        spjb_ppts: {
+          enabled: pptsEnabled,
+          startTime: pptsStartTime,
+          intervalHours: parseInt(pptsInterval) || 6,
+        },
+      }
+
+      const res = await fetch('/api/scraper/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error('Gagal menyimpan jadwal')
       return res.json()
     },
     onSuccess: (res) => {
       toast({
-        title: 'Sync Scraper Berjalan',
-        description: res.message || 'Proses scraping GOW CM sedang berjalan di background.',
+        title: 'Jadwal Disimpan',
+        description: res.message || 'Pengaturan jam & interval scraper berhasil diperbarui.',
       })
       refetch()
-      queryClient.invalidateQueries()
-      setTimeout(() => setIsSyncing(false), 3000)
     },
     onError: (err: Error) => {
-      setIsSyncing(false)
       toast({
-        title: 'Gagal Menjalankan Scraper',
+        title: 'Gagal Menyimpan',
         description: err.message,
         variant: 'destructive',
       })
     },
   })
 
+  // Manual Trigger SPJB Operasional
+  const triggerOpSync = async () => {
+    setIsSyncingOp(true)
+    try {
+      const res = await fetch('/api/gowcm/sync-spjb-operasional', { method: 'POST' })
+      const json = await res.json()
+      toast({
+        title: 'Sync SPJB Operasional Selesai',
+        description: json.message || `Total ${json.updatedAllocationCount || 0} record alokasi ter-update ke DB.`,
+      })
+      queryClient.invalidateQueries()
+    } catch (e: any) {
+      toast({
+        title: 'Sync Gagal',
+        description: e.message || 'Terjadi kesalahan saat sync DB Operasional',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSyncingOp(false)
+    }
+  }
+
+  // Manual Trigger SPJB PPTS
+  const triggerPptsSync = async () => {
+    setIsSyncingPpts(true)
+    try {
+      const res = await fetch('/api/gowcm/sync-spjb-ppts', { method: 'POST' })
+      const json = await res.json()
+      toast({
+        title: 'Sync SPJB PPTS Selesai',
+        description: json.message || `Total ${json.updatedPptsCount || 0} Kios PPTS ter-update ke DB.`,
+      })
+      queryClient.invalidateQueries()
+    } catch (e: any) {
+      toast({
+        title: 'Sync Gagal',
+        description: e.message || 'Terjadi kesalahan saat sync DB PPTS',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSyncingPpts(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Bot className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            Pengaturan Scraper GOW CM (Auto-Sync)
+            Pengaturan Jadwal Scraper GOW CM
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Jadwal sinkronisasi otomatis & status data scraping resmi Pupuk Indonesia
+            Atur jam mulai eksekusi & durasi pengulangan (interval) secara mandiri untuk SPJB Operasional & SPJB PPTS
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
           <div className="space-y-3 py-2">
-            <Skeleton className="h-16 w-full rounded-xl" />
-            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-20 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
           </div>
         ) : (
           <div className="space-y-4 text-xs pt-1">
-            {/* Box Jadwal Otomatis 6 Jam */}
-            <div className="p-3 rounded-xl border bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-bold text-foreground">
-                  <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Jadwal Auto-Sync Scraper</span>
-                </div>
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 font-bold dark:bg-emerald-950/50">
-                  Setiap 6 Jam
-                </Badge>
-              </div>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'operasional' | 'ppts')} className="w-full">
+              <TabsList className="grid grid-cols-2 w-full">
+                <TabsTrigger value="operasional" className="gap-1.5 text-xs font-bold">
+                  <Building2 className="h-3.5 w-3.5 text-emerald-600" />
+                  SPJB Operasional (PUD)
+                </TabsTrigger>
+                <TabsTrigger value="ppts" className="gap-1.5 text-xs font-bold">
+                  <Store className="h-3.5 w-3.5 text-blue-600" />
+                  SPJB PPTS (Kios)
+                </TabsTrigger>
+              </TabsList>
 
-              <p className="text-muted-foreground text-[11px]">
-                Scraper otomatis berjalan setiap 6 jam mulai dari jam 06:00 pagi:
-              </p>
-
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {['06:00 WIB (Pagi)', '12:00 WIB (Siang)', '18:00 WIB (Sore)', '00:00 WIB (Malam)'].map((t) => (
-                  <Badge key={t} variant="secondary" className="text-[10px] font-mono px-2 py-0.5 bg-background border">
-                    <Zap className="h-2.5 w-2.5 text-amber-500 mr-1" />
-                    {t}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Progress Bar Status saat Running */}
-            {(data?.isRunning || isSyncing) && (
-              <div className="p-3.5 rounded-xl border bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-amber-500/10 border-emerald-500/30 space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-emerald-600 dark:text-emerald-400" />
-                    <span>Progres Sinkronisasi Scraper GOW CM</span>
+              {/* TAB 1: SPJB OPERASIONAL */}
+              <TabsContent value="operasional" className="space-y-3 pt-3">
+                <div className="p-3.5 rounded-xl border bg-card space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-bold flex items-center gap-1.5">
+                        Status Auto-Sync SPJB Operasional
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">Aktifkan pengulangan otomatis berbasis jam & durasi</p>
+                    </div>
+                    <Switch checked={opEnabled} onCheckedChange={setOpEnabled} />
                   </div>
-                  <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-300 text-sm">
-                    {progressValue}%
-                  </span>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-emerald-600" />
+                        Jam Mulai Eksekusi
+                      </Label>
+                      <Input
+                        type="time"
+                        value={opStartTime}
+                        onChange={(e) => setOpStartTime(e.target.value)}
+                        className="h-8 text-xs font-mono"
+                        disabled={!opEnabled}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-amber-500" />
+                        Durasi / Interval Pengulangan
+                      </Label>
+                      <Select value={opInterval} onValueChange={setOpInterval} disabled={!opEnabled}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Pilih Interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INTERVAL_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {scheduleData?.settings?.spjb_operasional?.lastRun && (
+                    <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
+                      <span>Eksekusi Terakhir:</span>
+                      <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                        {new Date(scheduleData.settings.spjb_operasional.lastRun).toLocaleString('id-ID')}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
 
-                <Progress value={progressValue} className="h-2.5 bg-muted/60" />
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1 text-xs border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50"
+                    disabled={isSyncingOp}
+                    onClick={triggerOpSync}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingOp ? 'animate-spin' : ''}`} />
+                    {isSyncingOp ? 'Syncing...' : 'Sync DB Operasional Sekarang'}
+                  </Button>
+                </div>
+              </TabsContent>
 
-                <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-0.5 font-medium">
-                  <span>
-                    {progressValue < 25
-                      ? 'Tahap 1/4: Scraping SPJB Operasional (PUD)...'
-                      : progressValue < 55
-                      ? 'Tahap 2/4: Scraping SPJB PPTS & Kios...'
-                      : progressValue < 80
-                      ? 'Tahap 3/4: Scraping Penyaluran GOW CM...'
-                      : progressValue < 98
-                      ? 'Tahap 4/4: Scraping Stok Kios iPuber...'
-                      : 'Menyimpan & memperbarui database...'}
-                  </span>
-                  <span className="font-mono text-[10px] bg-background/80 px-1.5 py-0.5 rounded border">Est: ~3-4 min</span>
-                </div>
-              </div>
-            )}
+              {/* TAB 2: SPJB PPTS */}
+              <TabsContent value="ppts" className="space-y-3 pt-3">
+                <div className="p-3.5 rounded-xl border bg-card space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-bold flex items-center gap-1.5">
+                        Status Auto-Sync SPJB PPTS
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">Aktifkan pengulangan otomatis berbasis jam & durasi</p>
+                    </div>
+                    <Switch checked={pptsEnabled} onCheckedChange={setPptsEnabled} />
+                  </div>
 
-            {/* Status Sync Terakhir */}
-            <div className="p-3 rounded-xl border bg-card space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-muted-foreground">Status Scraper Terakhir:</span>
-                {data?.isRunning || isSyncing ? (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 animate-pulse font-bold">
-                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                    Sedang Running...
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 font-bold">
-                    <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-600" />
-                    Aktif / Ready
-                  </Badge>
-                )}
-              </div>
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-blue-600" />
+                        Jam Mulai Eksekusi
+                      </Label>
+                      <Input
+                        type="time"
+                        value={pptsStartTime}
+                        onChange={(e) => setPptsStartTime(e.target.value)}
+                        className="h-8 text-xs font-mono"
+                        disabled={!pptsEnabled}
+                      />
+                    </div>
 
-              <div className="text-[11px] space-y-1 text-muted-foreground pt-1 border-t">
-                <div className="flex justify-between">
-                  <span>Update SPJB Operasional:</span>
-                  <span className="font-mono font-semibold text-foreground">{data?.files?.spjb_operasional ? new Date(data.files.spjb_operasional).toLocaleString('id-ID') : 'Tersedia'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Update SPJB PPTS:</span>
-                  <span className="font-mono font-semibold text-foreground">{data?.files?.spjb_ppts ? new Date(data.files.spjb_ppts).toLocaleString('id-ID') : 'Tersedia'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Update Penyaluran GOW CM:</span>
-                  <span className="font-mono font-semibold text-foreground">{data?.files?.penyaluran ? new Date(data.files.penyaluran).toLocaleString('id-ID') : 'Tersedia'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Update Stok Kios iPuber:</span>
-                  <span className="font-mono font-semibold text-foreground">{data?.files?.stok_kios_ipuber ? new Date(data.files.stok_kios_ipuber).toLocaleString('id-ID') : 'Tersedia'}</span>
-                </div>
-              </div>
-            </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-amber-500" />
+                        Durasi / Interval Pengulangan
+                      </Label>
+                      <Select value={pptsInterval} onValueChange={setPptsInterval} disabled={!pptsEnabled}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Pilih Interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INTERVAL_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-            {/* Tombol Jalankan Manual */}
-            <div className="pt-2 flex items-center justify-between gap-2">
+                  {scheduleData?.settings?.spjb_ppts?.lastRun && (
+                    <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
+                      <span>Eksekusi Terakhir:</span>
+                      <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                        {new Date(scheduleData.settings.spjb_ppts.lastRun).toLocaleString('id-ID')}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1 text-xs border-blue-500/40 text-blue-700 dark:text-blue-300 hover:bg-blue-50"
+                    disabled={isSyncingPpts}
+                    onClick={triggerPptsSync}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingPpts ? 'animate-spin' : ''}`} />
+                    {isSyncingPpts ? 'Syncing...' : 'Sync DB PPTS Sekarang'}
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {/* Bottom Actions */}
+            <div className="pt-2 flex items-center justify-between border-t gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -239,17 +377,17 @@ export function ScraperDialog({
                 onClick={() => refetch()}
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                Cek Status
+                Refresh Status
               </Button>
 
               <Button
                 size="sm"
                 className="h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
-                disabled={data?.isRunning || isSyncing}
-                onClick={() => triggerSyncMutation.mutate()}
+                disabled={saveScheduleMutation.isPending}
+                onClick={() => saveScheduleMutation.mutate()}
               >
-                <Sparkles className="h-4 w-4" />
-                {data?.isRunning || isSyncing ? 'Sedang Sync...' : 'Jalankan Scraper Sekarang'}
+                <Save className="h-4 w-4" />
+                {saveScheduleMutation.isPending ? 'Menyimpan...' : 'Simpan Pengaturan Jadwal'}
               </Button>
             </div>
           </div>
@@ -258,3 +396,4 @@ export function ScraperDialog({
     </Dialog>
   )
 }
+
