@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-08-19T09:35:02.759Z",
+  "scraped_at": "2026-08-19T15:40:05.367Z",
   "source": "GOW CM — Alokasi >> SPJB Operasional",
   "filter": {
     "show": "Lihat Semua"
@@ -16,24 +16,24 @@
           "produk": "UREA",
           "totalAlokasi": 679,
           "totalSo": 0,
-          "totalSoApprove": 299,
-          "totalSisa": 380
+          "totalSoApprove": 306,
+          "totalSisa": 373
         },
         {
           "kecamatan": "Sumowono",
           "produk": "UREA",
           "totalAlokasi": 695,
           "totalSo": 0,
-          "totalSoApprove": 529,
-          "totalSisa": 166
+          "totalSoApprove": 531.5,
+          "totalSisa": 163.5
         },
         {
           "kecamatan": "Pringapus",
           "produk": "UREA",
           "totalAlokasi": 1753,
           "totalSo": 0,
-          "totalSoApprove": 1151.5,
-          "totalSisa": 601.5
+          "totalSoApprove": 1164.5,
+          "totalSisa": 588.5
         }
       ],
       "rawHeaders": [
@@ -103,8 +103,8 @@
           "produk": "NPK",
           "totalAlokasi": 420,
           "totalSo": 0,
-          "totalSoApprove": 209,
-          "totalSisa": 211
+          "totalSoApprove": 215,
+          "totalSisa": 205
         },
         {
           "kecamatan": "Tuntang",
@@ -143,16 +143,16 @@
           "produk": "NPK",
           "totalAlokasi": 640,
           "totalSo": 10,
-          "totalSoApprove": 378,
-          "totalSisa": 252
+          "totalSoApprove": 380.5,
+          "totalSisa": 249.5
         },
         {
           "kecamatan": "Pringapus",
           "produk": "NPK",
           "totalAlokasi": 1510,
           "totalSo": 35,
-          "totalSoApprove": 1193,
-          "totalSisa": 282
+          "totalSoApprove": 1205.5,
+          "totalSisa": 269.5
         },
         {
           "kecamatan": "Pringapus",
