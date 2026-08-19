@@ -27,7 +27,13 @@ export async function GET(request: Request) {
       list = list.filter((item: any) =>
         (item.noSuratJalan && item.noSuratJalan.toLowerCase().includes(search)) ||
         (item.kodeProdusen && item.kodeProdusen.toLowerCase().includes(search)) ||
-        (item.tglSuratJalan && item.tglSuratJalan.toLowerCase().includes(search))
+        (item.namaProdusen && item.namaProdusen.toLowerCase().includes(search)) ||
+        (item.status && item.status.toLowerCase().includes(search)) ||
+        (item.kabupaten && item.kabupaten.toLowerCase().includes(search)) ||
+        (item.kodeDistributor && item.kodeDistributor.toLowerCase().includes(search)) ||
+        (item.namaDistributor && item.namaDistributor.toLowerCase().includes(search)) ||
+        (item.tglSuratJalan && item.tglSuratJalan.toLowerCase().includes(search)) ||
+        (item.tglDiubah && item.tglDiubah.toLowerCase().includes(search))
       )
     }
 

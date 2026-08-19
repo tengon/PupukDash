@@ -27,14 +27,23 @@ import {
   Package,
   Hash,
   AlertCircle,
+  Building2,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 
 interface SuratJalanItem {
   noSuratJalan: string
-  kodeProdusen: string
-  tglSuratJalan: string
-  tglDibuat: string
-  tglDiubah: string
+  kodeDistributor?: string
+  namaDistributor?: string
+  kabupaten?: string
+  kodeProdusen?: string
+  namaProdusen?: string
+  status?: string
+  tglSuratJalan?: string
+  tglDibuat?: string
+  tglDiubah?: string
   href?: string
   detail?: {
     tables?: Array<{ headers: string[]; rows: string[][] }>
@@ -50,6 +59,8 @@ interface PenyaluranResponse {
   message?: string
 }
 
+const ITEMS_PER_PAGE = 15
+
 async function fetchPenyaluranPengecer(search?: string): Promise<PenyaluranResponse> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : ''
   const res = await fetch(`/api/gowcm/penyaluran-pengecer${qs}`)
@@ -64,19 +75,41 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
     (item.detail.labelValues && Object.keys(item.detail.labelValues).length > 0)
   )
 
+  const isSubmited = (item.status || '').toLowerCase().includes('submit')
+
   return (
     <>
       <TableRow
         className="hover:bg-muted/50 transition-colors cursor-pointer"
         onClick={() => hasDetail && setExpanded(!expanded)}
       >
-        <TableCell className="font-mono text-xs font-semibold text-primary">
+        <TableCell className="font-mono text-xs font-bold text-primary">
           {item.noSuratJalan || '-'}
         </TableCell>
-        <TableCell className="text-xs">{item.kodeProdusen || '-'}</TableCell>
-        <TableCell className="text-xs tabular-nums">{item.tglSuratJalan || '-'}</TableCell>
-        <TableCell className="text-xs tabular-nums">{item.tglDibuat || '-'}</TableCell>
-        <TableCell className="text-xs tabular-nums">{item.tglDiubah || '-'}</TableCell>
+        <TableCell className="text-xs">
+          <div className="font-semibold text-foreground">{item.namaProdusen || item.kodeProdusen || '-'}</div>
+          {item.kodeProdusen && item.namaProdusen && (
+            <span className="text-[10px] text-muted-foreground font-mono">Kode: {item.kodeProdusen}</span>
+          )}
+        </TableCell>
+        <TableCell className="text-xs">
+          <Badge
+            variant="outline"
+            className={`text-[10px] px-1.5 py-0 font-semibold ${
+              isSubmited
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300'
+            }`}
+          >
+            {item.status || 'Tercatat'}
+          </Badge>
+        </TableCell>
+        <TableCell className="text-xs tabular-nums whitespace-nowrap">
+          {item.tglSuratJalan || item.tglDibuat || '-'}
+        </TableCell>
+        <TableCell className="text-xs tabular-nums whitespace-nowrap">
+          {item.tglDiubah || '-'}
+        </TableCell>
         <TableCell className="text-center">
           {hasDetail ? (
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
@@ -103,6 +136,23 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
                 transition={{ duration: 0.2 }}
                 className="bg-muted/30 border-t border-border/40 px-4 py-3"
               >
+                {/* Info Distributor & Kabupaten */}
+                <div className="flex flex-wrap items-center gap-4 mb-3 p-2 rounded-md bg-background/60 border border-border/40 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-blue-500" />
+                    <span className="text-muted-foreground">Distributor:</span>
+                    <span className="font-bold text-foreground">{item.namaDistributor || 'CV. ANUGERAH MAKMUR'}</span>
+                    {item.kodeDistributor && <span className="font-mono text-[10px] text-muted-foreground">({item.kodeDistributor})</span>}
+                  </div>
+                  {item.kabupaten && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-emerald-500" />
+                      <span className="text-muted-foreground">Kabupaten:</span>
+                      <span className="font-semibold text-foreground">{item.kabupaten}</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Label-Value pairs */}
                 {item.detail?.labelValues && Object.keys(item.detail.labelValues).length > 0 && (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
@@ -161,6 +211,7 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
 export function PenyaluranPengecerView() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [page, setPage] = useState(1)
   const [isSyncing, setIsSyncing] = useState(false)
 
   const { data: res, isLoading, refetch, isFetching } = useQuery({
@@ -168,7 +219,10 @@ export function PenyaluranPengecerView() {
     queryFn: () => fetchPenyaluranPengecer(search),
   })
 
-  const handleSearch = () => setSearch(searchInput)
+  const handleSearch = () => {
+    setSearch(searchInput)
+    setPage(1)
+  }
 
   const handleManualRefresh = async () => {
     setIsSyncing(true)
@@ -183,6 +237,10 @@ export function PenyaluranPengecerView() {
   }
 
   const items = res?.data || []
+  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const pagedItems = items.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+
   const scrapedAt = res?.scraped_at
     ? new Date(res.scraped_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
     : null
@@ -202,13 +260,13 @@ export function PenyaluranPengecerView() {
                 <Truck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 Distribusi — Penyaluran ke Pengecer
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300">
-                  Surat Jalan
+                  Surat Jalan GOW CM
                 </Badge>
               </CardTitle>
               {scrapedAt && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
                   <span>🕒 Terakhir Update Scraper:</span>
-                  <strong className="font-semibold text-foreground">{scrapedAt}</strong>
+                  <strong className="font-semibold text-foreground">{scrapedAt} WIB</strong>
                 </p>
               )}
             </div>
@@ -224,7 +282,7 @@ export function PenyaluranPengecerView() {
                   className="pl-9 h-9 w-full sm:w-64"
                 />
               </div>
-              <Button onClick={handleSearch} size="sm" className="h-9 bg-blue-600 hover:bg-blue-700 text-white shrink-0">
+              <Button onClick={handleSearch} size="sm" className="h-9 bg-blue-600 hover:bg-blue-700 text-white shrink-0 font-bold">
                 Cari
               </Button>
               <Button
@@ -244,10 +302,10 @@ export function PenyaluranPengecerView() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
             <div className="glass rounded-xl p-3 border border-border/50">
               <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Surat Jalan</p>
-              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{res?.total || 0}</p>
+              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{res?.total || items.length}</p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase font-medium">Distributor</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-medium">Distributor PUD</p>
               <p className="text-sm font-bold truncate">CV. ANUGERAH MAKMUR</p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
@@ -256,7 +314,7 @@ export function PenyaluranPengecerView() {
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
               <p className="text-[10px] text-muted-foreground uppercase font-medium">Ditampilkan</p>
-              <p className="text-lg font-bold">{items.length}</p>
+              <p className="text-lg font-bold">{items.length} Dokumen</p>
             </div>
           </div>
         </CardHeader>
@@ -269,7 +327,6 @@ export function PenyaluranPengecerView() {
               ))}
             </div>
           ) : res?.message ? (
-            /* Belum ada data / scraper belum jalan */
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <AlertCircle className="h-12 w-12 opacity-30 mb-3 text-amber-500" />
               <p className="text-sm font-medium">Scraper Belum Dijalankan</p>
@@ -277,7 +334,7 @@ export function PenyaluranPengecerView() {
               <Button
                 onClick={handleManualRefresh}
                 size="sm"
-                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold"
                 disabled={isSyncing}
               >
                 <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -287,54 +344,86 @@ export function PenyaluranPengecerView() {
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Truck className="h-12 w-12 opacity-30 mb-3" />
-              <p className="text-sm font-medium">Tidak ada data Surat Jalan</p>
+              <p className="text-sm font-medium">Tidak ada data Surat Jalan yang sesuai</p>
               <p className="text-xs opacity-70 mt-1">
-                {search ? 'Coba ubah kata pencarian' : 'Jalankan scraper penyaluran_pengecer.js'}
+                {search ? 'Coba ubah kata pencarian' : 'Jalankan scraper penyaluran_pengecer.js di VPS'}
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-border/40">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="text-xs font-semibold">
-                      <div className="flex items-center gap-1">
-                        <Hash className="h-3 w-3" /> No. Surat Jalan
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold">
-                      <div className="flex items-center gap-1">
-                        <Package className="h-3 w-3" /> Kode Produsen
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> Tgl Surat Jalan
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> Tgl Dibuat
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> Tgl Diubah
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <FileText className="h-3 w-3" /> Detail
-                      </div>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item, idx) => (
-                    <SuratJalanRow key={`${item.noSuratJalan}_${idx}`} item={item} />
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="space-y-3">
+              <div className="overflow-x-auto rounded-lg border border-border/40">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="text-xs font-semibold">
+                        <div className="flex items-center gap-1">
+                          <Hash className="h-3 w-3 text-blue-500" /> No. Surat Jalan
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold">
+                        <div className="flex items-center gap-1">
+                          <Package className="h-3 w-3 text-blue-500" /> Produsen
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3 text-blue-500" /> Tgl Surat Jalan
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3 text-blue-500" /> Tgl Diubah
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <FileText className="h-3 w-3 text-blue-500" /> Detail
+                        </div>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pagedItems.map((item, idx) => (
+                      <SuratJalanRow key={`${item.noSuratJalan}_${idx}`} item={item} />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+                  <span>
+                    Menampilkan {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, items.length)} dari {items.length} Surat Jalan
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="px-2 font-medium">
+                      {safePage} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={safePage === totalPages}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

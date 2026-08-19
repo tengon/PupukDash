@@ -178,31 +178,69 @@ async function scrapeListPage(page) {
   await sleep(1000);
 
   return await page.evaluate(() => {
-    const table = document.querySelector('table');
-    if (!table) return [];
+    const tables = [...document.querySelectorAll('table')];
+    console.log('[DEBUG] Found tables count:', tables.length);
 
-    // Cek apakah kolom pertama adalah checkbox (kosong)
-    const firstHeader = table.querySelector('thead th:first-child')?.innerText?.trim() || '';
-    const offset = (!firstHeader || firstHeader === '' || firstHeader === '#') ? 1 : 0;
+    let targetTable = null;
+    let targetRows = [];
 
-    const headerCells = [...table.querySelectorAll('thead th')].map(h => h.innerText.trim());
-    console.log('[DEBUG] Headers:', headerCells.join(' | '));
+    for (const t of tables) {
+      const trs = [...t.querySelectorAll('tbody tr')];
+      if (trs.length > 0) {
+        targetTable = t;
+        targetRows = trs;
+        break;
+      }
+    }
 
-    const rows = [...table.querySelectorAll('tbody tr')];
-    return rows.map(row => {
+    if (!targetTable || targetRows.length === 0) {
+      console.log('[DEBUG] No table with tbody tr found!');
+      return [];
+    }
+
+    const headers = [...targetTable.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim());
+    console.log('[DEBUG TABLE HEADERS]', JSON.stringify(headers));
+
+    return targetRows.map((row, rIdx) => {
       const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
-      if (cells.length < 3) return null;
 
-      // Ambil href dari link detail
       const aEl = row.querySelector('a');
       const href = aEl ? aEl.getAttribute('href') || '' : '';
 
+      // Exact GOW CM Table column mapping:
+      // cells[0]: No. Surat Jalan
+      // cells[1]: Kode Distributor
+      // cells[2]: Nama Distributor
+      // cells[3]: Kabupaten
+      // cells[4]: Kode Produsen
+      // cells[5]: Nama Produsen
+      // cells[6]: Status
+      // cells[7]: Tgl. Surat Jalan
+      // cells[8]: Tgl. Diubah
+      // cells[9]: Aksi (Detail)
+
+      const noSuratJalan  = cells[0] || `SJ-${rIdx + 1}`;
+      const kodeDistributor = cells[1] || '';
+      const namaDistributor = cells[2] || '';
+      const kabupaten      = cells[3] || '';
+      const kodeProdusen   = cells[4] || '';
+      const namaProdusen   = cells[5] || '';
+      const status         = cells[6] || '';
+      const tglSuratJalan  = cells[7] || '';
+      const tglDibuat      = cells[7] || '';
+      const tglDiubah      = cells[8] || '';
+
       return {
-        noSuratJalan:  cells[0 + offset] || '',
-        kodeProdusen:  cells[1 + offset] || '',
-        tglSuratJalan: cells[2 + offset] || '',
-        tglDibuat:     cells[3 + offset] || '',
-        tglDiubah:     cells[4 + offset] || '',
+        noSuratJalan,
+        kodeDistributor,
+        namaDistributor,
+        kabupaten,
+        kodeProdusen,
+        namaProdusen,
+        status,
+        tglSuratJalan,
+        tglDibuat,
+        tglDiubah,
         rawCells: cells,
         href,
       };
@@ -311,6 +349,7 @@ async function main() {
 
   const page = await browser.newPage();
   page.setDefaultTimeout(30000);
+  page.on('console', msg => console.log('[PAGE]', msg.text()));
 
   try {
     const prefix = await loginAndGetPrefix(page);
@@ -436,26 +475,32 @@ async function main() {
 
     console.log(`\n[LIST] Total Surat Jalan: ${allList.length}`);
 
-    // Scrape detail setiap Surat Jalan
+    // Format data Surat Jalan
     const result = [];
     for (let i = 0; i < allList.length; i++) {
       const item = allList[i];
-      console.log(`\n[DETAIL] ${i + 1}/${allList.length} — ${item.noSuratJalan}`);
-
       let detail = null;
-      if (item.href) {
+
+      // Scrape detail jika href valid (limit ke 20 detail pertama jika terlalu banyak agar cepat)
+      if (item.href && i < 20) {
+        console.log(`[DETAIL] ${i + 1}/${Math.min(allList.length, 20)} — ${item.noSuratJalan}`);
         detail = await scrapeDetail(page, item, prefix);
-        await sleep(DELAY_MS);
+        await sleep(500);
       }
 
       result.push({
-        noSuratJalan:  item.noSuratJalan,
-        kodeProdusen:  item.kodeProdusen,
-        tglSuratJalan: item.tglSuratJalan,
-        tglDibuat:     item.tglDibuat,
-        tglDiubah:     item.tglDiubah,
-        href:          item.href,
-        detail:        detail,
+        noSuratJalan:    item.noSuratJalan,
+        kodeDistributor: item.kodeDistributor,
+        namaDistributor: item.namaDistributor,
+        kabupaten:       item.kabupaten,
+        kodeProdusen:    item.kodeProdusen,
+        namaProdusen:    item.namaProdusen,
+        status:          item.status,
+        tglSuratJalan:   item.tglSuratJalan,
+        tglDibuat:       item.tglDibuat,
+        tglDiubah:       item.tglDiubah,
+        href:            item.href,
+        detail:          detail,
       });
     }
 
