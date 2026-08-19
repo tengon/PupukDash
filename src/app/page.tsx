@@ -16,6 +16,7 @@ import { MonitoringRealisasiView } from '@/components/realisasi/monitoring-reali
 import { WarehousesView } from '@/components/warehouses/warehouses-view'
 import { StockView } from '@/components/stock/stock-view'
 import { DistributionsView } from '@/components/distributions/distributions-view'
+import { PenyaluranPengecerView } from '@/components/distributions/penyaluran-pengecer-view'
 import { OrdersView } from '@/components/orders/orders-view'
 import { PurchasesView } from '@/components/purchases/purchases-view'
 import { StockConfirmationView } from '@/components/stock/stock-confirmation-view'
@@ -48,7 +49,7 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   stock: { title: 'Stok Gudang', description: 'Monitor dan kelola stok pupuk di setiap gudang' },
   'stock-confirmation': { title: 'Konfirmasi Stok', description: 'Verifikasi dan berita acara penerimaan & penyaluran stok pupuk' },
   'stock-confirmation-report': { title: 'Laporan Konfirmasi Stok', description: 'Rekapitulasi dan berita acara opname konfirmasi stok pupuk bersubsidi' },
-  distributions: { title: 'Distribusi', description: 'Kelola distribusi pupuk ke kelompok tani' },
+  distributions: { title: 'Distribusi — Penyaluran ke Pengecer', description: 'Data surat jalan penyaluran pupuk bersubsidi ke pengecer dari GOW CM' },
   orders: { title: 'Penjualan (ke PPTS)', description: 'Kelola pesanan penjualan pupuk ke Kios PPTS' },
   purchases: { title: 'Pembelian (dari Supplier)', description: 'Pencatatan pasokan pupuk masuk dari PT Pupuk Indonesia / Produsen' },
   rpkp: { title: 'Logbook Penjualan Pupuk', description: 'Logbook dan pencatatan riwayat transaksi penjualan pupuk bersubsidi' },
@@ -297,7 +298,7 @@ export default function HomePage() {
                 {activeTab === 'stock' && <StockView />}
                 {activeTab === 'stock-confirmation' && <StockConfirmationView reportMode={false} />}
                 {activeTab === 'stock-confirmation-report' && <StockConfirmationView reportMode={true} />}
-                {activeTab === 'distributions' && <DistributionsView />}
+                {activeTab === 'distributions' && <PenyaluranPengecerView />}
                 {(activeTab === 'orders' || activeTab === 'monitoring-order') && <OrdersView />}
                 {activeTab === 'purchases' && <PurchasesView />}
                 {activeTab === 'rpkp' && <RPKPView />}

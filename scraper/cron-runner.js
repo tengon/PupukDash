@@ -26,6 +26,7 @@ function getSettings() {
     spjb_operasional: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     spjb_ppts: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     realisasi_stok_kios: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
+    penyaluran_pengecer: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
   };
 }
 
@@ -52,6 +53,7 @@ function shouldRunNow(config) {
 let isRunningOp = false;
 let isRunningPpts = false;
 let isRunningRealisasi = false;
+let isRunningPenyaluran = false;
 
 async function runOpScraper() {
   if (isRunningOp) return;
@@ -116,6 +118,25 @@ async function runRealisasiScraper() {
   }
 }
 
+async function runPenyaluranScraper() {
+  if (isRunningPenyaluran) return;
+  isRunningPenyaluran = true;
+  console.log(`\n[CRON] ${new Date().toLocaleString('id-ID')} — Memulai scraper Penyaluran ke Pengecer...`);
+
+  try {
+    const { stdout, stderr } = await execAsync('node penyaluran_pengecer.js', { cwd: __dirname, env: execEnv, timeout: 300000 });
+    console.log(stdout);
+    if (stderr) console.error(stderr);
+
+    updateLastRun('penyaluran_pengecer', new Date().toISOString());
+    console.log('[CRON] Penyaluran ke Pengecer Selesai!');
+  } catch (err) {
+    console.error('[CRON] Error Penyaluran Pengecer:', err.message);
+  } finally {
+    isRunningPenyaluran = false;
+  }
+}
+
 async function checkAndRun() {
   const settings = getSettings();
 
@@ -132,6 +153,11 @@ async function checkAndRun() {
   if (shouldRunNow(settings.realisasi_stok_kios)) {
     console.log('[CRON] Executing Realisasi Stok Kios...');
     await runRealisasiScraper();
+  }
+
+  if (shouldRunNow(settings.penyaluran_pengecer)) {
+    console.log('[CRON] Executing Penyaluran ke Pengecer...');
+    await runPenyaluranScraper();
   }
 }
 
