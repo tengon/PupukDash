@@ -201,6 +201,8 @@ async function scrapeListPage(page) {
     const headers = [...targetTable.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim());
     console.log('[DEBUG TABLE HEADERS]', JSON.stringify(headers));
 
+    return targetRows.map((row, rIdx) => {
+      const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
       const btn = row.querySelector('#detailList') || row.querySelector('button[data-uuid]') || row.querySelector('[data-uuid]');
       const uuid = btn ? btn.getAttribute('data-uuid') || '' : '';
       const aEl = row.querySelector('a');
