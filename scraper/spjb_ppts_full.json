@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-08-19T03:31:01.244Z",
+  "scraped_at": "2026-08-19T09:35:53.808Z",
   "source": "GOW CM — Alokasi >> SPJB PPTS",
   "filter": {
     "show": "Lihat Semua",
@@ -323,17 +323,17 @@
           "kecamatan": "",
           "produk": "Urea",
           "alokasiSpjb": 83,
-          "realisasi": 43,
-          "sisaAlokasi": 40,
-          "progress": "51.807%"
+          "realisasi": 46,
+          "sisaAlokasi": 37,
+          "progress": "55.422%"
         },
         {
           "kecamatan": "",
           "produk": "NPK",
           "alokasiSpjb": 65,
-          "realisasi": 28,
-          "sisaAlokasi": 37,
-          "progress": "43.077%"
+          "realisasi": 30,
+          "sisaAlokasi": 35,
+          "progress": "46.154%"
         }
       ]
     },
