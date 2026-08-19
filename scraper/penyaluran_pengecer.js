@@ -315,14 +315,13 @@ async function main() {
   try {
     const prefix = await loginAndGetPrefix(page);
 
-    // Coba beberapa route yang mungkin digunakan GOW CM untuk Penyaluran ke Pengecer
+    // Route persis yang ditemukan dari sidebar GOW CM:
     const possibleRoutes = [
+      'laporan/surat-jalan',
+      'pemenuhan-order-kios/surat-jalan',
+      'laporan/penyaluran-do',
+      'laporan/item-penyaluran',
       'penyaluran/surat-jalan',
-      'penyaluran/pengecer',
-      'penyaluran-pengecer',
-      'distribution/surat-jalan',
-      'distribusi/surat-jalan',
-      'monitoring/penyaluran-pengecer',
     ];
 
     let listLoaded = false;
