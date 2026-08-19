@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-08-18T16:50:49.605Z",
+  "scraped_at": "2026-08-19T03:31:01.244Z",
   "source": "GOW CM — Alokasi >> SPJB PPTS",
   "filter": {
     "show": "Lihat Semua",
@@ -143,9 +143,9 @@
           "kecamatan": "",
           "produk": "Urea",
           "alokasiSpjb": 256,
-          "realisasi": 122,
-          "sisaAlokasi": 134,
-          "progress": "47.656%"
+          "realisasi": 130,
+          "sisaAlokasi": 126,
+          "progress": "50.781%"
         },
         {
           "kecamatan": "",
@@ -391,9 +391,9 @@
           "kecamatan": "",
           "produk": "NPK",
           "alokasiSpjb": 60,
-          "realisasi": 40,
-          "sisaAlokasi": 20,
-          "progress": "66.667%"
+          "realisasi": 43,
+          "sisaAlokasi": 17,
+          "progress": "71.667%"
         }
       ]
     },
@@ -443,17 +443,17 @@
           "kecamatan": "",
           "produk": "Urea",
           "alokasiSpjb": 130,
-          "realisasi": 88,
-          "sisaAlokasi": 42,
-          "progress": "67.692%"
+          "realisasi": 93,
+          "sisaAlokasi": 37,
+          "progress": "71.538%"
         },
         {
           "kecamatan": "",
           "produk": "NPK",
           "alokasiSpjb": 130,
-          "realisasi": 76,
-          "sisaAlokasi": 54,
-          "progress": "58.462%"
+          "realisasi": 81,
+          "sisaAlokasi": 49,
+          "progress": "62.308%"
         }
       ]
     },
@@ -481,9 +481,9 @@
           "kecamatan": "",
           "produk": "NPK",
           "alokasiSpjb": 379.998,
-          "realisasi": 275,
-          "sisaAlokasi": 104.998,
-          "progress": "72.369%"
+          "realisasi": 295,
+          "sisaAlokasi": 84.998,
+          "progress": "77.632%"
         }
       ]
     },
@@ -503,17 +503,17 @@
           "kecamatan": "",
           "produk": "Urea",
           "alokasiSpjb": 129,
-          "realisasi": 82.5,
-          "sisaAlokasi": 46.5,
-          "progress": "63.953%"
+          "realisasi": 87.5,
+          "sisaAlokasi": 41.5,
+          "progress": "67.829%"
         },
         {
           "kecamatan": "",
           "produk": "NPK",
           "alokasiSpjb": 125,
-          "realisasi": 93,
-          "sisaAlokasi": 32,
-          "progress": "74.400%"
+          "realisasi": 99,
+          "sisaAlokasi": 26,
+          "progress": "79.200%"
         }
       ]
     },

@@ -3,18 +3,18 @@
     "enabled": true,
     "startTime": "06:00",
     "intervalHours": 6,
-    "lastRun": "2026-08-18T15:19:38.614Z"
+    "lastRun": "2026-08-19T03:30:21.234Z"
   },
   "spjb_ppts": {
     "enabled": true,
     "startTime": "06:00",
     "intervalHours": 6,
-    "lastRun": "2026-08-18T15:20:28.476Z"
+    "lastRun": "2026-08-19T03:31:09.298Z"
   },
   "realisasi_stok_kios": {
     "enabled": true,
     "startTime": "06:00",
     "intervalHours": 6,
-    "lastRun": "2026-08-18T19:25:57.476Z"
+    "lastRun": "2026-08-19T07:39:56.666Z"
   }
 }
