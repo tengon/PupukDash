@@ -268,7 +268,7 @@ async function scrapeDetail(page, item, prefix) {
       });
 
       // Coba ambil semua label-value pairs
-      const labelValues: Record<string, string> = {};
+      const labelValues = {};
       document.querySelectorAll('tr').forEach(tr => {
         const tds = [...tr.querySelectorAll('td, th')];
         if (tds.length === 2) {
