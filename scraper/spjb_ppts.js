@@ -56,31 +56,129 @@ function parseNumber(val) {
   return parseFloat(str) || 0;
 }
 
-/** Login dan ambil encrypted prefix dari sidebar */
+/** Ekstrak prefix dari URL page yang sedang aktif */
+function extractPrefixFromUrl(url) {
+  const match = url.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
+  if (match) return match[1];
+  const match2 = url.match(/#\/([A-Za-z0-9+\/=%]{20,})$/);
+  if (match2) return match2[1];
+  return null;
+}
+
+/** Login dan ambil encrypted prefix dari sidebar — robust multi-fallback */
 async function loginAndGetPrefix(page) {
   console.log('[LOGIN] Navigasi ke halaman login...');
+
+  // Set user-agent agar tidak terdeteksi sebagai bot headless
+  await page.setExtraHTTPHeaders({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  });
+
   await page.goto('https://gowcm.pupuk-indonesia.com/#/login', { waitUntil: 'networkidle', timeout: 30000 });
+  await sleep(1000);
+
   await page.fill('input[placeholder="Your Username"]', CREDENTIALS.username);
   await page.fill('input[placeholder="Enter Password"]', CREDENTIALS.password);
   await page.click('button:has-text("Masuk")');
 
-  await page.waitForFunction(() => !window.location.href.includes('/login'), { timeout: 15000 });
-  await sleep(3000);
+  // Tunggu redirect keluar dari /login
+  await page.waitForFunction(() => !window.location.href.includes('/login'), { timeout: 20000 });
+  console.log('[LOGIN] Redirect berhasil, URL:', page.url().substring(0, 80));
 
-  // Ambil prefix dari href sidebar (BUKAN dari page.url())
-  const prefix = await page.evaluate(() => {
-    const links = [...document.querySelectorAll('a[href], [href]')];
-    for (const link of links) {
-      const href = link.getAttribute('href') || '';
+  // Tunggu sidebar ter-render (lebih lama di VPS headless)
+  await sleep(5000);
+
+  // ── STRATEGI 1: Ambil prefix dari href sidebar/nav ──
+  let prefix = await page.evaluate(() => {
+    const els = [
+      ...document.querySelectorAll('a[href]'),
+      ...document.querySelectorAll('[href]'),
+      ...document.querySelectorAll('li a'),
+      ...document.querySelectorAll('nav a'),
+      ...document.querySelectorAll('.sidebar a'),
+      ...document.querySelectorAll('.menu a'),
+    ];
+    for (const el of els) {
+      const href = el.getAttribute('href') || '';
       const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
       if (match) return match[1];
     }
     return null;
   });
 
-  if (!prefix) throw new Error('Gagal mendapatkan encrypted prefix dari sidebar!');
-  console.log('[LOGIN] Prefix OK:', prefix.substring(0, 30) + '...');
-  return prefix;
+  if (prefix) {
+    const decoded = decodeURIComponent(prefix);
+    console.log('[LOGIN] Prefix via sidebar OK:', decoded.substring(0, 30) + '...');
+    return decoded;
+  }
+  console.warn('[LOGIN] Strategi 1 gagal, coba strategi 2 (page URL)...');
+
+  // ── STRATEGI 2: Ambil prefix dari URL saat ini ──
+  prefix = extractPrefixFromUrl(page.url());
+  if (prefix) {
+    const decoded = decodeURIComponent(prefix);
+    console.log('[LOGIN] Prefix via URL OK:', decoded.substring(0, 30) + '...');
+    return decoded;
+  }
+  console.warn('[LOGIN] Strategi 2 gagal, coba strategi 3 (klik menu dulu)...');
+
+  // ── STRATEGI 3: Klik salah satu menu agar navigasi terjadi & prefix muncul di URL ──
+  try {
+    const clicked = await page.evaluate(() => {
+      const els = [
+        ...document.querySelectorAll('a[href*="alokasi"]'),
+        ...document.querySelectorAll('a[href*="#/"]'),
+        ...document.querySelectorAll('nav a'),
+        ...document.querySelectorAll('.sidebar a'),
+      ];
+      if (els.length > 0) {
+        els[0].click();
+        return els[0].getAttribute('href') || '';
+      }
+      return null;
+    });
+    console.log('[LOGIN] Klik menu:', clicked);
+    await sleep(2000);
+
+    prefix = extractPrefixFromUrl(page.url());
+    if (prefix) {
+      const decoded = decodeURIComponent(prefix);
+      console.log('[LOGIN] Prefix via klik-menu OK:', decoded.substring(0, 30) + '...');
+      return decoded;
+    }
+
+    prefix = await page.evaluate(() => {
+      const els = [...document.querySelectorAll('a[href]')];
+      for (const el of els) {
+        const href = el.getAttribute('href') || '';
+        const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
+        if (match) return match[1];
+      }
+      return null;
+    });
+    if (prefix) {
+      const decoded = decodeURIComponent(prefix);
+      console.log('[LOGIN] Prefix via sidebar (post-click) OK:', decoded.substring(0, 30) + '...');
+      return decoded;
+    }
+  } catch (e) {
+    console.warn('[LOGIN] Strategi 3 error:', e.message);
+  }
+
+  // ── STRATEGI 4: Screenshot debug & scan semua href ──
+  try {
+    await page.screenshot({ path: path.join(__dirname, 'debug_login_vps.png') });
+    console.log('[LOGIN] Screenshot disimpan: debug_login_vps.png');
+    const allHrefs = await page.evaluate(() =>
+      [...document.querySelectorAll('[href]')].map(el => el.getAttribute('href') || '').filter(Boolean)
+    );
+    console.log('[LOGIN] Semua href di DOM:', allHrefs.slice(0, 20));
+    console.log('[LOGIN] URL saat ini:', page.url());
+  } catch (e) {
+    console.warn('[LOGIN] Screenshot/debug error:', e.message);
+  }
+
+  throw new Error('Gagal mendapatkan encrypted prefix dari sidebar! (Semua strategi gagal)');
 }
 
 /** Set filter Show = Lihat Semua dan Status = Active */
@@ -292,6 +390,12 @@ async function main() {
   const browser = await chromium.launch({
     headless: true,
     executablePath: undefined,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-blink-features=AutomationControlled',
+    ],
   });
 
   const page = await browser.newPage();
