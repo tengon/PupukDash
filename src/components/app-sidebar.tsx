@@ -31,7 +31,6 @@ import {
   ShoppingCart,
   FileBarChart,
   ClipboardList,
-  ClipboardCheck,
   History,
   Store,
   ShoppingBag,
@@ -71,7 +70,6 @@ const navGroups = [
       { id: 'monitoring-realisasi', label: 'Realisasi (Stok Kios)', icon: PackageCheck },
       { id: 'monitoring-order', label: 'Order (Monitoring)', icon: ShoppingBag },
       { id: 'stock', label: 'Stok', icon: Boxes },
-      { id: 'stock-confirmation', label: 'Konfirmasi Stok', icon: ClipboardCheck },
       { id: 'distributions', label: 'Distribusi', icon: Truck },
     ],
   },
@@ -80,7 +78,6 @@ const navGroups = [
     items: [
       { id: 'rpkp', label: 'Logbook Penjualan Pupuk', icon: ClipboardList },
       { id: 'reports', label: 'Laporan', icon: FileBarChart },
-      { id: 'stock-confirmation-report', label: 'Konfirmasi Stok', icon: ClipboardCheck },
     ],
   },
   {
