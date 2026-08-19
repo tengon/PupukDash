@@ -623,12 +623,25 @@ export const fetchSpjbPpts = (params?: { search?: string; status?: string }) => 
 // SPJB Operasional (Monitoring SPJB Distributor PUD)
 export interface SpjbOperasionalItem {
   nomorSpjb: string
-  tahun: string
-  distributor: string
-  produsen: string
-  tanggalBuat: string
-  tanggalGanti: string
-  status: string
+  tahun?: string
+  distributor?: string
+  produsen?: string
+  namaPud?: string
+  tanggalBuat?: string
+  tanggalGanti?: string
+  status?: string
+  // Format scraper baru (detailPerKecamatan)
+  detailPerKecamatan?: Array<{
+    kecamatan: string
+    produk: string
+    totalAlokasi: number
+    totalSo: number
+    totalSoApprove: number
+    totalSisa: number
+  }>
+  rawHeaders?: string[]
+  rawRows?: string[][]
+  // Format scraper lama (detail.alokasiTable)
   detail?: {
     header?: { judul?: string; status?: string }
     alokasiTable?: {

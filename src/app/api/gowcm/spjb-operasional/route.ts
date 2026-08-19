@@ -75,16 +75,22 @@ export async function GET(request: Request) {
     })
 
     if (search) {
-      list = list.filter((item: any) =>
-        (item.nomorSpjb && item.nomorSpjb.toLowerCase().includes(search)) ||
-        (item.produsen && item.produsen.toLowerCase().includes(search)) ||
-        (item.distributor && item.distributor.toLowerCase().includes(search))
-      )
+      list = list.filter((item: any) => {
+        const inSpjb = item.nomorSpjb && item.nomorSpjb.toLowerCase().includes(search)
+        const inProdusen = item.produsen && item.produsen.toLowerCase().includes(search)
+        const inDistributor = item.distributor && item.distributor.toLowerCase().includes(search)
+        const inNamaPud = item.namaPud && item.namaPud.toLowerCase().includes(search)
+        const inKecamatan = item.detailPerKecamatan?.some((d: any) =>
+          d.kecamatan && d.kecamatan.toLowerCase().includes(search)
+        )
+        return inSpjb || inProdusen || inDistributor || inNamaPud || inKecamatan
+      })
     }
 
     if (produsen && produsen !== 'ALL') {
       list = list.filter((item: any) =>
-        item.produsen && item.produsen.toLowerCase().includes(produsen.toLowerCase())
+        (item.produsen && item.produsen.toLowerCase().includes(produsen.toLowerCase())) ||
+        (item.namaPud && item.namaPud.toLowerCase().includes(produsen.toLowerCase()))
       )
     }
 

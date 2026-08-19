@@ -532,7 +532,9 @@ export function MonitoringPudView() {
   let totalNpkReal = 0
 
   items.forEach(item => {
-    const is2026 = (item.tahun === '2026' || (item.nomorSpjb && item.nomorSpjb.includes('2025')) || !item.tahun)
+    // Terima semua item (scraper baru tidak selalu punya field tahun)
+    const is2026 = !item.tahun || item.tahun === '2026' || item.tahun === '2025' ||
+      (item.nomorSpjb && (item.nomorSpjb.includes('2026') || item.nomorSpjb.includes('2025')))
     if (!is2026) return
 
     if (item.detailPerKecamatan && item.detailPerKecamatan.length > 0) {
