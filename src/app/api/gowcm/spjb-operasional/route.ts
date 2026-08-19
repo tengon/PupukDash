@@ -28,16 +28,22 @@ export async function GET(request: Request) {
     const json = JSON.parse(fileContent)
     let list = json.data || []
 
-    // Fetch user-edited allocation values from DB
-    const { db } = await import('@/lib/db')
-    const dbAllocations = await db.allocation.findMany({ where: { type: 'OPERASIONAL' } })
+    // Fetch user-edited allocation values from DB (graceful fallback if DB not ready)
     const allocMap = new Map<string, number>()
-    dbAllocations.forEach(a => {
-      if (a.district && a.productName) {
-        const key = `${a.district.toLowerCase().trim()}_${a.productName.toLowerCase().trim()}`
-        allocMap.set(key, a.totalAllocationTon)
+    try {
+      const { db } = await import('@/lib/db')
+      if (db && db.allocation) {
+        const dbAllocations = await db.allocation.findMany({ where: { type: 'OPERASIONAL' } })
+        dbAllocations.forEach(a => {
+          if (a.district && a.productName) {
+            const key = `${a.district.toLowerCase().trim()}_${a.productName.toLowerCase().trim()}`
+            allocMap.set(key, a.totalAllocationTon)
+          }
+        })
       }
-    })
+    } catch (dbErr: any) {
+      console.warn('[SPJB Operasional] DB tidak tersedia, skip allocation merge:', dbErr.message)
+    }
 
     // Merge user-edited allocation values into list
     list = list.map((item: any) => {
