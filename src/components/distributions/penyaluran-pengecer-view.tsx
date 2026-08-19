@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -31,10 +31,14 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react'
 
 interface SuratJalanItem {
   noSuratJalan: string
+  uuid?: string
   kodeDistributor?: string
   namaDistributor?: string
   kabupaten?: string
@@ -59,7 +63,28 @@ interface PenyaluranResponse {
   message?: string
 }
 
+type SortField = 'noSuratJalan' | 'tglSuratJalan' | 'tglDiubah' | 'namaProdusen'
+type SortOrder = 'asc' | 'desc'
+
 const ITEMS_PER_PAGE = 15
+
+function parseSuratJalanDate(str?: string): number {
+  if (!str) return 0
+  const monthMap: Record<string, string> = {
+    jan: '01', feb: '02', mar: '03', apr: '04', mei: '05', jun: '06',
+    jul: '07', ags: '08', agu: '08', sep: '09', okt: '10', nov: '11', des: '12'
+  }
+  const parts = str.toLowerCase().split('-')
+  if (parts.length >= 3) {
+    const year = parts[0]
+    const month = monthMap[parts[1]] || '01'
+    const dayRest = parts[2].replace(',', '').trim()
+    const isoStr = `${year}-${month}-${dayRest.padStart(2, '0')}`
+    const timestamp = Date.parse(isoStr)
+    if (!isNaN(timestamp)) return timestamp
+  }
+  return Date.parse(str) || 0
+}
 
 async function fetchPenyaluranPengecer(search?: string): Promise<PenyaluranResponse> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : ''
@@ -213,6 +238,8 @@ export function PenyaluranPengecerView() {
   const [searchInput, setSearchInput] = useState('')
   const [page, setPage] = useState(1)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [sortField, setSortField] = useState<SortField>('tglSuratJalan')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
   const { data: res, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['penyaluranPengecer', search],
@@ -222,6 +249,15 @@ export function PenyaluranPengecerView() {
   const handleSearch = () => {
     setSearch(searchInput)
     setPage(1)
+  }
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
   }
 
   const handleManualRefresh = async () => {
@@ -237,13 +273,41 @@ export function PenyaluranPengecerView() {
   }
 
   const items = res?.data || []
-  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE))
+
+  // Sorting logic
+  const sortedItems = useMemo(() => {
+    if (!sortField) return items
+    return [...items].sort((a, b) => {
+      let comp = 0
+      if (sortField === 'noSuratJalan') {
+        comp = (a.noSuratJalan || '').localeCompare(b.noSuratJalan || '')
+      } else if (sortField === 'tglSuratJalan') {
+        comp = parseSuratJalanDate(a.tglSuratJalan) - parseSuratJalanDate(b.tglSuratJalan)
+      } else if (sortField === 'tglDiubah') {
+        comp = parseSuratJalanDate(a.tglDiubah) - parseSuratJalanDate(b.tglDiubah)
+      } else if (sortField === 'namaProdusen') {
+        comp = (a.namaProdusen || '').localeCompare(b.namaProdusen || '')
+      }
+      return sortOrder === 'asc' ? comp : -comp
+    })
+  }, [items, sortField, sortOrder])
+
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / ITEMS_PER_PAGE))
   const safePage = Math.min(page, totalPages)
-  const pagedItems = items.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+  const pagedItems = sortedItems.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
 
   const scrapedAt = res?.scraped_at
     ? new Date(res.scraped_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
     : null
+
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0 font-bold" />
+    ) : (
+      <ArrowDown className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0 font-bold" />
+    )
+  }
 
   return (
     <motion.div
@@ -309,12 +373,14 @@ export function PenyaluranPengecerView() {
               <p className="text-sm font-bold truncate">CV. ANUGERAH MAKMUR</p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase font-medium">Sumber Data</p>
-              <p className="text-xs font-semibold text-muted-foreground">GOW CM Pupuk Indonesia</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-medium">Urutan Tampil</p>
+              <p className="text-xs font-semibold text-foreground capitalize">
+                {sortField === 'noSuratJalan' ? 'No. Surat Jalan' : sortField === 'tglSuratJalan' ? 'Tgl Surat Jalan' : 'Tgl Diubah'} ({sortOrder === 'asc' ? 'A-Z / Lama' : 'Z-A / Baru'})
+              </p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
               <p className="text-[10px] text-muted-foreground uppercase font-medium">Ditampilkan</p>
-              <p className="text-lg font-bold">{items.length} Dokumen</p>
+              <p className="text-lg font-bold">{sortedItems.length} Dokumen</p>
             </div>
           </div>
         </CardHeader>
@@ -341,7 +407,7 @@ export function PenyaluranPengecerView() {
                 Jalankan Scraper Sekarang
               </Button>
             </div>
-          ) : items.length === 0 ? (
+          ) : sortedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Truck className="h-12 w-12 opacity-30 mb-3" />
               <p className="text-sm font-medium">Tidak ada data Surat Jalan yang sesuai</p>
@@ -354,33 +420,62 @@ export function PenyaluranPengecerView() {
               <div className="overflow-x-auto rounded-lg border border-border/40">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="text-xs font-semibold">
-                        <div className="flex items-center gap-1">
-                          <Hash className="h-3 w-3 text-blue-500" /> No. Surat Jalan
+                    <TableRow className="bg-muted/50 select-none">
+                      {/* Sortable: No. Surat Jalan */}
+                      <TableHead
+                        className="text-xs font-semibold cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSort('noSuratJalan')}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Hash className="h-3 w-3 text-blue-500 shrink-0" />
+                          <span>No. Surat Jalan</span>
+                          {renderSortIcon('noSuratJalan')}
                         </div>
                       </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        <div className="flex items-center gap-1">
-                          <Package className="h-3 w-3 text-blue-500" /> Produsen
+
+                      {/* Sortable: Produsen */}
+                      <TableHead
+                        className="text-xs font-semibold cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSort('namaProdusen')}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Package className="h-3 w-3 text-blue-500 shrink-0" />
+                          <span>Produsen</span>
+                          {renderSortIcon('namaProdusen')}
                         </div>
                       </TableHead>
+
                       <TableHead className="text-xs font-semibold">
                         Status
                       </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-blue-500" /> Tgl Surat Jalan
+
+                      {/* Sortable: Tgl Surat Jalan */}
+                      <TableHead
+                        className="text-xs font-semibold cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSort('tglSuratJalan')}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3 text-blue-500 shrink-0" />
+                          <span>Tgl Surat Jalan</span>
+                          {renderSortIcon('tglSuratJalan')}
                         </div>
                       </TableHead>
-                      <TableHead className="text-xs font-semibold">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-blue-500" /> Tgl Diubah
+
+                      {/* Sortable: Tgl Diubah */}
+                      <TableHead
+                        className="text-xs font-semibold cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSort('tglDiubah')}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3 text-blue-500 shrink-0" />
+                          <span>Tgl Diubah</span>
+                          {renderSortIcon('tglDiubah')}
                         </div>
                       </TableHead>
+
                       <TableHead className="text-xs font-semibold text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <FileText className="h-3 w-3 text-blue-500" /> Detail
+                          <FileText className="h-3 w-3 text-blue-500 shrink-0" /> Detail
                         </div>
                       </TableHead>
                     </TableRow>
@@ -397,7 +492,7 @@ export function PenyaluranPengecerView() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
                   <span>
-                    Menampilkan {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, items.length)} dari {items.length} Surat Jalan
+                    Menampilkan {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, sortedItems.length)} dari {sortedItems.length} Surat Jalan
                   </span>
                   <div className="flex items-center gap-1">
                     <Button

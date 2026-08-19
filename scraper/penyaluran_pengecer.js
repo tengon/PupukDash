@@ -201,11 +201,10 @@ async function scrapeListPage(page) {
     const headers = [...targetTable.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim());
     console.log('[DEBUG TABLE HEADERS]', JSON.stringify(headers));
 
-    return targetRows.map((row, rIdx) => {
-      const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
-
+      const btn = row.querySelector('#detailList') || row.querySelector('button[data-uuid]') || row.querySelector('[data-uuid]');
+      const uuid = btn ? btn.getAttribute('data-uuid') || '' : '';
       const aEl = row.querySelector('a');
-      const href = aEl ? aEl.getAttribute('href') || '' : '';
+      const href = aEl ? (aEl.getAttribute('href') || aEl.getAttribute('to') || '') : '';
 
       // Exact GOW CM Table column mapping:
       // cells[0]: No. Surat Jalan
@@ -219,19 +218,20 @@ async function scrapeListPage(page) {
       // cells[8]: Tgl. Diubah
       // cells[9]: Aksi (Detail)
 
-      const noSuratJalan  = cells[0] || `SJ-${rIdx + 1}`;
+      const noSuratJalan    = cells[0] || `SJ-${rIdx + 1}`;
       const kodeDistributor = cells[1] || '';
       const namaDistributor = cells[2] || '';
-      const kabupaten      = cells[3] || '';
-      const kodeProdusen   = cells[4] || '';
-      const namaProdusen   = cells[5] || '';
-      const status         = cells[6] || '';
-      const tglSuratJalan  = cells[7] || '';
-      const tglDibuat      = cells[7] || '';
-      const tglDiubah      = cells[8] || '';
+      const kabupaten       = cells[3] || '';
+      const kodeProdusen    = cells[4] || '';
+      const namaProdusen    = cells[5] || '';
+      const status          = cells[6] || '';
+      const tglSuratJalan   = cells[7] || '';
+      const tglDibuat       = cells[7] || '';
+      const tglDiubah       = cells[8] || '';
 
       return {
         noSuratJalan,
+        uuid,
         kodeDistributor,
         namaDistributor,
         kabupaten,
@@ -274,57 +274,107 @@ async function clickNextPage(page) {
 /** Scrape detail Surat Jalan */
 async function scrapeDetail(page, item, prefix) {
   try {
+    if (!item.uuid && !item.href) return null;
+
+    // Coba klik tombol detail (modal) di list page
+    if (item.uuid) {
+      const btnSelector = `button[data-uuid="${item.uuid}"], #detailList[data-uuid="${item.uuid}"]`;
+      const btn = await page.$(btnSelector);
+      if (btn) {
+        await btn.click();
+        await sleep(1200);
+
+        const detailData = await page.evaluate(() => {
+          const container = document.querySelector('.modal-dialog') ||
+                            document.querySelector('.modal-content') ||
+                            document.querySelector('.modal') ||
+                            document.body;
+
+          const tables = [...container.querySelectorAll('table')];
+          const parseTable = (t) => {
+            if (!t) return { headers: [], rows: [] };
+            const headers = [...t.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim()).filter(Boolean);
+            const rows = [...t.querySelectorAll('tbody tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText.trim())).filter(r => r.some(c => c !== ''));
+            return { headers, rows };
+          };
+
+          const labelValues = {};
+          container.querySelectorAll('tr, .row > div, dl dt, dl dd, p').forEach(el => {
+            const text = el.innerText || '';
+            if (text.includes(':') && text.length < 120) {
+              const parts = text.split(':');
+              if (parts.length === 2) {
+                const k = parts[0].trim();
+                const v = parts[1].trim();
+                if (k && v && k.length < 40) labelValues[k] = v;
+              }
+            }
+          });
+
+          return {
+            tables: tables.map(t => parseTable(t)).filter(t => t.rows.length > 0),
+            labelValues,
+          };
+        });
+
+        // Tutup modal jika ada
+        await page.evaluate(() => {
+          const closeBtn = document.querySelector('.modal .close, button[data-dismiss="modal"], .modal-header .close, button.close');
+          if (closeBtn) closeBtn.click();
+        }).catch(() => {});
+        await sleep(400);
+
+        if (detailData && (detailData.tables.length > 0 || Object.keys(detailData.labelValues).length > 0)) {
+          return detailData;
+        }
+      }
+    }
+
+    // Fallback: buka URL detail via route
     let detailUrl;
     if (item.href && item.href.startsWith('/#/')) {
       detailUrl = `https://gowcm.pupuk-indonesia.com${item.href}`;
     } else if (item.href && item.href.startsWith('/')) {
       detailUrl = `https://gowcm.pupuk-indonesia.com/#${item.href}`;
+    } else if (item.uuid) {
+      const decodedPrefix = decodeURIComponent(prefix);
+      detailUrl = `https://gowcm.pupuk-indonesia.com/#/${decodedPrefix}/laporan/surat-jalan/${item.uuid}`;
     } else {
-      return null; // Tidak ada href, skip detail
+      return null;
     }
 
-    await page.goto(detailUrl, { waitUntil: 'networkidle', timeout: 30000 });
-    await page.waitForSelector('table', { timeout: 8000 }).catch(() => {});
-    await sleep(1000);
+    await page.goto(detailUrl, { waitUntil: 'networkidle', timeout: 15000 });
+    await page.waitForSelector('table', { timeout: 5000 }).catch(() => {});
+    await sleep(800);
 
-    const detail = await page.evaluate(() => {
+    return await page.evaluate(() => {
       const tables = [...document.querySelectorAll('table')];
       const parseTable = (t) => {
         if (!t) return { headers: [], rows: [] };
-        const headers = [...t.querySelectorAll('thead th, thead td')]
-          .map(h => h.innerText.trim()).filter(Boolean);
-        const rows = [...t.querySelectorAll('tbody tr')]
-          .map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText.trim()))
-          .filter(r => r.some(c => c !== ''));
+        const headers = [...t.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim()).filter(Boolean);
+        const rows = [...t.querySelectorAll('tbody tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText.trim())).filter(r => r.some(c => c !== ''));
         return { headers, rows };
       };
 
-      // Ambil info header halaman (nama pengecer, status, dll)
-      const headerInfo = {};
-      document.querySelectorAll('.card-body dl dt, .card-body dl dd, .info-box, .detail-header').forEach(el => {
-        headerInfo[el.tagName + '_' + el.className] = el.innerText?.trim();
-      });
-
-      // Coba ambil semua label-value pairs
       const labelValues = {};
-      document.querySelectorAll('tr').forEach(tr => {
-        const tds = [...tr.querySelectorAll('td, th')];
-        if (tds.length === 2) {
-          const key = tds[0].innerText.trim().replace(':', '');
-          const val = tds[1].innerText.trim();
-          if (key && val) labelValues[key] = val;
+      document.querySelectorAll('tr, dl dt, dl dd').forEach(el => {
+        const text = el.innerText || '';
+        if (text.includes(':') && text.length < 100) {
+          const parts = text.split(':');
+          if (parts.length === 2) {
+            const k = parts[0].trim();
+            const v = parts[1].trim();
+            if (k && v && k.length < 40) labelValues[k] = v;
+          }
         }
       });
 
       return {
-        tables: tables.slice(0, 3).map(t => parseTable(t)),
+        tables: tables.map(t => parseTable(t)).filter(t => t.rows.length > 0),
         labelValues,
       };
     });
-
-    return detail;
   } catch (e) {
-    console.warn('[DETAIL] Error:', e.message);
     return null;
   }
 }
@@ -475,21 +525,22 @@ async function main() {
 
     console.log(`\n[LIST] Total Surat Jalan: ${allList.length}`);
 
-    // Format data Surat Jalan
+    // Format data Surat Jalan & Scrape detail untuk setiap Surat Jalan
     const result = [];
     for (let i = 0; i < allList.length; i++) {
       const item = allList[i];
       let detail = null;
 
-      // Scrape detail jika href valid (limit ke 20 detail pertama jika terlalu banyak agar cepat)
-      if (item.href && i < 20) {
-        console.log(`[DETAIL] ${i + 1}/${Math.min(allList.length, 20)} — ${item.noSuratJalan}`);
+      if (item.uuid || item.href) {
+        if ((i + 1) % 10 === 0 || i === 0 || i === allList.length - 1) {
+          console.log(`[DETAIL] Memproses ${i + 1}/${allList.length} — ${item.noSuratJalan} (uuid: ${item.uuid})`);
+        }
         detail = await scrapeDetail(page, item, prefix);
-        await sleep(500);
       }
 
       result.push({
         noSuratJalan:    item.noSuratJalan,
+        uuid:            item.uuid,
         kodeDistributor: item.kodeDistributor,
         namaDistributor: item.namaDistributor,
         kabupaten:       item.kabupaten,
