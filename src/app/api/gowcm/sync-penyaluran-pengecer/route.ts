@@ -30,7 +30,8 @@ export async function POST(request: Request) {
     const { stdout, stderr } = await execAsync(`node penyaluran_pengecer.js ${rangeArg}`.trim(), {
       cwd: scraperDir,
       env: execEnv,
-      timeout: 300000, // 5 min timeout
+      timeout: 600000, // 10 min timeout
+      maxBuffer: 20 * 1024 * 1024, // 20MB maxBuffer
     })
 
     console.log('[SYNC STDOUT]:', stdout)

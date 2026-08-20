@@ -354,7 +354,8 @@ async function scrapeDetail(page, item, prefix) {
       const btn = await page.$(btnSelector);
       if (btn) {
         await btn.click();
-        await sleep(1200);
+        await page.waitForSelector('.modal.show, .modal-dialog, .modal-content', { timeout: 1000 }).catch(() => {});
+        await sleep(300);
 
         const detailData = await page.evaluate(() => {
           const container = document.querySelector('.modal-dialog') ||
@@ -394,7 +395,7 @@ async function scrapeDetail(page, item, prefix) {
           const closeBtn = document.querySelector('.modal .close, button[data-dismiss="modal"], .modal-header .close, button.close');
           if (closeBtn) closeBtn.click();
         }).catch(() => {});
-        await sleep(400);
+        await sleep(100);
 
         if (detailData && (detailData.tables.length > 0 || Object.keys(detailData.labelValues).length > 0)) {
           return detailData;
@@ -613,16 +614,40 @@ async function main() {
 
     console.log(`\n[LIST] Total Surat Jalan: ${allList.length}`);
 
+    // Load detail cache dari file output sebelumnya
+    const detailCache = new Map();
+    if (fs.existsSync(OUTPUT_FILE)) {
+      try {
+        const raw = fs.readFileSync(OUTPUT_FILE, 'utf-8');
+        const prevJson = JSON.parse(raw);
+        if (Array.isArray(prevJson.data)) {
+          for (const prevItem of prevJson.data) {
+            if (prevItem.noSuratJalan && prevItem.detail) {
+              detailCache.set(prevItem.noSuratJalan, prevItem.detail);
+            }
+          }
+        }
+        console.log(`[CACHE] Loaded ${detailCache.size} detail Surat Jalan dari cache.`);
+      } catch (err) {
+        console.log('[CACHE] Gagal membaca cache file:', err.message);
+      }
+    }
+
     // Format data Surat Jalan & Scrape detail untuk setiap Surat Jalan
     const result = [];
+    let cacheHits = 0;
+    let detailScrapedCount = 0;
+
     for (let i = 0; i < allList.length; i++) {
       const item = allList[i];
       let detail = null;
 
-      if (item.uuid || item.href) {
-        if ((i + 1) % 10 === 0 || i === 0 || i === allList.length - 1) {
-          console.log(`[DETAIL] Memproses ${i + 1}/${allList.length} — ${item.noSuratJalan} (uuid: ${item.uuid})`);
-        }
+      if (detailCache.has(item.noSuratJalan)) {
+        detail = detailCache.get(item.noSuratJalan);
+        cacheHits++;
+      } else if (item.uuid || item.href) {
+        detailScrapedCount++;
+        console.log(`[DETAIL] (${detailScrapedCount}) Memproses ${i + 1}/${allList.length} — ${item.noSuratJalan} (uuid: ${item.uuid})`);
         detail = await scrapeDetail(page, item, prefix);
       }
 
@@ -656,6 +681,8 @@ async function main() {
     };
 
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf-8');
+
+    console.log(`[DETAIL STATS] Cache hits: ${cacheHits}/${allList.length}, Scraped baru: ${detailScrapedCount}`);
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`\n${'='.repeat(60)}`);
