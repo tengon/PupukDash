@@ -33,6 +33,7 @@ import {
   Store,
   Boxes,
   Truck,
+  Filter,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -40,6 +41,7 @@ interface ScraperScheduleItem {
   enabled: boolean
   startTime: string
   intervalHours: number
+  scrapeRange?: string
   lastRun: string | null
 }
 
@@ -57,6 +59,13 @@ const INTERVAL_OPTIONS = [
   { value: '6', label: 'Setiap 6 Jam' },
   { value: '12', label: 'Setiap 12 Jam' },
   { value: '24', label: 'Setiap 24 Jam' },
+]
+
+const SCRAPE_RANGE_OPTIONS = [
+  { value: 'today', label: '⚡ Hari Ini Sahaja (Sangat Cepat)' },
+  { value: '7days', label: '📅 7 Hari Terakhir' },
+  { value: '1month', label: '🗓️ 1 Bulan Terakhir' },
+  { value: 'all', label: '🌐 Semua Data (Seluruh Halaman)' },
 ]
 
 export function ScraperDialog({
@@ -86,6 +95,7 @@ export function ScraperDialog({
   const [distribusiEnabled, setDistribusiEnabled] = useState(true)
   const [distribusiStartTime, setDistribusiStartTime] = useState('06:00')
   const [distribusiInterval, setDistribusiInterval] = useState('6')
+  const [distribusiScrapeRange, setDistribusiScrapeRange] = useState<string>('all')
 
   const [isSyncingOp, setIsSyncingOp] = useState(false)
   const [isSyncingPpts, setIsSyncingPpts] = useState(false)
@@ -125,6 +135,7 @@ export function ScraperDialog({
         setDistribusiEnabled(s.penyaluran_pengecer.enabled ?? true)
         setDistribusiStartTime(s.penyaluran_pengecer.startTime || '06:00')
         setDistribusiInterval(String(s.penyaluran_pengecer.intervalHours || 6))
+        setDistribusiScrapeRange(s.penyaluran_pengecer.scrapeRange || 'all')
       }
     }
   }, [scheduleData])
@@ -152,6 +163,7 @@ export function ScraperDialog({
           enabled: distribusiEnabled,
           startTime: distribusiStartTime,
           intervalHours: parseInt(distribusiInterval) || 6,
+          scrapeRange: distribusiScrapeRange,
         },
       }
 
@@ -245,11 +257,11 @@ export function ScraperDialog({
     }
   }
 
-  // Manual Trigger Penyaluran Pengecer (Distribusi)
+  // Manual Trigger Penyaluran Pengecer (Distribusi) with Range Option
   const triggerDistribusiSync = async () => {
     setIsSyncingDistribusi(true)
     try {
-      const res = await fetch('/api/gowcm/sync-penyaluran-pengecer', { method: 'POST' })
+      const res = await fetch(`/api/gowcm/sync-penyaluran-pengecer?range=${distribusiScrapeRange}`, { method: 'POST' })
       const json = await res.json()
       toast({
         title: 'Sync Penyaluran Pengecer Selesai',
@@ -276,7 +288,7 @@ export function ScraperDialog({
             Penjadwalan Scraper Automatic GOW CM
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Atur status aktif, jam mulai eksekusi & durasi pengulangan (interval) secara mandiri untuk seluruh modul scraper GOW CM
+            Atur status aktif, rentang data, jam mulai eksekusi & durasi pengulangan secara mandiri untuk seluruh modul scraper GOW CM
           </DialogDescription>
         </DialogHeader>
 
@@ -571,6 +583,29 @@ export function ScraperDialog({
                     </div>
                   </div>
 
+                  {/* Opsi Filter Rentang Data Scraper */}
+                  <div className="space-y-1 pt-2 border-t">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <Filter className="h-3 w-3 text-sky-600" />
+                      Rentang Data yang Di-Scrape (Limit Tanggal)
+                    </Label>
+                    <Select value={distribusiScrapeRange} onValueChange={setDistribusiScrapeRange}>
+                      <SelectTrigger className="h-8 text-xs font-bold text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800">
+                        <SelectValue placeholder="Pilih Rentang Data" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCRAPE_RANGE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground">
+                      Pilih 'Hari Ini' atau '7 Hari' agar proses scraping berjalan sangat cepat dalam hitungan detik.
+                    </p>
+                  </div>
+
                   {scheduleData?.settings?.penyaluran_pengecer?.lastRun && (
                     <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
                       <span>Eksekusi Terakhir:</span>
@@ -590,7 +625,7 @@ export function ScraperDialog({
                     onClick={triggerDistribusiSync}
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingDistribusi ? 'animate-spin' : ''}`} />
-                    {isSyncingDistribusi ? 'Syncing...' : 'Run Scraper Distribusi Sekarang'}
+                    {isSyncingDistribusi ? 'Syncing...' : `Run Scraper (${distribusiScrapeRange.toUpperCase()}) Sekarang`}
                   </Button>
                 </div>
               </TabsContent>

@@ -17,7 +17,7 @@ function getSettings() {
     spjb_operasional: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     spjb_ppts: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     realisasi_stok_kios: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
-    penyaluran_pengecer: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
+    penyaluran_pengecer: { enabled: true, startTime: '06:00', intervalHours: 6, scrapeRange: 'all', lastRun: null },
   }
 }
 

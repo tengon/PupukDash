@@ -6,8 +6,11 @@ import fs from 'fs'
 
 const execAsync = promisify(exec)
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const rangeParam = searchParams.get('range')
+
     const scraperDir = path.join(process.cwd(), 'scraper')
     const testGetNodeModules = path.join('d:', 'testGet', 'node_modules')
     const nodePath = fs.existsSync(testGetNodeModules)
@@ -16,8 +19,14 @@ export async function POST() {
 
     const execEnv = { ...process.env, NODE_PATH: nodePath }
 
-    console.log('[SYNC] Executing penyaluran_pengecer.js scraper...')
-    const { stdout, stderr } = await execAsync('node penyaluran_pengecer.js', {
+    // Tentukan range argument
+    let rangeArg = ''
+    if (rangeParam) {
+      rangeArg = `--range=${rangeParam}`
+    }
+
+    console.log(`[SYNC] Executing penyaluran_pengecer.js ${rangeArg}...`)
+    const { stdout, stderr } = await execAsync(`node penyaluran_pengecer.js ${rangeArg}`.trim(), {
       cwd: scraperDir,
       env: execEnv,
       timeout: 300000, // 5 min timeout

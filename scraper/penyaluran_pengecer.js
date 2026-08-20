@@ -29,6 +29,62 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+const MONTH_MAP = {
+  jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, may: 4, jun: 5,
+  jul: 6, ags: 7, agu: 7, aug: 7, sep: 8, okt: 9, oct: 9, nov: 10, des: 11, dec: 11
+};
+
+/** Ambil opsi rentang scraping (today, 7days, 1month, all) dari args, env, atau schedule_settings.json */
+function getScrapeRange() {
+  const arg = process.argv.find(a => a.startsWith('--range='));
+  if (arg) return arg.split('=')[1].trim().toLowerCase();
+
+  if (process.env.SCRAPE_RANGE) return process.env.SCRAPE_RANGE.trim().toLowerCase();
+
+  const settingsFile = path.join(__dirname, 'schedule_settings.json');
+  if (fs.existsSync(settingsFile)) {
+    try {
+      const json = JSON.parse(fs.readFileSync(settingsFile, 'utf-8'));
+      if (json?.penyaluran_pengecer?.scrapeRange) {
+        return json.penyaluran_pengecer.scrapeRange.toLowerCase();
+      }
+    } catch {}
+  }
+  return 'all';
+}
+
+function parseDateStr(str) {
+  if (!str) return null;
+  const parts = str.toLowerCase().split('-');
+  if (parts.length >= 3) {
+    const year = parseInt(parts[0]) || 2026;
+    const month = MONTH_MAP[parts[1]] !== undefined ? MONTH_MAP[parts[1]] : 0;
+    const dayRest = parts[2].replace(',', '').trim();
+    const day = parseInt(dayRest) || 1;
+    return new Date(year, month, day);
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function getCutoffDate(range) {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (range === 'today') return todayStart;
+  if (range === '7days') {
+    const d = new Date(todayStart);
+    d.setDate(d.getDate() - 7);
+    return d;
+  }
+  if (range === '1month') {
+    const d = new Date(todayStart);
+    d.setDate(d.getDate() - 30);
+    return d;
+  }
+  return null; // 'all'
+}
+
 /** Ekstrak prefix dari URL page yang sedang aktif */
 function extractPrefixFromUrl(url) {
   const match = url.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
@@ -516,22 +572,39 @@ async function main() {
       return;
     }
 
+    // Filter Tanggal Data
+    const scrapeRange = getScrapeRange();
+    const cutoffDate = getCutoffDate(scrapeRange);
+    console.log(`\n[FILTER DATE] Opsi Rentang Scraping: ${scrapeRange.toUpperCase()}${cutoffDate ? ' (Cutoff: ' + cutoffDate.toISOString().split('T')[0] + ')' : ' (Semua Data)'}`);
+
     // Set filter Show = Lihat Semua
     await setFilterShowAll(page);
     await sleep(2000);
 
-    // Scrape semua halaman list
+    // Scrape halaman list dengan penghentian dini jika lewat cutoff date
     const allList = [];
     let pageNum = 1;
+    let stopEarly = false;
 
-    while (true) {
+    while (!stopEarly) {
       console.log(`\n[LIST] Halaman ${pageNum}...`);
       const rows = await scrapeListPage(page);
       console.log(`  Ditemukan ${rows.length} baris`);
-      allList.push(...rows);
 
-      if (!(await hasNextPage(page))) {
-        console.log('  [PAGING] Tidak ada halaman berikutnya.');
+      for (const row of rows) {
+        if (cutoffDate) {
+          const itemDate = parseDateStr(row.tglSuratJalan || row.tglDibuat || row.tglDiubah);
+          if (itemDate && itemDate < cutoffDate) {
+            console.log(`  [FILTER DATE] Tanggal ${row.tglSuratJalan} < Cutoff (${cutoffDate.toISOString().split('T')[0]}). Menghentikan scraping.`);
+            stopEarly = true;
+            break;
+          }
+        }
+        allList.push(row);
+      }
+
+      if (stopEarly || !(await hasNextPage(page))) {
+        if (!stopEarly) console.log('  [PAGING] Tidak ada halaman berikutnya.');
         break;
       }
       await clickNextPage(page);
@@ -573,7 +646,11 @@ async function main() {
     const output = {
       scraped_at: new Date().toISOString(),
       source: `GOW CM — Penyaluran ke Pengecer (Surat Jalan) via /${usedRoute}`,
-      filter: { show: 'Lihat Semua' },
+      filter: {
+        show: 'Lihat Semua',
+        scrapeRange: scrapeRange,
+        cutoffDate: cutoffDate ? cutoffDate.toISOString().split('T')[0] : null,
+      },
       total: result.length,
       data: result,
     };
