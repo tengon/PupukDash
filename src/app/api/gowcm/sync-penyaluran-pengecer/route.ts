@@ -37,8 +37,9 @@ export async function POST(request: Request) {
     console.log('[SYNC STDOUT]:', stdout)
     if (stderr) console.error('[SYNC STDERR]:', stderr)
 
-    // Otomatis sinkronkan hasil scraping ke tabel SuratJalan di database SQLite
+    // Otomatis sinkronkan hasil scraping ke tabel SuratJalan di database SQLite (Lewati jika sudah ada)
     let importedCount = 0
+    let skippedCount = 0
     try {
       const jsonPath = path.join(scraperDir, 'penyaluran_pengecer_full.json')
       if (fs.existsSync(jsonPath) && (db as any).suratJalan) {
@@ -46,28 +47,25 @@ export async function POST(request: Request) {
         const json = JSON.parse(raw)
         const items = json.data || []
 
+        // Ambil set noSuratJalan yang sudah tersimpan di database
+        const existingRecords = await (db as any).suratJalan.findMany({
+          select: { noSuratJalan: true },
+        })
+        const existingSet = new Set(existingRecords.map((r: any) => r.noSuratJalan))
+
         for (const item of items) {
           if (!item.noSuratJalan) continue
+
+          // Lewati jika noSuratJalan sudah ada di database
+          if (existingSet.has(item.noSuratJalan)) {
+            skippedCount++
+            continue
+          }
+
           const detailStr = item.detail ? JSON.stringify(item.detail) : null
 
-          await (db as any).suratJalan.upsert({
-            where: { noSuratJalan: item.noSuratJalan },
-            update: {
-              uuid: item.uuid || null,
-              kodeDistributor: item.kodeDistributor || null,
-              namaDistributor: item.namaDistributor || null,
-              provinsi: item.provinsi || null,
-              kabupaten: item.kabupaten || null,
-              kodeProdusen: item.kodeProdusen || null,
-              namaProdusen: item.namaProdusen || null,
-              status: item.status || null,
-              tglSuratJalan: item.tglSuratJalan || null,
-              tglDibuat: item.tglDibuat || null,
-              tglDiubah: item.tglDiubah || null,
-              href: item.href || null,
-              detail: detailStr,
-            },
-            create: {
+          await (db as any).suratJalan.create({
+            data: {
               noSuratJalan: item.noSuratJalan,
               uuid: item.uuid || null,
               kodeDistributor: item.kodeDistributor || null,
@@ -84,9 +82,10 @@ export async function POST(request: Request) {
               detail: detailStr,
             },
           })
+          existingSet.add(item.noSuratJalan)
           importedCount++
         }
-        console.log(`[SYNC DB] Berhasil tersimpan ke tabel SuratJalan (${importedCount} data)`)
+        console.log(`[SYNC DB] Tersimpan ${importedCount} Surat Jalan baru ke DB (${skippedCount} dilewati karena sudah ada).`)
       }
     } catch (dbSyncErr) {
       console.warn('Gagal sinkron database SuratJalan:', dbSyncErr)
@@ -94,9 +93,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Scraper Penyaluran Pengecer berhasil dijalankan & ${importedCount} Surat Jalan tersimpan di DB!`,
+      message: `Scraper Penyaluran Pengecer selesai! ${importedCount} Surat Jalan baru dimasukkan ke DB (${skippedCount} dilewati).`,
       output: stdout,
       importedCount,
+      skippedCount,
     })
   } catch (error: any) {
     console.error('Error running penyaluran_pengecer scraper:', error)

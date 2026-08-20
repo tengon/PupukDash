@@ -13,32 +13,30 @@ async function main() {
   const json = JSON.parse(raw)
   const items = json.data || []
 
-  console.log(`Mengimport ${items.length} Surat Jalan ke database SQLite...`)
+  console.log(`Memeriksa ${items.length} Surat Jalan dari hasil scraper...`)
 
-  let successCount = 0
+  // Ambil daftar No. Surat Jalan yang sudah tersimpan di DB
+  const existingRecords = await (db as any).suratJalan.findMany({
+    select: { noSuratJalan: true },
+  })
+  const existingSet = new Set(existingRecords.map((r: any) => r.noSuratJalan))
+
+  let insertedCount = 0
+  let skippedCount = 0
+
   for (const item of items) {
     if (!item.noSuratJalan) continue
 
+    // Jika noSuratJalan sudah ada di database, lewati
+    if (existingSet.has(item.noSuratJalan)) {
+      skippedCount++
+      continue
+    }
+
     const detailStr = item.detail ? JSON.stringify(item.detail) : null
 
-    await (db as any).suratJalan.upsert({
-      where: { noSuratJalan: item.noSuratJalan },
-      update: {
-        uuid: item.uuid || null,
-        kodeDistributor: item.kodeDistributor || null,
-        namaDistributor: item.namaDistributor || null,
-        provinsi: item.provinsi || null,
-        kabupaten: item.kabupaten || null,
-        kodeProdusen: item.kodeProdusen || null,
-        namaProdusen: item.namaProdusen || null,
-        status: item.status || null,
-        tglSuratJalan: item.tglSuratJalan || null,
-        tglDibuat: item.tglDibuat || null,
-        tglDiubah: item.tglDiubah || null,
-        href: item.href || null,
-        detail: detailStr,
-      },
-      create: {
+    await (db as any).suratJalan.create({
+      data: {
         noSuratJalan: item.noSuratJalan,
         uuid: item.uuid || null,
         kodeDistributor: item.kodeDistributor || null,
@@ -55,10 +53,12 @@ async function main() {
         detail: detailStr,
       },
     })
-    successCount++
+
+    existingSet.add(item.noSuratJalan)
+    insertedCount++
   }
 
-  console.log(`✅ Berhasil mengimpor/memperbarui ${successCount} Surat Jalan di database!`)
+  console.log(`✅ Selesai! ${insertedCount} Surat Jalan baru berhasil dimasukkan, ${skippedCount} dilewati (karena sudah ada).`)
 }
 
 main()
