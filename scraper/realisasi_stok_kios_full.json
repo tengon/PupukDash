@@ -1,7 +1,7 @@
 {
   "success": true,
   "total": 100,
-  "scraped_at": "2026-08-20T01:55:00.212Z",
+  "scraped_at": "2026-08-20T08:00:02.369Z",
   "data": [
     {
       "kodeKios": "RT0000017846",
@@ -9,15 +9,7 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000017846",
-      "namaKios": "TOKO MARISA",
-      "kodeProduk": "UN46",
-      "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 6130,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000017846",
@@ -25,15 +17,23 @@
       "kodeProduk": "ORCR",
       "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000017846",
+      "namaKios": "TOKO MARISA",
+      "kodeProduk": "UN46",
+      "namaProduk": "Pupuk Urea N 46%",
+      "stokKg": 4380,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000017846",
       "namaKios": "TOKO MARISA",
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 3500,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "stokKg": 1500,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000017846",
@@ -41,23 +41,7 @@
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021053",
-      "namaKios": "ALIFA",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021053",
-      "namaKios": "ALIFA",
-      "kodeProduk": "NPKP",
-      "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 4075,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021053",
@@ -65,7 +49,15 @@
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 2000,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021053",
+      "namaKios": "ALIFA",
+      "kodeProduk": "NPKP",
+      "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 4075,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021053",
@@ -73,7 +65,15 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 3200,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021053",
+      "namaKios": "ALIFA",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021053",
@@ -81,39 +81,39 @@
       "kodeProduk": "ORCR",
       "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021057",
-      "namaKios": "BAROKAH",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021057",
-      "namaKios": "BAROKAH",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021057",
       "namaKios": "BAROKAH",
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 5600,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "stokKg": 5302,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021057",
       "namaKios": "BAROKAH",
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 3200,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "stokKg": 2716,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021057",
+      "namaKios": "BAROKAH",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021057",
+      "namaKios": "BAROKAH",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021057",
@@ -121,15 +121,7 @@
       "kodeProduk": "ORCR",
       "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021058",
-      "namaKios": "BINA MAJU JAYA",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021058",
@@ -137,23 +129,7 @@
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021058",
-      "namaKios": "BINA MAJU JAYA",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021058",
-      "namaKios": "BINA MAJU JAYA",
-      "kodeProduk": "NPKP",
-      "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 13100,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021058",
@@ -161,15 +137,31 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 9816,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
-      "kodeKios": "RT0000021060",
-      "namaKios": "HIJAU",
-      "kodeProduk": "UN46",
-      "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 11250,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "kodeKios": "RT0000021058",
+      "namaKios": "BINA MAJU JAYA",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021058",
+      "namaKios": "BINA MAJU JAYA",
+      "kodeProduk": "NPKP",
+      "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 13100,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021058",
+      "namaKios": "BINA MAJU JAYA",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021060",
@@ -177,7 +169,23 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021060",
+      "namaKios": "HIJAU",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021060",
+      "namaKios": "HIJAU",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021060",
@@ -185,31 +193,15 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 11300,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021060",
       "namaKios": "HIJAU",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021060",
-      "namaKios": "HIJAU",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021064",
-      "namaKios": "KUD BINA DHARMA",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "kodeProduk": "UN46",
+      "namaProduk": "Pupuk Urea N 46%",
+      "stokKg": 11250,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021064",
@@ -217,23 +209,15 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021064",
       "namaKios": "KUD BINA DHARMA",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021064",
-      "namaKios": "KUD BINA DHARMA",
-      "kodeProduk": "NPKP",
-      "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 2700,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021064",
@@ -241,15 +225,23 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 5100,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
-      "kodeKios": "RT0000021065",
-      "namaKios": "KUD BRINGIN",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
+      "kodeKios": "RT0000021064",
+      "namaKios": "KUD BINA DHARMA",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021064",
+      "namaKios": "KUD BINA DHARMA",
+      "kodeProduk": "NPKP",
+      "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 2700,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021065",
@@ -257,7 +249,7 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 2450,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021065",
@@ -265,15 +257,7 @@
       "kodeProduk": "ORCR",
       "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021065",
-      "namaKios": "KUD BRINGIN",
-      "kodeProduk": "NPKP",
-      "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 3900,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021065",
@@ -281,39 +265,23 @@
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 280,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
-      "kodeKios": "RT0000021071",
-      "namaKios": "POKJASUS AGROPOLITAN",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021071",
-      "namaKios": "POKJASUS AGROPOLITAN",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021071",
-      "namaKios": "POKJASUS AGROPOLITAN",
-      "kodeProduk": "UN46",
-      "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021071",
-      "namaKios": "POKJASUS AGROPOLITAN",
+      "kodeKios": "RT0000021065",
+      "namaKios": "KUD BRINGIN",
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 3900,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021065",
+      "namaKios": "KUD BRINGIN",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021071",
@@ -321,7 +289,39 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021071",
+      "namaKios": "POKJASUS AGROPOLITAN",
+      "kodeProduk": "UN46",
+      "namaProduk": "Pupuk Urea N 46%",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021071",
+      "namaKios": "POKJASUS AGROPOLITAN",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021071",
+      "namaKios": "POKJASUS AGROPOLITAN",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021071",
+      "namaKios": "POKJASUS AGROPOLITAN",
+      "kodeProduk": "NPKP",
+      "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021076",
@@ -329,23 +329,7 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 2200,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021076",
-      "namaKios": "SEJAHTERA",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021076",
-      "namaKios": "SEJAHTERA",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021076",
@@ -353,7 +337,23 @@
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021076",
+      "namaKios": "SEJAHTERA",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021076",
+      "namaKios": "SEJAHTERA",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021076",
@@ -361,15 +361,7 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 1750,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021078",
-      "namaKios": "SIDO MAKMUR",
-      "kodeProduk": "UN46",
-      "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 2986,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021078",
@@ -377,7 +369,23 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 8376,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021078",
+      "namaKios": "SIDO MAKMUR",
+      "kodeProduk": "UN46",
+      "namaProduk": "Pupuk Urea N 46%",
+      "stokKg": 2986,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021078",
+      "namaKios": "SIDO MAKMUR",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021078",
@@ -385,7 +393,7 @@
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021078",
@@ -393,15 +401,15 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
-      "kodeKios": "RT0000021078",
-      "namaKios": "SIDO MAKMUR",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
+      "kodeKios": "RT0000021079",
+      "namaKios": "SUKAMAJU",
+      "kodeProduk": "UN46",
+      "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021079",
@@ -409,7 +417,15 @@
       "kodeProduk": "ORCR",
       "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021079",
+      "namaKios": "SUKAMAJU",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021079",
@@ -417,7 +433,7 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021079",
@@ -425,47 +441,23 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
-      "kodeKios": "RT0000021079",
-      "namaKios": "SUKAMAJU",
-      "kodeProduk": "UN46",
-      "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 1772,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "kodeKios": "RT0000021080",
+      "namaKios": "SUMBER REJEKI",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
-      "kodeKios": "RT0000021079",
-      "namaKios": "SUKAMAJU",
+      "kodeKios": "RT0000021080",
+      "namaKios": "SUMBER REJEKI",
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021080",
-      "namaKios": "SUMBER REJEKI",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021080",
-      "namaKios": "SUMBER REJEKI",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021080",
-      "namaKios": "SUMBER REJEKI",
-      "kodeProduk": "UN46",
-      "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 22642,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021080",
@@ -473,23 +465,23 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 24372,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021080",
       "namaKios": "SUMBER REJEKI",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021083",
-      "namaKios": "SURYA TANI",
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 36610,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "stokKg": 22642,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021080",
+      "namaKios": "SUMBER REJEKI",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021083",
@@ -497,7 +489,31 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 10500,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021083",
+      "namaKios": "SURYA TANI",
+      "kodeProduk": "UN46",
+      "namaProduk": "Pupuk Urea N 46%",
+      "stokKg": 36610,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021083",
+      "namaKios": "SURYA TANI",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021083",
+      "namaKios": "SURYA TANI",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021083",
@@ -505,47 +521,15 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021083",
-      "namaKios": "SURYA TANI",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021083",
-      "namaKios": "SURYA TANI",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021084",
       "namaKios": "SYUKUR TANI",
-      "kodeProduk": "NPKP",
-      "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 3250,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021084",
-      "namaKios": "SYUKUR TANI",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021084",
-      "namaKios": "SYUKUR TANI",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021084",
@@ -553,71 +537,71 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 1800,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021084",
       "namaKios": "SYUKUR TANI",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021084",
+      "namaKios": "SYUKUR TANI",
+      "kodeProduk": "NPKP",
+      "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 2250,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021084",
+      "namaKios": "SYUKUR TANI",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021093",
       "namaKios": "UMEGA",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021093",
       "namaKios": "UMEGA",
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 6250,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "stokKg": 6058,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021093",
       "namaKios": "UMEGA",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021093",
-      "namaKios": "UMEGA",
-      "kodeProduk": "NPKP",
-      "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 4590,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021093",
-      "namaKios": "UMEGA",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021094",
-      "namaKios": "USAHA TANI",
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
-      "kodeKios": "RT0000021094",
-      "namaKios": "USAHA TANI",
+      "kodeKios": "RT0000021093",
+      "namaKios": "UMEGA",
+      "kodeProduk": "NPKP",
+      "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 4366,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021093",
+      "namaKios": "UMEGA",
       "kodeProduk": "ORCR",
       "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021094",
@@ -625,15 +609,7 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021094",
-      "namaKios": "USAHA TANI",
-      "kodeProduk": "NPKP",
-      "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 2100,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021094",
@@ -641,7 +617,31 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 1695,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021094",
+      "namaKios": "USAHA TANI",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021094",
+      "namaKios": "USAHA TANI",
+      "kodeProduk": "NPKP",
+      "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 2100,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021094",
+      "namaKios": "USAHA TANI",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021096",
@@ -649,7 +649,31 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021096",
+      "namaKios": "ZULFA",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021096",
+      "namaKios": "ZULFA",
+      "kodeProduk": "NPKP",
+      "namaProduk": "Pupuk NPK Phonska",
+      "stokKg": 4542,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021096",
+      "namaKios": "ZULFA",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021096",
@@ -657,31 +681,15 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 10144,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
-      "kodeKios": "RT0000021096",
-      "namaKios": "ZULFA",
+      "kodeKios": "RT0000021104",
+      "namaKios": "ENGGAL SEMI",
       "kodeProduk": "ORCR",
       "namaProduk": "Pupuk Organik Cair",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021096",
-      "namaKios": "ZULFA",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021096",
-      "namaKios": "ZULFA",
-      "kodeProduk": "NPKP",
-      "namaProduk": "Pupuk NPK Phonska",
-      "stokKg": 4625,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021104",
@@ -689,15 +697,7 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 3250,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021104",
-      "namaKios": "ENGGAL SEMI",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021104",
@@ -705,7 +705,7 @@
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021104",
@@ -713,31 +713,39 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 2650,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021104",
       "namaKios": "ENGGAL SEMI",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021107",
       "namaKios": "KUD. MEKAR",
-      "kodeProduk": "ORGR",
-      "namaProduk": "Pupuk Organik Granul",
+      "kodeProduk": "NPKFK",
+      "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021107",
       "namaKios": "KUD. MEKAR",
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
-      "stokKg": 10550,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "stokKg": 9950,
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021107",
+      "namaKios": "KUD. MEKAR",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021107",
@@ -745,23 +753,15 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 6550,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021107",
       "namaKios": "KUD. MEKAR",
-      "kodeProduk": "NPKFK",
-      "namaProduk": "Pupuk NPK Formula Khusus",
+      "kodeProduk": "ORGR",
+      "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021107",
-      "namaKios": "KUD. MEKAR",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021108",
@@ -769,15 +769,7 @@
       "kodeProduk": "UN46",
       "namaProduk": "Pupuk Urea N 46%",
       "stokKg": 4300,
-      "syncAt": "2026-08-20 08:00:00.520"
-    },
-    {
-      "kodeKios": "RT0000021108",
-      "namaKios": "MEKAR",
-      "kodeProduk": "ORCR",
-      "namaProduk": "Pupuk Organik Cair",
-      "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021108",
@@ -785,7 +777,7 @@
       "kodeProduk": "NPKFK",
       "namaProduk": "Pupuk NPK Formula Khusus",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021108",
@@ -793,7 +785,7 @@
       "kodeProduk": "NPKP",
       "namaProduk": "Pupuk NPK Phonska",
       "stokKg": 3650,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
     },
     {
       "kodeKios": "RT0000021108",
@@ -801,7 +793,15 @@
       "kodeProduk": "ORGR",
       "namaProduk": "Pupuk Organik Granul",
       "stokKg": 0,
-      "syncAt": "2026-08-20 08:00:00.520"
+      "syncAt": "2026-08-20 14:00:00.707"
+    },
+    {
+      "kodeKios": "RT0000021108",
+      "namaKios": "MEKAR",
+      "kodeProduk": "ORCR",
+      "namaProduk": "Pupuk Organik Cair",
+      "stokKg": 0,
+      "syncAt": "2026-08-20 14:00:00.707"
     }
   ]
 }
