@@ -15,6 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
@@ -35,6 +42,7 @@ import {
   ArrowUp,
   ArrowDown,
   Clock,
+  Filter,
 } from 'lucide-react'
 
 interface SuratJalanItem {
@@ -67,25 +75,65 @@ interface PenyaluranResponse {
 
 type SortField = 'noSuratJalan' | 'tglSuratJalan' | 'tglDibuat' | 'tglDiubah' | 'namaProdusen'
 type SortOrder = 'asc' | 'desc'
+type TimeRangeFilter = 'all' | 'today' | '7days' | '1month' | 'custom_month'
 
 const ITEMS_PER_PAGE = 15
 
+const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+]
+
+const MONTH_MAP: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, may: 4, jun: 5,
+  jul: 6, ags: 7, agu: 7, aug: 7, sep: 8, okt: 9, oct: 9, nov: 10, des: 11, dec: 11
+}
+
 function parseSuratJalanDate(str?: string): number {
   if (!str) return 0
-  const monthMap: Record<string, string> = {
-    jan: '01', feb: '02', mar: '03', apr: '04', mei: '05', jun: '06',
-    jul: '07', ags: '08', agu: '08', sep: '09', okt: '10', nov: '11', des: '12'
-  }
   const parts = str.toLowerCase().split('-')
   if (parts.length >= 3) {
-    const year = parts[0]
-    const month = monthMap[parts[1]] || '01'
+    const year = parseInt(parts[0]) || 2026
+    const month = MONTH_MAP[parts[1]] !== undefined ? MONTH_MAP[parts[1]] : 0
     const dayRest = parts[2].replace(',', '').trim()
-    const isoStr = `${year}-${month}-${dayRest.padStart(2, '0')}`
+    const day = parseInt(dayRest) || 1
+    const isoStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     const timestamp = Date.parse(isoStr)
     if (!isNaN(timestamp)) return timestamp
   }
   return Date.parse(str) || 0
+}
+
+function getItemDateInfo(item: SuratJalanItem) {
+  const dateStr = item.tglSuratJalan || item.tglDibuat || item.tglDiubah || ''
+  if (!dateStr) return null
+
+  const parts = dateStr.toLowerCase().split('-')
+  if (parts.length >= 3) {
+    const year = parseInt(parts[0]) || 2026
+    const month = MONTH_MAP[parts[1]] !== undefined ? MONTH_MAP[parts[1]] : 0
+    const dayRest = parts[2].replace(',', '').trim()
+    const day = parseInt(dayRest) || 1
+
+    const dateObj = new Date(year, month, day)
+    return {
+      year,
+      month, // 0-11
+      day,
+      timestamp: dateObj.getTime(),
+    }
+  }
+  const timestamp = Date.parse(dateStr)
+  if (!isNaN(timestamp)) {
+    const d = new Date(timestamp)
+    return {
+      year: d.getFullYear(),
+      month: d.getMonth(),
+      day: d.getDate(),
+      timestamp,
+    }
+  }
+  return null
 }
 
 async function fetchPenyaluranPengecer(search?: string): Promise<PenyaluranResponse> {
@@ -238,6 +286,11 @@ export function PenyaluranPengecerView() {
   const [sortField, setSortField] = useState<SortField>('tglSuratJalan')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
+  // Date Range Filters: 'all' | 'today' | '7days' | '1month' | 'custom_month'
+  const [timeRangeFilter, setTimeRangeFilter] = useState<TimeRangeFilter>('all')
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth()) // 0 - 11
+  const [selectedYear, setSelectedYear] = useState<number>(2026)
+
   const { data: res, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['penyaluranPengecer', search],
     queryFn: () => fetchPenyaluranPengecer(search),
@@ -269,12 +322,41 @@ export function PenyaluranPengecerView() {
     }
   }
 
-  const items = res?.data || []
+  const rawItems = res?.data || []
 
-  // Sorting logic
+  // 1. Date Range Filtering
+  const dateFilteredItems = useMemo(() => {
+    if (timeRangeFilter === 'all') return rawItems
+
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const sevenDaysAgo = todayStart - 7 * 24 * 60 * 60 * 1000
+    const thirtyDaysAgo = todayStart - 30 * 24 * 60 * 60 * 1000
+
+    return rawItems.filter(item => {
+      const dateInfo = getItemDateInfo(item)
+      if (!dateInfo) return true // Tampilkan jika tanggal gagal di-parse
+
+      if (timeRangeFilter === 'today') {
+        return dateInfo.timestamp >= todayStart
+      }
+      if (timeRangeFilter === '7days') {
+        return dateInfo.timestamp >= sevenDaysAgo
+      }
+      if (timeRangeFilter === '1month') {
+        return dateInfo.timestamp >= thirtyDaysAgo
+      }
+      if (timeRangeFilter === 'custom_month') {
+        return dateInfo.year === selectedYear && dateInfo.month === selectedMonth
+      }
+      return true
+    })
+  }, [rawItems, timeRangeFilter, selectedMonth, selectedYear])
+
+  // 2. Sorting logic
   const sortedItems = useMemo(() => {
-    if (!sortField) return items
-    return [...items].sort((a, b) => {
+    if (!sortField) return dateFilteredItems
+    return [...dateFilteredItems].sort((a, b) => {
       let comp = 0
       if (sortField === 'noSuratJalan') {
         comp = (a.noSuratJalan || '').localeCompare(b.noSuratJalan || '')
@@ -289,7 +371,7 @@ export function PenyaluranPengecerView() {
       }
       return sortOrder === 'asc' ? comp : -comp
     })
-  }, [items, sortField, sortOrder])
+  }, [dateFilteredItems, sortField, sortOrder])
 
   const totalPages = Math.max(1, Math.ceil(sortedItems.length / ITEMS_PER_PAGE))
   const safePage = Math.min(page, totalPages)
@@ -361,25 +443,117 @@ export function PenyaluranPengecerView() {
             </div>
           </div>
 
+          {/* Opsi Filter Tanggal / Waktu */}
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border/40 mt-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mr-1">
+              <Filter className="h-3.5 w-3.5 text-blue-600" />
+              <span>Filter Tanggal:</span>
+            </div>
+
+            <Button
+              size="sm"
+              variant={timeRangeFilter === 'all' ? 'default' : 'outline'}
+              className={`h-7 text-xs px-2.5 ${timeRangeFilter === 'all' ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold' : ''}`}
+              onClick={() => { setTimeRangeFilter('all'); setPage(1) }}
+            >
+              Semua
+            </Button>
+
+            <Button
+              size="sm"
+              variant={timeRangeFilter === 'today' ? 'default' : 'outline'}
+              className={`h-7 text-xs px-2.5 ${timeRangeFilter === 'today' ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold' : ''}`}
+              onClick={() => { setTimeRangeFilter('today'); setPage(1) }}
+            >
+              Hari Ini
+            </Button>
+
+            <Button
+              size="sm"
+              variant={timeRangeFilter === '7days' ? 'default' : 'outline'}
+              className={`h-7 text-xs px-2.5 ${timeRangeFilter === '7days' ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold' : ''}`}
+              onClick={() => { setTimeRangeFilter('7days'); setPage(1) }}
+            >
+              7 Hari Terakhir
+            </Button>
+
+            <Button
+              size="sm"
+              variant={timeRangeFilter === '1month' ? 'default' : 'outline'}
+              className={`h-7 text-xs px-2.5 ${timeRangeFilter === '1month' ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold' : ''}`}
+              onClick={() => { setTimeRangeFilter('1month'); setPage(1) }}
+            >
+              1 Bulan Terakhir
+            </Button>
+
+            <Button
+              size="sm"
+              variant={timeRangeFilter === 'custom_month' ? 'default' : 'outline'}
+              className={`h-7 text-xs px-2.5 ${timeRangeFilter === 'custom_month' ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold' : ''}`}
+              onClick={() => { setTimeRangeFilter('custom_month'); setPage(1) }}
+            >
+              Pilihan Bulan
+            </Button>
+
+            {/* Sub-controls untuk Pilihan Bulan */}
+            {timeRangeFilter === 'custom_month' && (
+              <div className="flex items-center gap-1.5 ml-1 animate-in fade-in slide-in-from-left-2 duration-200">
+                <Select
+                  value={String(selectedMonth)}
+                  onValueChange={(val) => { setSelectedMonth(parseInt(val)); setPage(1) }}
+                >
+                  <SelectTrigger className="h-7 text-xs w-32 border-blue-300 dark:border-blue-700">
+                    <SelectValue placeholder="Pilih Bulan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTH_NAMES.map((m, idx) => (
+                      <SelectItem key={idx} value={String(idx)} className="text-xs">
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={String(selectedYear)}
+                  onValueChange={(val) => { setSelectedYear(parseInt(val)); setPage(1) }}
+                >
+                  <SelectTrigger className="h-7 text-xs w-24 border-blue-300 dark:border-blue-700">
+                    <SelectValue placeholder="Tahun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2026" className="text-xs">2026</SelectItem>
+                    <SelectItem value="2025" className="text-xs">2025</SelectItem>
+                    <SelectItem value="2024" className="text-xs">2024</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
           {/* Summary Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
             <div className="glass rounded-xl p-3 border border-border/50">
               <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Surat Jalan</p>
-              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{res?.total || items.length}</p>
+              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{rawItems.length}</p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
               <p className="text-[10px] text-muted-foreground uppercase font-medium">Distributor PUD</p>
               <p className="text-sm font-bold truncate">CV. ANUGERAH MAKMUR</p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase font-medium">Urutan Tampil</p>
-              <p className="text-xs font-semibold text-foreground capitalize">
-                {sortField === 'noSuratJalan' ? 'No. Surat Jalan' : sortField === 'tglSuratJalan' ? 'Tgl Surat Jalan' : sortField === 'tglDibuat' ? 'Tgl Dibuat' : 'Tgl Diubah'} ({sortOrder === 'asc' ? 'Asc / Lama' : 'Desc / Baru'})
+              <p className="text-[10px] text-muted-foreground uppercase font-medium">Filter Waktu</p>
+              <p className="text-xs font-semibold text-foreground truncate">
+                {timeRangeFilter === 'all' && 'Semua Tanggal'}
+                {timeRangeFilter === 'today' && 'Hari Ini'}
+                {timeRangeFilter === '7days' && '7 Hari Terakhir'}
+                {timeRangeFilter === '1month' && '30 Hari Terakhir'}
+                {timeRangeFilter === 'custom_month' && `${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
               </p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase font-medium">Ditampilkan</p>
-              <p className="text-lg font-bold">{sortedItems.length} Dokumen</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-medium">Tersaring</p>
+              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{sortedItems.length} Dokumen</p>
             </div>
           </div>
         </CardHeader>
@@ -409,9 +583,9 @@ export function PenyaluranPengecerView() {
           ) : sortedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Truck className="h-12 w-12 opacity-30 mb-3" />
-              <p className="text-sm font-medium">Tidak ada data Surat Jalan yang sesuai</p>
+              <p className="text-sm font-medium">Tidak ada data Surat Jalan yang sesuai filter</p>
               <p className="text-xs opacity-70 mt-1">
-                {search ? 'Coba ubah kata pencarian' : 'Jalankan scraper penyaluran_pengecer.js di VPS'}
+                {search || timeRangeFilter !== 'all' ? 'Coba ubah opsi filter tanggal atau kata pencarian' : 'Jalankan scraper penyaluran_pengecer.js di VPS'}
               </p>
             </div>
           ) : (
@@ -499,7 +673,7 @@ export function PenyaluranPengecerView() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
                   <span>
-                    Menampilkan {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, sortedItems.length)} dari {sortedItems.length} Surat Jalan
+                    Menampilkan {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, sortedItems.length)} dari {sortedItems.length} Surat Jalan tersaring
                   </span>
                   <div className="flex items-center gap-1">
                     <Button

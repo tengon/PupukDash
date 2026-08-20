@@ -32,6 +32,7 @@ import {
   Building2,
   Store,
   Boxes,
+  Truck,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -46,6 +47,7 @@ interface ScheduleSettings {
   spjb_operasional: ScraperScheduleItem
   spjb_ppts: ScraperScheduleItem
   realisasi_stok_kios: ScraperScheduleItem
+  penyaluran_pengecer: ScraperScheduleItem
 }
 
 const INTERVAL_OPTIONS = [
@@ -66,7 +68,7 @@ export function ScraperDialog({
 }) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<'operasional' | 'ppts' | 'realisasi'>('operasional')
+  const [activeTab, setActiveTab] = useState<'operasional' | 'ppts' | 'realisasi' | 'distribusi'>('operasional')
 
   // Local settings state
   const [opEnabled, setOpEnabled] = useState(true)
@@ -81,9 +83,14 @@ export function ScraperDialog({
   const [realisasiStartTime, setRealisasiStartTime] = useState('06:00')
   const [realisasiInterval, setRealisasiInterval] = useState('6')
 
+  const [distribusiEnabled, setDistribusiEnabled] = useState(true)
+  const [distribusiStartTime, setDistribusiStartTime] = useState('06:00')
+  const [distribusiInterval, setDistribusiInterval] = useState('6')
+
   const [isSyncingOp, setIsSyncingOp] = useState(false)
   const [isSyncingPpts, setIsSyncingPpts] = useState(false)
   const [isSyncingRealisasi, setIsSyncingRealisasi] = useState(false)
+  const [isSyncingDistribusi, setIsSyncingDistribusi] = useState(false)
 
   // Fetch current schedule settings
   const { data: scheduleData, isLoading, refetch } = useQuery<{ success: boolean; settings: ScheduleSettings }>({
@@ -114,6 +121,11 @@ export function ScraperDialog({
         setRealisasiStartTime(s.realisasi_stok_kios.startTime || '06:00')
         setRealisasiInterval(String(s.realisasi_stok_kios.intervalHours || 6))
       }
+      if (s.penyaluran_pengecer) {
+        setDistribusiEnabled(s.penyaluran_pengecer.enabled ?? true)
+        setDistribusiStartTime(s.penyaluran_pengecer.startTime || '06:00')
+        setDistribusiInterval(String(s.penyaluran_pengecer.intervalHours || 6))
+      }
     }
   }, [scheduleData])
 
@@ -136,6 +148,11 @@ export function ScraperDialog({
           startTime: realisasiStartTime,
           intervalHours: parseInt(realisasiInterval) || 6,
         },
+        penyaluran_pengecer: {
+          enabled: distribusiEnabled,
+          startTime: distribusiStartTime,
+          intervalHours: parseInt(distribusiInterval) || 6,
+        },
       }
 
       const res = await fetch('/api/scraper/schedule', {
@@ -148,15 +165,15 @@ export function ScraperDialog({
     },
     onSuccess: (res) => {
       toast({
-        title: 'Jadwal Disimpan',
-        description: res.message || 'Pengaturan jam & interval scraper berhasil diperbarui.',
+        title: 'Pengaturan Disimpan',
+        description: res.message || 'Jadwal otomatis scraper GOW CM berhasil diperbarui.',
       })
       refetch()
     },
-    onError: (err: Error) => {
+    onError: (err: any) => {
       toast({
         title: 'Gagal Menyimpan',
-        description: err.message,
+        description: err.message || 'Terjadi kesalahan saat menyimpan pengaturan jadwal.',
         variant: 'destructive',
       })
     },
@@ -170,7 +187,7 @@ export function ScraperDialog({
       const json = await res.json()
       toast({
         title: 'Sync SPJB Operasional Selesai',
-        description: json.message || `Total ${json.updatedAllocationCount || 0} record alokasi ter-update ke DB.`,
+        description: json.message || 'Data SPJB Operasional berhasil di-scrape.',
       })
       queryClient.invalidateQueries()
     } catch (e: any) {
@@ -192,7 +209,7 @@ export function ScraperDialog({
       const json = await res.json()
       toast({
         title: 'Sync SPJB PPTS Selesai',
-        description: json.message || `Total ${json.updatedPptsCount || 0} Kios PPTS ter-update ke DB.`,
+        description: json.message || 'Data SPJB PPTS berhasil di-scrape.',
       })
       queryClient.invalidateQueries()
     } catch (e: any) {
@@ -228,6 +245,28 @@ export function ScraperDialog({
     }
   }
 
+  // Manual Trigger Penyaluran Pengecer (Distribusi)
+  const triggerDistribusiSync = async () => {
+    setIsSyncingDistribusi(true)
+    try {
+      const res = await fetch('/api/gowcm/sync-penyaluran-pengecer', { method: 'POST' })
+      const json = await res.json()
+      toast({
+        title: 'Sync Penyaluran Pengecer Selesai',
+        description: json.message || 'Scraping Surat Jalan Penyaluran Pengecer berhasil dijalankan.',
+      })
+      queryClient.invalidateQueries()
+    } catch (e: any) {
+      toast({
+        title: 'Sync Gagal',
+        description: e.message || 'Terjadi kesalahan saat sync Penyaluran Pengecer',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSyncingDistribusi(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
@@ -249,18 +288,22 @@ export function ScraperDialog({
         ) : (
           <div className="space-y-4 text-xs pt-1">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-              <TabsList className="grid grid-cols-3 w-full">
-                <TabsTrigger value="operasional" className="gap-1 text-[11px] font-bold truncate">
-                  <Building2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                  <span className="truncate">SPJB Operasional</span>
+              <TabsList className="grid grid-cols-4 w-full">
+                <TabsTrigger value="operasional" className="gap-1 text-[10px] font-bold truncate">
+                  <Building2 className="h-3 w-3 text-emerald-600 shrink-0" />
+                  <span className="truncate">Operasional</span>
                 </TabsTrigger>
-                <TabsTrigger value="ppts" className="gap-1 text-[11px] font-bold truncate">
-                  <Store className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                <TabsTrigger value="ppts" className="gap-1 text-[10px] font-bold truncate">
+                  <Store className="h-3 w-3 text-blue-600 shrink-0" />
                   <span className="truncate">SPJB PPTS</span>
                 </TabsTrigger>
-                <TabsTrigger value="realisasi" className="gap-1 text-[11px] font-bold truncate">
-                  <Boxes className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                  <span className="truncate">Realisasi Stok</span>
+                <TabsTrigger value="realisasi" className="gap-1 text-[10px] font-bold truncate">
+                  <Boxes className="h-3 w-3 text-purple-600 shrink-0" />
+                  <span className="truncate">Stok Kios</span>
+                </TabsTrigger>
+                <TabsTrigger value="distribusi" className="gap-1 text-[10px] font-bold truncate">
+                  <Truck className="h-3 w-3 text-sky-600 shrink-0" />
+                  <span className="truncate">Distribusi</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -476,6 +519,78 @@ export function ScraperDialog({
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingRealisasi ? 'animate-spin' : ''}`} />
                     {isSyncingRealisasi ? 'Syncing...' : 'Run Scraper Realisasi Sekarang'}
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* TAB 4: MONITORING DISTRIBUSI (PENYALURAN PENGECER) */}
+              <TabsContent value="distribusi" className="space-y-3 pt-3">
+                <div className="p-3.5 rounded-xl border bg-card space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-bold flex items-center gap-1.5">
+                        Status Auto-Sync Monitoring Distribusi
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">Aktifkan pengulangan otomatis scraping Surat Jalan Penyaluran ke Pengecer</p>
+                    </div>
+                    <Switch checked={distribusiEnabled} onCheckedChange={setDistribusiEnabled} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-sky-600" />
+                        Jam Mulai Eksekusi
+                      </Label>
+                      <Input
+                        type="time"
+                        value={distribusiStartTime}
+                        onChange={(e) => setDistribusiStartTime(e.target.value)}
+                        className="h-8 text-xs font-mono"
+                        disabled={!distribusiEnabled}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-amber-500" />
+                        Interval Pengulangan
+                      </Label>
+                      <Select value={distribusiInterval} onValueChange={setDistribusiInterval} disabled={!distribusiEnabled}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Pilih Interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INTERVAL_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {scheduleData?.settings?.penyaluran_pengecer?.lastRun && (
+                    <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
+                      <span>Eksekusi Terakhir:</span>
+                      <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                        {new Date(scheduleData.settings.penyaluran_pengecer.lastRun).toLocaleString('id-ID')}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1 text-xs border-sky-500/40 text-sky-700 dark:text-sky-300 hover:bg-sky-50"
+                    disabled={isSyncingDistribusi}
+                    onClick={triggerDistribusiSync}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingDistribusi ? 'animate-spin' : ''}`} />
+                    {isSyncingDistribusi ? 'Syncing...' : 'Run Scraper Distribusi Sekarang'}
                   </Button>
                 </div>
               </TabsContent>

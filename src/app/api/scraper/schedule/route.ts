@@ -17,6 +17,7 @@ function getSettings() {
     spjb_operasional: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     spjb_ppts: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     realisasi_stok_kios: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
+    penyaluran_pengecer: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
   }
 }
 
@@ -53,6 +54,10 @@ export async function POST(request: Request) {
       realisasi_stok_kios: {
         ...current.realisasi_stok_kios,
         ...(body.realisasi_stok_kios || {}),
+      },
+      penyaluran_pengecer: {
+        ...current.penyaluran_pengecer,
+        ...(body.penyaluran_pengecer || {}),
       },
     }
 
