@@ -336,3 +336,28 @@ model AlokasiPpts {
 
   @@index([pptsCode, productName])
 }
+
+// 4. Tabel Surat Jalan Penyaluran Pengecer
+model SuratJalan {
+  id              String   @id @default(cuid())
+  noSuratJalan    String   @unique
+  uuid            String?
+  kodeDistributor String?
+  namaDistributor String?
+  provinsi        String?
+  kabupaten       String?
+  kodeProdusen    String?
+  namaProdusen    String?
+  status          String?
+  tglSuratJalan   String?
+  tglDibuat       String?
+  tglDiubah       String?
+  href            String?
+  detail          String?  // JSON stringified detail (tables & labelValues)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([noSuratJalan])
+  @@index([kodeProdusen])
+}
+

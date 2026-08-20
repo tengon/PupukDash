@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
 import fs from 'fs'
 import path from 'path'
 
@@ -8,7 +9,57 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')?.toLowerCase() || ''
 
     const filePath = path.join(process.cwd(), 'scraper', 'penyaluran_pengecer_full.json')
+    let scrapedAt: string | null = null
 
+    if (fs.existsSync(filePath)) {
+      try {
+        const raw = fs.readFileSync(filePath, 'utf-8')
+        const json = JSON.parse(raw)
+        scrapedAt = json.scraped_at || null
+      } catch {}
+    }
+
+    // Try fetching from Prisma DB (SuratJalan model)
+    try {
+      if ((db as any).suratJalan) {
+        const whereClause = search
+          ? {
+              OR: [
+                { noSuratJalan: { contains: search } },
+                { kodeProdusen: { contains: search } },
+                { namaProdusen: { contains: search } },
+                { kodeDistributor: { contains: search } },
+                { namaDistributor: { contains: search } },
+                { kabupaten: { contains: search } },
+              ],
+            }
+          : {}
+
+        const dbRecords = await (db as any).suratJalan.findMany({
+          where: whereClause,
+          orderBy: { createdAt: 'desc' },
+        })
+
+        if (dbRecords && dbRecords.length > 0) {
+          const formatted = dbRecords.map((r: any) => ({
+            ...r,
+            detail: r.detail ? JSON.parse(r.detail) : null,
+          }))
+
+          return NextResponse.json({
+            success: true,
+            scraped_at: scrapedAt,
+            source: 'database',
+            total: formatted.length,
+            data: formatted,
+          })
+        }
+      }
+    } catch (dbErr) {
+      console.warn('Fallback to JSON file for Surat Jalan:', dbErr)
+    }
+
+    // Fallback to reading JSON file directly
     if (!fs.existsSync(filePath)) {
       return NextResponse.json({
         success: true,
@@ -40,6 +91,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       scraped_at: json.scraped_at || null,
+      source: 'json',
       total: list.length,
       data: list,
     })

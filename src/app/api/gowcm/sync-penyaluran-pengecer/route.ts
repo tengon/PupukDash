@@ -3,6 +3,7 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import path from 'path'
 import fs from 'fs'
+import { db } from '@/lib/db'
 
 const execAsync = promisify(exec)
 
@@ -35,10 +36,66 @@ export async function POST(request: Request) {
     console.log('[SYNC STDOUT]:', stdout)
     if (stderr) console.error('[SYNC STDERR]:', stderr)
 
+    // Otomatis sinkronkan hasil scraping ke tabel SuratJalan di database SQLite
+    let importedCount = 0
+    try {
+      const jsonPath = path.join(scraperDir, 'penyaluran_pengecer_full.json')
+      if (fs.existsSync(jsonPath) && (db as any).suratJalan) {
+        const raw = fs.readFileSync(jsonPath, 'utf-8')
+        const json = JSON.parse(raw)
+        const items = json.data || []
+
+        for (const item of items) {
+          if (!item.noSuratJalan) continue
+          const detailStr = item.detail ? JSON.stringify(item.detail) : null
+
+          await (db as any).suratJalan.upsert({
+            where: { noSuratJalan: item.noSuratJalan },
+            update: {
+              uuid: item.uuid || null,
+              kodeDistributor: item.kodeDistributor || null,
+              namaDistributor: item.namaDistributor || null,
+              provinsi: item.provinsi || null,
+              kabupaten: item.kabupaten || null,
+              kodeProdusen: item.kodeProdusen || null,
+              namaProdusen: item.namaProdusen || null,
+              status: item.status || null,
+              tglSuratJalan: item.tglSuratJalan || null,
+              tglDibuat: item.tglDibuat || null,
+              tglDiubah: item.tglDiubah || null,
+              href: item.href || null,
+              detail: detailStr,
+            },
+            create: {
+              noSuratJalan: item.noSuratJalan,
+              uuid: item.uuid || null,
+              kodeDistributor: item.kodeDistributor || null,
+              namaDistributor: item.namaDistributor || null,
+              provinsi: item.provinsi || null,
+              kabupaten: item.kabupaten || null,
+              kodeProdusen: item.kodeProdusen || null,
+              namaProdusen: item.namaProdusen || null,
+              status: item.status || null,
+              tglSuratJalan: item.tglSuratJalan || null,
+              tglDibuat: item.tglDibuat || null,
+              tglDiubah: item.tglDiubah || null,
+              href: item.href || null,
+              detail: detailStr,
+            },
+          })
+          importedCount++
+        }
+        console.log(`[SYNC DB] Berhasil tersimpan ke tabel SuratJalan (${importedCount} data)`)
+      }
+    } catch (dbSyncErr) {
+      console.warn('Gagal sinkron database SuratJalan:', dbSyncErr)
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Scraper Penyaluran Pengecer (Surat Jalan) berhasil dijalankan!',
+      message: `Scraper Penyaluran Pengecer berhasil dijalankan & ${importedCount} Surat Jalan tersimpan di DB!`,
       output: stdout,
+      importedCount,
     })
   } catch (error: any) {
     console.error('Error running penyaluran_pengecer scraper:', error)
