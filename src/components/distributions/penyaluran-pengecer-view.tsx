@@ -34,6 +34,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Clock,
 } from 'lucide-react'
 
 interface SuratJalanItem {
@@ -41,6 +42,7 @@ interface SuratJalanItem {
   uuid?: string
   kodeDistributor?: string
   namaDistributor?: string
+  provinsi?: string
   kabupaten?: string
   kodeProdusen?: string
   namaProdusen?: string
@@ -63,7 +65,7 @@ interface PenyaluranResponse {
   message?: string
 }
 
-type SortField = 'noSuratJalan' | 'tglSuratJalan' | 'tglDiubah' | 'namaProdusen'
+type SortField = 'noSuratJalan' | 'tglSuratJalan' | 'tglDibuat' | 'tglDiubah' | 'namaProdusen'
 type SortOrder = 'asc' | 'desc'
 
 const ITEMS_PER_PAGE = 15
@@ -100,8 +102,6 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
     (item.detail.labelValues && Object.keys(item.detail.labelValues).length > 0)
   )
 
-  const isSubmited = (item.status || '').toLowerCase().includes('submit')
-
   return (
     <>
       <TableRow
@@ -113,24 +113,15 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
         </TableCell>
         <TableCell className="text-xs">
           <div className="font-semibold text-foreground">{item.namaProdusen || item.kodeProdusen || '-'}</div>
-          {item.kodeProdusen && item.namaProdusen && (
+          {item.kodeProdusen && (
             <span className="text-[10px] text-muted-foreground font-mono">Kode: {item.kodeProdusen}</span>
           )}
         </TableCell>
-        <TableCell className="text-xs">
-          <Badge
-            variant="outline"
-            className={`text-[10px] px-1.5 py-0 font-semibold ${
-              isSubmited
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
-                : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300'
-            }`}
-          >
-            {item.status || 'Tercatat'}
-          </Badge>
+        <TableCell className="text-xs tabular-nums whitespace-nowrap">
+          {item.tglSuratJalan || '-'}
         </TableCell>
         <TableCell className="text-xs tabular-nums whitespace-nowrap">
-          {item.tglSuratJalan || item.tglDibuat || '-'}
+          {item.tglDibuat || '-'}
         </TableCell>
         <TableCell className="text-xs tabular-nums whitespace-nowrap">
           {item.tglDiubah || '-'}
@@ -174,6 +165,12 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
                       <MapPin className="h-3.5 w-3.5 text-emerald-500" />
                       <span className="text-muted-foreground">Kabupaten:</span>
                       <span className="font-semibold text-foreground">{item.kabupaten}</span>
+                    </div>
+                  )}
+                  {item.provinsi && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">Provinsi:</span>
+                      <span className="font-semibold text-foreground">{item.provinsi}</span>
                     </div>
                   )}
                 </div>
@@ -283,6 +280,8 @@ export function PenyaluranPengecerView() {
         comp = (a.noSuratJalan || '').localeCompare(b.noSuratJalan || '')
       } else if (sortField === 'tglSuratJalan') {
         comp = parseSuratJalanDate(a.tglSuratJalan) - parseSuratJalanDate(b.tglSuratJalan)
+      } else if (sortField === 'tglDibuat') {
+        comp = parseSuratJalanDate(a.tglDibuat) - parseSuratJalanDate(b.tglDibuat)
       } else if (sortField === 'tglDiubah') {
         comp = parseSuratJalanDate(a.tglDiubah) - parseSuratJalanDate(b.tglDiubah)
       } else if (sortField === 'namaProdusen') {
@@ -322,9 +321,9 @@ export function PenyaluranPengecerView() {
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Truck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                Distribusi — Penyaluran ke Pengecer
+                Penyaluran Ke Pengecer — Surat Jalan
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300">
-                  Surat Jalan GOW CM
+                  GOW CM Pupuk Indonesia
                 </Badge>
               </CardTitle>
               {scrapedAt && (
@@ -375,7 +374,7 @@ export function PenyaluranPengecerView() {
             <div className="glass rounded-xl p-3 border border-border/50">
               <p className="text-[10px] text-muted-foreground uppercase font-medium">Urutan Tampil</p>
               <p className="text-xs font-semibold text-foreground capitalize">
-                {sortField === 'noSuratJalan' ? 'No. Surat Jalan' : sortField === 'tglSuratJalan' ? 'Tgl Surat Jalan' : 'Tgl Diubah'} ({sortOrder === 'asc' ? 'A-Z / Lama' : 'Z-A / Baru'})
+                {sortField === 'noSuratJalan' ? 'No. Surat Jalan' : sortField === 'tglSuratJalan' ? 'Tgl Surat Jalan' : sortField === 'tglDibuat' ? 'Tgl Dibuat' : 'Tgl Diubah'} ({sortOrder === 'asc' ? 'Asc / Lama' : 'Desc / Baru'})
               </p>
             </div>
             <div className="glass rounded-xl p-3 border border-border/50">
@@ -440,13 +439,9 @@ export function PenyaluranPengecerView() {
                       >
                         <div className="flex items-center gap-1.5">
                           <Package className="h-3 w-3 text-blue-500 shrink-0" />
-                          <span>Produsen</span>
+                          <span>Kode Produsen</span>
                           {renderSortIcon('namaProdusen')}
                         </div>
-                      </TableHead>
-
-                      <TableHead className="text-xs font-semibold">
-                        Status
                       </TableHead>
 
                       {/* Sortable: Tgl Surat Jalan */}
@@ -458,6 +453,18 @@ export function PenyaluranPengecerView() {
                           <Calendar className="h-3 w-3 text-blue-500 shrink-0" />
                           <span>Tgl Surat Jalan</span>
                           {renderSortIcon('tglSuratJalan')}
+                        </div>
+                      </TableHead>
+
+                      {/* Sortable: Tgl Dibuat */}
+                      <TableHead
+                        className="text-xs font-semibold cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSort('tglDibuat')}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 text-blue-500 shrink-0" />
+                          <span>Tgl Dibuat</span>
+                          {renderSortIcon('tglDibuat')}
                         </div>
                       </TableHead>
 

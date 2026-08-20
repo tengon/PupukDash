@@ -208,34 +208,48 @@ async function scrapeListPage(page) {
       const aEl = row.querySelector('a');
       const href = aEl ? (aEl.getAttribute('href') || aEl.getAttribute('to') || '') : '';
 
-      // Exact GOW CM Table column mapping:
-      // cells[0]: No. Surat Jalan
-      // cells[1]: Kode Distributor
-      // cells[2]: Nama Distributor
-      // cells[3]: Kabupaten
-      // cells[4]: Kode Produsen
-      // cells[5]: Nama Produsen
-      // cells[6]: Status
-      // cells[7]: Tgl. Surat Jalan
-      // cells[8]: Tgl. Diubah
-      // cells[9]: Aksi (Detail)
+      const isPemenuhanOrder = headers.some(h => h.includes('PUD') || h.includes('Pengambilan'));
 
-      const noSuratJalan    = cells[0] || `SJ-${rIdx + 1}`;
-      const kodeDistributor = cells[1] || '';
-      const namaDistributor = cells[2] || '';
-      const kabupaten       = cells[3] || '';
-      const kodeProdusen    = cells[4] || '';
-      const namaProdusen    = cells[5] || '';
-      const status          = cells[6] || '';
-      const tglSuratJalan   = cells[7] || '';
-      const tglDibuat       = cells[7] || '';
-      const tglDiubah       = cells[8] || '';
+      let noSuratJalan    = cells[0] || `SJ-${rIdx + 1}`;
+      let kodeDistributor = '';
+      let namaDistributor = '';
+      let provinsi        = '';
+      let kabupaten       = '';
+      let kodeProdusen    = '';
+      let namaProdusen    = '';
+      let status          = 'Submited';
+      let tglSuratJalan   = '';
+      let tglDibuat       = '';
+      let tglDiubah       = '';
+
+      if (isPemenuhanOrder && cells.length >= 10) {
+        kodeDistributor = cells[1] || '';
+        namaDistributor = cells[2] || '';
+        provinsi        = cells[3] || '';
+        kabupaten       = cells[4] || '';
+        kodeProdusen    = cells[5] || '';
+        namaProdusen    = cells[6] || '';
+        tglSuratJalan   = cells[7] || '';
+        tglDibuat       = cells[8] || '';
+        tglDiubah       = cells[9] || '';
+      } else {
+        kodeDistributor = cells[1] || '';
+        namaDistributor = cells[2] || '';
+        kabupaten       = cells[3] || '';
+        kodeProdusen    = cells[4] || '';
+        namaProdusen    = cells[5] || '';
+        status          = cells[6] || 'Submited';
+        tglSuratJalan   = cells[7] || '';
+        tglDibuat       = cells[7] || '';
+        tglDiubah       = cells[8] || '';
+      }
 
       return {
         noSuratJalan,
         uuid,
         kodeDistributor,
         namaDistributor,
+        provinsi,
         kabupaten,
         kodeProdusen,
         namaProdusen,
@@ -406,13 +420,12 @@ async function main() {
   try {
     const prefix = await loginAndGetPrefix(page);
 
-    // Route persis yang ditemukan dari sidebar GOW CM:
+    // Route persis Penyaluran Ke Pengecer >> Surat Jalan GOW CM:
     const possibleRoutes = [
-      'laporan/surat-jalan',
       'pemenuhan-order-kios/surat-jalan',
+      'laporan/surat-jalan',
       'laporan/penyaluran-do',
       'laporan/item-penyaluran',
-      'penyaluran/surat-jalan',
     ];
 
     let listLoaded = false;
