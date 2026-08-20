@@ -15,8 +15,15 @@ async function main() {
 
   console.log(`Memeriksa ${items.length} Surat Jalan dari hasil scraper...`)
 
+  const suratJalanModel = (db as any).suratJalan
+  if (!suratJalanModel) {
+    console.error('❌ Error: Model SuratJalan belum ter-generate di Prisma Client.')
+    console.error('👉 Silakan jalankan perintah: npx prisma generate')
+    return
+  }
+
   // Ambil daftar No. Surat Jalan yang sudah tersimpan di DB
-  const existingRecords = await (db as any).suratJalan.findMany({
+  const existingRecords = await suratJalanModel.findMany({
     select: { noSuratJalan: true },
   })
   const existingSet = new Set(existingRecords.map((r: any) => r.noSuratJalan))
@@ -35,7 +42,7 @@ async function main() {
 
     const detailStr = item.detail ? JSON.stringify(item.detail) : null
 
-    await (db as any).suratJalan.create({
+    await suratJalanModel.create({
       data: {
         noSuratJalan: item.noSuratJalan,
         uuid: item.uuid || null,
