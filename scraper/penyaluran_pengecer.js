@@ -212,6 +212,7 @@ async function setFilterShowAll(page) {
     for (const sel of showSelects) {
       const options = await sel.evaluate(el => [...el.options].map(o => ({ value: o.value, text: o.text })));
       const allOpt = options.find(o =>
+        o.text.toLowerCase().includes('lihat semua') ||
         o.text.toLowerCase().includes('semua') ||
         o.text.toLowerCase().includes('all') ||
         o.value === '-1' || o.value === '0' || parseInt(o.value) >= 100
@@ -225,6 +226,34 @@ async function setFilterShowAll(page) {
     }
   } catch (e) {
     console.warn('[FILTER] Warning set filter:', e.message);
+  }
+}
+
+/** Set sorting tabel ke Descending (desc) */
+async function setSortingDesc(page) {
+  try {
+    console.log('[SORTING] Mengatur sorting tabel ke Descending (desc)...');
+    await page.evaluate(() => {
+      const headers = [...document.querySelectorAll('table thead th')];
+      const sortableHeader = headers.find(th => {
+        const text = th.innerText.toLowerCase();
+        return text.includes('tgl') || text.includes('surat jalan') || text.includes('dibuat') || text.includes('no.');
+      }) || headers[0];
+
+      if (sortableHeader) {
+        if (!sortableHeader.classList.contains('sorting_desc')) {
+          sortableHeader.click();
+        }
+        setTimeout(() => {
+          if (!sortableHeader.classList.contains('sorting_desc')) {
+            sortableHeader.click();
+          }
+        }, 400);
+      }
+    });
+    await sleep(1200);
+  } catch (e) {
+    console.warn('[SORTING] Warning set sorting desc:', e.message);
   }
 }
 
@@ -257,6 +286,28 @@ async function scrapeListPage(page) {
     const headers = [...targetTable.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim());
     console.log('[DEBUG TABLE HEADERS]', JSON.stringify(headers));
 
+    // Periksa offset kolom jika ada leading checkbox / kolom kosong pertama
+    const firstHeader = targetTable.querySelector('thead th:first-child')?.innerText?.trim();
+    const offset = (!firstHeader || firstHeader === '' || firstHeader === '#') ? 1 : 0;
+
+    // Map header text ke indeks kolom
+    const colMap = {};
+    headers.forEach((h, i) => {
+      const clean = h.toLowerCase().trim();
+      if (clean) colMap[clean] = i;
+    });
+
+    const getValByHeader = (cells, keywords, defaultIdx) => {
+      for (const kw of keywords) {
+        for (const [hName, idx] of Object.entries(colMap)) {
+          if (hName.includes(kw) && cells[idx] !== undefined && cells[idx] !== '') {
+            return cells[idx];
+          }
+        }
+      }
+      return cells[defaultIdx] || '';
+    };
+
     return targetRows.map((row, rIdx) => {
       const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
       const btn = row.querySelector('#detailList') || row.querySelector('button[data-uuid]') || row.querySelector('[data-uuid]');
@@ -264,55 +315,56 @@ async function scrapeListPage(page) {
       const aEl = row.querySelector('a');
       const href = aEl ? (aEl.getAttribute('href') || aEl.getAttribute('to') || '') : '';
 
-      const isPemenuhanOrder = headers.some(h => h.includes('PUD') || h.includes('Pengambilan'));
-
-      let noSuratJalan    = cells[0] || `SJ-${rIdx + 1}`;
-      let kodeDistributor = '';
-      let namaDistributor = '';
-      let provinsi        = '';
-      let kabupaten       = '';
-      let kodeProdusen    = '';
-      let namaProdusen    = '';
-      let status          = 'Submited';
-      let tglSuratJalan   = '';
-      let tglDibuat       = '';
-      let tglDiubah       = '';
-
-      if (isPemenuhanOrder && cells.length >= 10) {
-        kodeDistributor = cells[1] || '';
-        namaDistributor = cells[2] || '';
-        provinsi        = cells[3] || '';
-        kabupaten       = cells[4] || '';
-        kodeProdusen    = cells[5] || '';
-        namaProdusen    = cells[6] || '';
-        tglSuratJalan   = cells[7] || '';
-        tglDibuat       = cells[8] || '';
-        tglDiubah       = cells[9] || '';
-      } else {
-        kodeDistributor = cells[1] || '';
-        namaDistributor = cells[2] || '';
-        kabupaten       = cells[3] || '';
-        kodeProdusen    = cells[4] || '';
-        namaProdusen    = cells[5] || '';
-        status          = cells[6] || 'Submited';
-        tglSuratJalan   = cells[7] || '';
-        tglDibuat       = cells[7] || '';
-        tglDiubah       = cells[8] || '';
-      }
+      const noSuratJalan    = getValByHeader(cells, ['no. surat jalan', 'surat jalan'], 0 + offset);
+      const nomorPkp        = getValByHeader(cells, ['nomor pkp', 'pkp'], 1 + offset);
+      const nomorOrder      = getValByHeader(cells, ['nomor order', 'order'], 2 + offset);
+      const kodeSo          = getValByHeader(cells, ['kode so'], 3 + offset);
+      const provinsi        = getValByHeader(cells, ['provinsi'], 4 + offset);
+      const kabupaten       = getValByHeader(cells, ['kabupaten'], 5 + offset);
+      const kecamatan       = getValByHeader(cells, ['kecamatan'], 6 + offset);
+      const urea            = getValByHeader(cells, ['urea'], 7 + offset);
+      const npk             = getValByHeader(cells, ['npk'], 8 + offset);
+      const organik         = getValByHeader(cells, ['organik'], 9 + offset);
+      const npkKakao        = getValByHeader(cells, ['npk kakao', 'kakao'], 10 + offset);
+      const za              = getValByHeader(cells, ['za'], 11 + offset);
+      const sp36            = getValByHeader(cells, ['sp-36', 'sp36'], 12 + offset);
+      const tglSuratJalan   = getValByHeader(cells, ['tanggal surat jalan', 'tgl. surat jalan', 'tgl surat jalan'], 13 + offset);
+      const tglSyncIpubers  = getValByHeader(cells, ['tanggal sync ipubers', 'sync ipubers'], 14 + offset);
+      const tglTerimaKios   = getValByHeader(cells, ['tanggal terima kios', 'terima kios'], 15 + offset);
+      const asalPengambilan = getValByHeader(cells, ['asal pengambilan', 'pengambilan'], 16 + offset);
+      const namaProdusen    = getValByHeader(cells, ['produsen'], 17 + offset);
+      const kodeDistributor = getValByHeader(cells, ['kode distributor'], 18 + offset);
+      const namaDistributor = getValByHeader(cells, ['nama distributor'], 19 + offset);
+      const status          = getValByHeader(cells, ['status'], 20 + offset) || 'Submited';
+      const tglDibuat       = tglSuratJalan;
+      const tglDiubah       = tglSyncIpubers || tglSuratJalan;
 
       return {
         noSuratJalan,
         uuid,
+        nomorPkp,
+        nomorOrder,
+        kodeSo,
         kodeDistributor,
         namaDistributor,
         provinsi,
         kabupaten,
-        kodeProdusen,
+        kecamatan,
+        kodeProdusen: '',
         namaProdusen,
+        urea,
+        npk,
+        organik,
+        npkKakao,
+        za,
+        sp36,
         status,
         tglSuratJalan,
         tglDibuat,
         tglDiubah,
+        tglSyncIpubers,
+        tglTerimaKios,
+        asalPengambilan,
         rawCells: cells,
         href,
       };
@@ -477,8 +529,9 @@ async function main() {
   try {
     const prefix = await loginAndGetPrefix(page);
 
-    // Route persis Penyaluran Ke Pengecer >> Surat Jalan GOW CM:
+    // Route target Penyaluran Ke Pengecer >> Surat Jalan GOW CM:
     const possibleRoutes = [
+      'pemenuhan-order-kios/surat-jalan/detail-sj-pkp-order',
       'pemenuhan-order-kios/surat-jalan',
       'laporan/surat-jalan',
       'laporan/penyaluran-do',
@@ -581,6 +634,10 @@ async function main() {
     // Set filter Show = Lihat Semua
     await setFilterShowAll(page);
     await sleep(2000);
+
+    // Set sorting = Descending (desc)
+    await setSortingDesc(page);
+    await sleep(1500);
 
     // Scrape halaman list dengan penghentian dini jika lewat cutoff date
     const allList = [];

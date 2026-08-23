@@ -337,21 +337,34 @@ model AlokasiPpts {
   @@index([pptsCode, productName])
 }
 
-// 4. Tabel Surat Jalan Penyaluran Pengecer
+// 4. Tabel Surat Jalan Penyaluran Pengecer (Detail PKP Order)
 model SuratJalan {
   id              String   @id @default(cuid())
   noSuratJalan    String   @unique
   uuid            String?
+  nomorPkp        String?
+  nomorOrder      String?
+  kodeSo          String?
   kodeDistributor String?
   namaDistributor String?
   provinsi        String?
   kabupaten       String?
+  kecamatan       String?
   kodeProdusen    String?
   namaProdusen    String?
+  urea            String?
+  npk             String?
+  organik         String?
+  npkKakao        String?
+  za              String?
+  sp36            String?
   status          String?
   tglSuratJalan   String?
   tglDibuat       String?
   tglDiubah       String?
+  tglSyncIpubers  String?
+  tglTerimaKios   String?
+  asalPengambilan String?
   href            String?
   detail          String?  // JSON stringified detail (tables & labelValues)
   createdAt       DateTime @default(now())
@@ -360,4 +373,3 @@ model SuratJalan {
   @@index([noSuratJalan])
   @@index([kodeProdusen])
 }
-
