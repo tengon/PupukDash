@@ -206,7 +206,9 @@ export default function HomePage() {
         <header className="flex h-14 shrink-0 items-center gap-1.5 px-3 sm:gap-2 sm:px-4 glass sticky top-0 z-10 header-gradient" style={{ borderBottom: '1px solid transparent', backgroundImage: 'linear-gradient(to bottom, var(--background), var(--background)), linear-gradient(to right, oklch(0.65 0.15 150 / 0.2), oklch(0.55 0.10 145 / 0.15), oklch(0.65 0.12 160 / 0.2))', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderBottomWidth: '1px', borderBottomStyle: 'solid', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
           <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" />
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Leaf className="h-4 w-4 text-primary hidden sm:block" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0 border border-emerald-500/30 shadow-xs">
+              <Leaf className="h-4.5 w-4.5" />
+            </div>
             <div className="min-w-0">
               <h1 className="truncate text-lg font-semibold leading-tight">{pageInfo.title}</h1>
               <p className="text-[11px] text-muted-foreground hidden sm:block">{pageInfo.description}</p>

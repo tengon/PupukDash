@@ -43,6 +43,7 @@ import {
   ArrowDown,
   Clock,
   Filter,
+  Leaf,
 } from 'lucide-react'
 
 interface SuratJalanItem {
@@ -402,7 +403,7 @@ export function PenyaluranPengecerView() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Truck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <Leaf className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 Penyaluran Ke Pengecer — Surat Jalan
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300">
                   GOW CM Pupuk Indonesia
