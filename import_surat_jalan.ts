@@ -22,63 +22,55 @@ async function main() {
     return
   }
 
-  // Ambil daftar No. Surat Jalan yang sudah tersimpan di DB
-  const existingRecords = await suratJalanModel.findMany({
-    select: { noSuratJalan: true },
-  })
-  const existingSet = new Set(existingRecords.map((r: any) => r.noSuratJalan))
-
-  let insertedCount = 0
-  let skippedCount = 0
+  let upsertCount = 0
 
   for (const item of items) {
     if (!item.noSuratJalan) continue
 
-    // Jika noSuratJalan sudah ada di database, lewati
-    if (existingSet.has(item.noSuratJalan)) {
-      skippedCount++
-      continue
-    }
-
     const detailStr = item.detail ? JSON.stringify(item.detail) : null
 
-    await suratJalanModel.create({
-      data: {
+    const dataPayload = {
+      uuid: item.uuid || null,
+      nomorPkp: item.nomorPkp || null,
+      nomorOrder: item.nomorOrder || null,
+      kodeSo: item.kodeSo || null,
+      kodeDistributor: item.kodeDistributor || null,
+      namaDistributor: item.namaDistributor || null,
+      provinsi: item.provinsi || null,
+      kabupaten: item.kabupaten || null,
+      kecamatan: item.kecamatan || null,
+      kodeProdusen: item.kodeProdusen || null,
+      namaProdusen: item.namaProdusen || null,
+      urea: item.urea || null,
+      npk: item.npk || null,
+      organik: item.organik || null,
+      npkKakao: item.npkKakao || null,
+      za: item.za || null,
+      sp36: item.sp36 || null,
+      status: item.status || null,
+      tglSuratJalan: item.tglSuratJalan || null,
+      tglDibuat: item.tglDibuat || null,
+      tglDiubah: item.tglDiubah || null,
+      tglSyncIpubers: item.tglSyncIpubers || null,
+      tglTerimaKios: item.tglTerimaKios || null,
+      asalPengambilan: item.asalPengambilan || null,
+      href: item.href || null,
+      detail: detailStr,
+    }
+
+    await suratJalanModel.upsert({
+      where: { noSuratJalan: item.noSuratJalan },
+      update: dataPayload,
+      create: {
         noSuratJalan: item.noSuratJalan,
-        uuid: item.uuid || null,
-        nomorPkp: item.nomorPkp || null,
-        nomorOrder: item.nomorOrder || null,
-        kodeSo: item.kodeSo || null,
-        kodeDistributor: item.kodeDistributor || null,
-        namaDistributor: item.namaDistributor || null,
-        provinsi: item.provinsi || null,
-        kabupaten: item.kabupaten || null,
-        kecamatan: item.kecamatan || null,
-        kodeProdusen: item.kodeProdusen || null,
-        namaProdusen: item.namaProdusen || null,
-        urea: item.urea || null,
-        npk: item.npk || null,
-        organik: item.organik || null,
-        npkKakao: item.npkKakao || null,
-        za: item.za || null,
-        sp36: item.sp36 || null,
-        status: item.status || null,
-        tglSuratJalan: item.tglSuratJalan || null,
-        tglDibuat: item.tglDibuat || null,
-        tglDiubah: item.tglDiubah || null,
-        tglSyncIpubers: item.tglSyncIpubers || null,
-        tglTerimaKios: item.tglTerimaKios || null,
-        asalPengambilan: item.asalPengambilan || null,
-        href: item.href || null,
-        detail: detailStr,
+        ...dataPayload,
       },
     })
 
-    existingSet.add(item.noSuratJalan)
-    insertedCount++
+    upsertCount++
   }
 
-  console.log(`✅ Selesai! ${insertedCount} Surat Jalan baru berhasil dimasukkan, ${skippedCount} dilewati (karena sudah ada).`)
+  console.log(`✅ Selesai! ${upsertCount} Surat Jalan berhasil disinkronkan ke database SQLite.`)
 }
 
 main()

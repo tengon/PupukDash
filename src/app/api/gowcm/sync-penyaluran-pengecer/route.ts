@@ -47,58 +47,51 @@ export async function POST(request: Request) {
         const json = JSON.parse(raw)
         const items = json.data || []
 
-        // Ambil set noSuratJalan yang sudah tersimpan di database
-        const existingRecords = await (db as any).suratJalan.findMany({
-          select: { noSuratJalan: true },
-        })
-        const existingSet = new Set(existingRecords.map((r: any) => r.noSuratJalan))
-
         for (const item of items) {
           if (!item.noSuratJalan) continue
 
-          // Lewati jika noSuratJalan sudah ada di database
-          if (existingSet.has(item.noSuratJalan)) {
-            skippedCount++
-            continue
-          }
-
           const detailStr = item.detail ? JSON.stringify(item.detail) : null
 
-          await (db as any).suratJalan.create({
-            data: {
+          const dataPayload = {
+            uuid: item.uuid || null,
+            nomorPkp: item.nomorPkp || null,
+            nomorOrder: item.nomorOrder || null,
+            kodeSo: item.kodeSo || null,
+            kodeDistributor: item.kodeDistributor || null,
+            namaDistributor: item.namaDistributor || null,
+            provinsi: item.provinsi || null,
+            kabupaten: item.kabupaten || null,
+            kecamatan: item.kecamatan || null,
+            kodeProdusen: item.kodeProdusen || null,
+            namaProdusen: item.namaProdusen || null,
+            urea: item.urea || null,
+            npk: item.npk || null,
+            organik: item.organik || null,
+            npkKakao: item.npkKakao || null,
+            za: item.za || null,
+            sp36: item.sp36 || null,
+            status: item.status || null,
+            tglSuratJalan: item.tglSuratJalan || null,
+            tglDibuat: item.tglDibuat || null,
+            tglDiubah: item.tglDiubah || null,
+            tglSyncIpubers: item.tglSyncIpubers || null,
+            tglTerimaKios: item.tglTerimaKios || null,
+            asalPengambilan: item.asalPengambilan || null,
+            href: item.href || null,
+            detail: detailStr,
+          }
+
+          await (db as any).suratJalan.upsert({
+            where: { noSuratJalan: item.noSuratJalan },
+            update: dataPayload,
+            create: {
               noSuratJalan: item.noSuratJalan,
-              uuid: item.uuid || null,
-              nomorPkp: item.nomorPkp || null,
-              nomorOrder: item.nomorOrder || null,
-              kodeSo: item.kodeSo || null,
-              kodeDistributor: item.kodeDistributor || null,
-              namaDistributor: item.namaDistributor || null,
-              provinsi: item.provinsi || null,
-              kabupaten: item.kabupaten || null,
-              kecamatan: item.kecamatan || null,
-              kodeProdusen: item.kodeProdusen || null,
-              namaProdusen: item.namaProdusen || null,
-              urea: item.urea || null,
-              npk: item.npk || null,
-              organik: item.organik || null,
-              npkKakao: item.npkKakao || null,
-              za: item.za || null,
-              sp36: item.sp36 || null,
-              status: item.status || null,
-              tglSuratJalan: item.tglSuratJalan || null,
-              tglDibuat: item.tglDibuat || null,
-              tglDiubah: item.tglDiubah || null,
-              tglSyncIpubers: item.tglSyncIpubers || null,
-              tglTerimaKios: item.tglTerimaKios || null,
-              asalPengambilan: item.asalPengambilan || null,
-              href: item.href || null,
-              detail: detailStr,
+              ...dataPayload,
             },
           })
-          existingSet.add(item.noSuratJalan)
           importedCount++
         }
-        console.log(`[SYNC DB] Tersimpan ${importedCount} Surat Jalan baru ke DB (${skippedCount} dilewati karena sudah ada).`)
+        console.log(`[SYNC DB] Berhasil tersinkronisasi ${importedCount} Surat Jalan ke database.`)
       }
     } catch (dbSyncErr) {
       console.warn('Gagal sinkron database SuratJalan:', dbSyncErr)

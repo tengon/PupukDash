@@ -55,10 +55,15 @@ function getScrapeRange() {
 
 function parseDateStr(str) {
   if (!str) return null;
-  const parts = str.toLowerCase().split('-');
+  const parts = str.toLowerCase().trim().split('-');
   if (parts.length >= 3) {
     const year = parseInt(parts[0]) || 2026;
-    const month = MONTH_MAP[parts[1]] !== undefined ? MONTH_MAP[parts[1]] : 0;
+    let month = 0;
+    if (!isNaN(parseInt(parts[1]))) {
+      month = Math.max(0, Math.min(11, parseInt(parts[1]) - 1));
+    } else if (MONTH_MAP[parts[1]] !== undefined) {
+      month = MONTH_MAP[parts[1]];
+    }
     const dayRest = parts[2].replace(',', '').trim();
     const day = parseInt(dayRest) || 1;
     return new Date(year, month, day);
@@ -286,27 +291,11 @@ async function scrapeListPage(page) {
     const headers = [...targetTable.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim());
     console.log('[DEBUG TABLE HEADERS]', JSON.stringify(headers));
 
+    const isPkpOrderDetail = headers.some(h => h.includes('Nomor PKP') || h.includes('Tanggal Sync IPubers'));
+
     // Periksa offset kolom jika ada leading checkbox / kolom kosong pertama
     const firstHeader = targetTable.querySelector('thead th:first-child')?.innerText?.trim();
-    const offset = (!firstHeader || firstHeader === '' || firstHeader === '#') ? 1 : 0;
-
-    // Map header text ke indeks kolom
-    const colMap = {};
-    headers.forEach((h, i) => {
-      const clean = h.toLowerCase().trim();
-      if (clean) colMap[clean] = i;
-    });
-
-    const getValByHeader = (cells, keywords, defaultIdx) => {
-      for (const kw of keywords) {
-        for (const [hName, idx] of Object.entries(colMap)) {
-          if (hName.includes(kw) && cells[idx] !== undefined && cells[idx] !== '') {
-            return cells[idx];
-          }
-        }
-      }
-      return cells[defaultIdx] || '';
-    };
+    const offset = isPkpOrderDetail ? 0 : ((!firstHeader || firstHeader === '' || firstHeader === '#') ? 1 : 0);
 
     return targetRows.map((row, rIdx) => {
       const cells = [...row.querySelectorAll('td')].map(td => td.innerText.trim());
@@ -315,29 +304,61 @@ async function scrapeListPage(page) {
       const aEl = row.querySelector('a');
       const href = aEl ? (aEl.getAttribute('href') || aEl.getAttribute('to') || '') : '';
 
-      const noSuratJalan    = getValByHeader(cells, ['no. surat jalan', 'surat jalan'], 0 + offset);
-      const nomorPkp        = getValByHeader(cells, ['nomor pkp', 'pkp'], 1 + offset);
-      const nomorOrder      = getValByHeader(cells, ['nomor order', 'order'], 2 + offset);
-      const kodeSo          = getValByHeader(cells, ['kode so'], 3 + offset);
-      const provinsi        = getValByHeader(cells, ['provinsi'], 4 + offset);
-      const kabupaten       = getValByHeader(cells, ['kabupaten'], 5 + offset);
-      const kecamatan       = getValByHeader(cells, ['kecamatan'], 6 + offset);
-      const urea            = getValByHeader(cells, ['urea'], 7 + offset);
-      const npk             = getValByHeader(cells, ['npk'], 8 + offset);
-      const organik         = getValByHeader(cells, ['organik'], 9 + offset);
-      const npkKakao        = getValByHeader(cells, ['npk kakao', 'kakao'], 10 + offset);
-      const za              = getValByHeader(cells, ['za'], 11 + offset);
-      const sp36            = getValByHeader(cells, ['sp-36', 'sp36'], 12 + offset);
-      const tglSuratJalan   = getValByHeader(cells, ['tanggal surat jalan', 'tgl. surat jalan', 'tgl surat jalan'], 13 + offset);
-      const tglSyncIpubers  = getValByHeader(cells, ['tanggal sync ipubers', 'sync ipubers'], 14 + offset);
-      const tglTerimaKios   = getValByHeader(cells, ['tanggal terima kios', 'terima kios'], 15 + offset);
-      const asalPengambilan = getValByHeader(cells, ['asal pengambilan', 'pengambilan'], 16 + offset);
-      const namaProdusen    = getValByHeader(cells, ['produsen'], 17 + offset);
-      const kodeDistributor = getValByHeader(cells, ['kode distributor'], 18 + offset);
-      const namaDistributor = getValByHeader(cells, ['nama distributor'], 19 + offset);
-      const status          = getValByHeader(cells, ['status'], 20 + offset) || 'Submited';
-      const tglDibuat       = tglSuratJalan;
-      const tglDiubah       = tglSyncIpubers || tglSuratJalan;
+      let noSuratJalan    = '';
+      let nomorPkp        = '';
+      let nomorOrder      = '';
+      let kodeSo          = '';
+      let provinsi        = '';
+      let kabupaten       = '';
+      let kecamatan       = '';
+      let urea            = '';
+      let npk             = '';
+      let organik         = '';
+      let npkKakao        = '';
+      let za              = '';
+      let sp36            = '';
+      let tglSuratJalan   = '';
+      let tglSyncIpubers  = '';
+      let tglTerimaKios   = '';
+      let asalPengambilan = '';
+      let namaProdusen    = '';
+      let kodeDistributor = '';
+      let namaDistributor = '';
+      let status          = 'Submited';
+
+      if (isPkpOrderDetail && cells.length >= 15) {
+        noSuratJalan    = cells[0 + offset] || `SJ-${rIdx + 1}`;
+        nomorPkp        = cells[1 + offset] || '';
+        nomorOrder      = cells[2 + offset] || '';
+        kodeSo          = cells[3 + offset] || '';
+        provinsi        = cells[4 + offset] || '';
+        kabupaten       = cells[5 + offset] || '';
+        kecamatan       = cells[6 + offset] || '';
+        urea            = cells[7 + offset] || '';
+        npk             = cells[8 + offset] || '';
+        organik         = cells[9 + offset] || '';
+        npkKakao        = cells[10 + offset] || '';
+        za              = cells[11 + offset] || '';
+        sp36            = cells[12 + offset] || '';
+        tglSuratJalan   = cells[13 + offset] || '';
+        tglSyncIpubers  = cells[14 + offset] || '';
+        tglTerimaKios   = cells[15 + offset] || '';
+        asalPengambilan = cells[16 + offset] || '';
+        namaProdusen    = cells[17 + offset] || '';
+        kodeDistributor = cells[18 + offset] || '';
+        namaDistributor = cells[19 + offset] || '';
+      } else {
+        noSuratJalan    = getValByHeader(cells, ['no. surat jalan', 'surat jalan'], 0 + offset);
+        kodeDistributor = getValByHeader(cells, ['kode distributor'], 1 + offset);
+        namaDistributor = getValByHeader(cells, ['nama distributor'], 2 + offset);
+        provinsi        = getValByHeader(cells, ['provinsi'], 3 + offset);
+        kabupaten       = getValByHeader(cells, ['kabupaten'], 4 + offset);
+        namaProdusen    = getValByHeader(cells, ['produsen'], 6 + offset);
+        tglSuratJalan   = getValByHeader(cells, ['tanggal surat jalan', 'tgl. surat jalan'], 7 + offset);
+      }
+
+      const tglDibuat = tglSuratJalan;
+      const tglDiubah = tglSyncIpubers || tglSuratJalan;
 
       return {
         noSuratJalan,
