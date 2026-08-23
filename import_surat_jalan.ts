@@ -3,8 +3,15 @@ import fs from 'fs'
 import path from 'path'
 
 async function main() {
-  const filePath = path.join(process.cwd(), 'scraper', 'penyaluran_pengecer_full.json')
-  if (!fs.existsSync(filePath)) {
+  const possiblePaths = [
+    path.join(__dirname, 'scraper', 'penyaluran_pengecer_full.json'),
+    path.join(__dirname, 'penyaluran_pengecer_full.json'),
+    path.join(process.cwd(), 'scraper', 'penyaluran_pengecer_full.json'),
+    path.join(process.cwd(), 'penyaluran_pengecer_full.json'),
+  ]
+
+  const filePath = possiblePaths.find(p => fs.existsSync(p))
+  if (!filePath) {
     console.error('File penyaluran_pengecer_full.json tidak ditemukan!')
     return
   }
