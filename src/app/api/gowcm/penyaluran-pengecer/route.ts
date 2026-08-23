@@ -16,7 +16,7 @@ export async function GET(request: Request) {
         const raw = fs.readFileSync(filePath, 'utf-8')
         const json = JSON.parse(raw)
         scrapedAt = json.scraped_at || null
-      } catch {}
+      } catch { }
     }
 
     // Try fetching from Prisma DB (SuratJalan model)
@@ -24,15 +24,15 @@ export async function GET(request: Request) {
       if ((db as any).suratJalan) {
         const whereClause = search
           ? {
-              OR: [
-                { noSuratJalan: { contains: search } },
-                { kodeProdusen: { contains: search } },
-                { namaProdusen: { contains: search } },
-                { kodeDistributor: { contains: search } },
-                { namaDistributor: { contains: search } },
-                { kabupaten: { contains: search } },
-              ],
-            }
+            OR: [
+              { noSuratJalan: { contains: search } },
+              { kodeProdusen: { contains: search } },
+              { namaProdusen: { contains: search } },
+              { kodeDistributor: { contains: search } },
+              { namaDistributor: { contains: search } },
+              { kabupaten: { contains: search } },
+            ],
+          }
           : {}
 
         const dbRecords = await (db as any).suratJalan.findMany({

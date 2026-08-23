@@ -15,13 +15,13 @@
     "enabled": true,
     "startTime": "06:00",
     "intervalHours": 6,
-    "lastRun": "2026-08-20T14:03:26.914Z"
+    "lastRun": "2026-08-20T20:05:54.972Z"
   },
   "penyaluran_pengecer": {
     "enabled": true,
     "startTime": "06:00",
     "intervalHours": 6,
     "scrapeRange": "today",
-    "lastRun": "2026-08-20T14:30:08.367Z"
+    "lastRun": "2026-08-20T20:30:52.578Z"
   }
 }
