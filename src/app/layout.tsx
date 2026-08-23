@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { Leaf } from 'lucide-react'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   keywords: ["pupuk", "subsidi", "Indonesia", "pertanian", "SiPUPUK"],
   authors: [{ name: "Kementerian Pertanian RI" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/images/sipupuk-icon.png"
   },
   openGraph: {
     title: "SiPUPUK - Sistem Informasi Penjualan Pupuk Bersubsidi",
