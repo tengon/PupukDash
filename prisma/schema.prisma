@@ -339,8 +339,8 @@ model AlokasiPpts {
 
 // 4. Tabel Surat Jalan Penyaluran Pengecer (Detail PKP Order)
 model SuratJalan {
-  id              String   @id @default(cuid())
-  noSuratJalan    String   @unique
+  id              String             @id @default(cuid())
+  noSuratJalan    String             @unique
   uuid            String?
   nomorPkp        String?
   nomorOrder      String?
@@ -366,10 +366,33 @@ model SuratJalan {
   tglTerimaKios   String?
   asalPengambilan String?
   href            String?
-  detail          String?  // JSON stringified detail (tables & labelValues)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  detail          String?            // JSON stringified detail (tables & labelValues)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  details         SuratJalanDetail[]
 
   @@index([noSuratJalan])
   @@index([kodeProdusen])
+}
+
+// 5. Tabel Detail Rincian Item Surat Jalan
+model SuratJalanDetail {
+  id            String      @id @default(cuid())
+  suratJalanId  String?
+  noSuratJalan  String
+  kodeKios      String?
+  namaKios      String?
+  kecamatan     String?
+  desa          String?
+  namaProduk    String?
+  jumlah        Float?      @default(0)
+  satuan        String?     @default("Ton")
+  keterangan    String?
+  rawJson       String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  suratJalan    SuratJalan? @relation(fields: [suratJalanId], references: [id], onDelete: Cascade)
+
+  @@index([noSuratJalan])
+  @@index([suratJalanId])
 }
