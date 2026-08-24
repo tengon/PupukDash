@@ -22,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
@@ -46,7 +53,41 @@ import {
   Leaf,
   Layers,
   CheckCircle2,
+  Eye,
+  Store,
+  Sparkles,
 } from 'lucide-react'
+
+interface SuratJalanDetailItem {
+  id?: string
+  noSuratJalan: string
+  nomorPkp?: string
+  nomorOrder?: string
+  kodeSo?: string
+  provinsi?: string
+  kabupaten?: string
+  kecamatan?: string
+  desa?: string
+  kodeKios?: string
+  namaKios?: string
+  namaProduk?: string
+  jumlah?: number
+  satuan?: string
+  urea?: number
+  npk?: number
+  organik?: number
+  npkKakao?: number
+  za?: number
+  sp36?: number
+  tglSuratJalan?: string
+  tglSyncIpubers?: string
+  tglTerimaKios?: string
+  asalPengambilan?: string
+  namaProdusen?: string
+  kodeDistributor?: string
+  namaDistributor?: string
+  keterangan?: string
+}
 
 interface SuratJalanItem {
   noSuratJalan: string
@@ -79,6 +120,7 @@ interface SuratJalanItem {
     tables?: Array<{ headers: string[]; rows: string[][] }>
     labelValues?: Record<string, string>
   } | null
+  details?: SuratJalanDetailItem[]
 }
 
 interface PenyaluranResponse {
@@ -134,7 +176,7 @@ function getItemDateInfo(item: SuratJalanItem) {
     const dateObj = new Date(year, month, day)
     return {
       year,
-      month, // 0-11
+      month,
       day,
       timestamp: dateObj.getTime(),
     }
@@ -152,14 +194,206 @@ function getItemDateInfo(item: SuratJalanItem) {
   return null
 }
 
-async function fetchPenyaluranPengecer(search?: string): Promise<PenyaluranResponse> {
-  const qs = search ? `?search=${encodeURIComponent(search)}` : ''
-  const res = await fetch(`/api/gowcm/penyaluran-pengecer${qs}`)
-  if (!res.ok) throw new Error('Gagal memuat data')
+async function fetchPenyaluranPengecer(search: string): Promise<PenyaluranResponse> {
+  const res = await fetch(`/api/gowcm/penyaluran-pengecer?search=${encodeURIComponent(search)}`)
+  if (!res.ok) throw new Error('Gagal mengambil data Penyaluran Pengecer')
   return res.json()
 }
 
-function SuratJalanRow({ item }: { item: SuratJalanItem }) {
+/** Component Modal Detail Surat Jalan */
+function DetailSuratJalanModal({
+  item,
+  open,
+  onOpenChange,
+}: {
+  item: SuratJalanItem | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const { data: detailRes, isLoading } = useQuery({
+    queryKey: ['detailSuratJalan', item?.noSuratJalan],
+    queryFn: async () => {
+      if (!item?.noSuratJalan) return null
+      const res = await fetch(`/api/gowcm/detail-surat-jalan?noSuratJalan=${encodeURIComponent(item.noSuratJalan)}`)
+      if (!res.ok) throw new Error('Gagal mengambil detail Surat Jalan')
+      return res.json()
+    },
+    enabled: open && !!item?.noSuratJalan,
+  })
+
+  if (!item) return null
+
+  const detailItems: SuratJalanDetailItem[] = detailRes?.data || item.details || []
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-emerald-600 dark:text-emerald-400">
+            <FileText className="h-5 w-5 text-emerald-600" />
+            Rincian Detail Surat Jalan — {item.noSuratJalan}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Informasi lengkap dokumen Penyaluran ke Pengecer dan Rincian Item (Detail SJ-PKP-Order)
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 text-xs pt-2">
+          {/* Header Info Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-card border border-border/60 shadow-xs">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">No. Surat Jalan</span>
+              <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 text-xs">{item.noSuratJalan}</span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Nomor PKP</span>
+              <span className="font-mono font-semibold text-foreground">{item.nomorPkp || '-'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Nomor Order / Kode SO</span>
+              <span className="font-mono font-semibold text-foreground">{item.nomorOrder || item.kodeSo || '-'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Tgl Surat Jalan</span>
+              <span className="font-medium text-foreground">{item.tglSuratJalan || item.tglDibuat || '-'}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-card border border-border/60 shadow-xs">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Kecamatan & Kab</span>
+              <span className="font-semibold text-foreground">{[item.kecamatan, item.kabupaten, item.provinsi].filter(Boolean).join(', ') || '-'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Tgl Sync IPubers</span>
+              <span className="font-medium text-foreground">{item.tglSyncIpubers || '-'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Tgl Terima Kios</span>
+              <span className="font-medium text-foreground">{item.tglTerimaKios || '-'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Asal Pengambilan</span>
+              <span className="font-medium text-foreground">{item.asalPengambilan || '-'}</span>
+            </div>
+          </div>
+
+          {/* Produsen & Distributor Card */}
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-muted/40 border border-border/50">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Produsen</span>
+              <span className="font-semibold text-foreground">{item.namaProdusen || item.kodeProdusen || '-'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Distributor</span>
+              <span className="font-semibold text-foreground">{item.namaDistributor || item.kodeDistributor || '-'}</span>
+            </div>
+          </div>
+
+          {/* Pupuk Breakdown Badge Grid */}
+          <div className="p-3.5 rounded-xl border bg-card space-y-2">
+            <p className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+              <Package className="h-3.5 w-3.5 text-emerald-600" />
+              Alokasi Kuantitas Pupuk Bersubsidi (detail-sj-pkp-order)
+            </p>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs text-center font-mono">
+              <div className="p-2 rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/20">
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 block">Urea</span>
+                <strong className="text-sm font-bold text-emerald-800 dark:text-emerald-200">{item.urea || '0'}</strong>
+              </div>
+              <div className="p-2 rounded-lg border bg-blue-50/50 dark:bg-blue-950/20">
+                <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 block">NPK</span>
+                <strong className="text-sm font-bold text-blue-800 dark:text-blue-200">{item.npk || '0'}</strong>
+              </div>
+              <div className="p-2 rounded-lg border bg-amber-50/50 dark:bg-amber-950/20">
+                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 block">ZA</span>
+                <strong className="text-sm font-bold text-amber-800 dark:text-amber-200">{item.za || '0'}</strong>
+              </div>
+              <div className="p-2 rounded-lg border bg-purple-50/50 dark:bg-purple-950/20">
+                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">SP-36</span>
+                <strong className="text-sm font-bold text-purple-800 dark:text-purple-200">{item.sp36 || '0'}</strong>
+              </div>
+              <div className="p-2 rounded-lg border bg-amber-950/10 dark:bg-amber-900/20">
+                <span className="text-[10px] font-bold text-amber-900 dark:text-amber-300 block">Organik</span>
+                <strong className="text-sm font-bold text-amber-950 dark:text-amber-100">{item.organik || '0'}</strong>
+              </div>
+              <div className="p-2 rounded-lg border bg-amber-700/10 dark:bg-amber-800/20">
+                <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 block">NPK Kakao</span>
+                <strong className="text-sm font-bold text-amber-900 dark:text-amber-100">{item.npkKakao || '0'}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Rincian Item Detail Table (SuratJalanDetail) */}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Store className="h-4 w-4 text-emerald-600" />
+                Tabel Rincian Item Detail (Database SuratJalanDetail)
+              </p>
+              <Badge variant="outline" className="font-mono text-[10px]">
+                {detailItems.length} Rincian Item
+              </Badge>
+            </div>
+
+            {isLoading ? (
+              <div className="space-y-1.5 py-2">
+                <Skeleton className="h-10 w-full rounded" />
+                <Skeleton className="h-10 w-full rounded" />
+              </div>
+            ) : detailItems.length === 0 ? (
+              <div className="p-4 text-center border rounded-lg bg-muted/20 text-muted-foreground">
+                <p className="text-xs font-medium">Belum ada rincian item detail tersimpan untuk Surat Jalan ini.</p>
+                <p className="text-[11px] opacity-75 mt-0.5">Jalankan scraper `node detail_surat_jalan.js` dan import ke database.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-border/50">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/60 text-[11px]">
+                      <TableHead className="w-10">No</TableHead>
+                      <TableHead>Nama Kios / PKP</TableHead>
+                      <TableHead>Kecamatan & Desa</TableHead>
+                      <TableHead>Jenis Produk</TableHead>
+                      <TableHead className="text-right">Jumlah</TableHead>
+                      <TableHead>Satuan</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detailItems.map((d, idx) => (
+                      <TableRow key={d.id || idx} className="text-xs hover:bg-muted/40">
+                        <TableCell className="font-mono text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell className="font-semibold text-foreground">{d.namaKios || (d.nomorPkp ? `Kios PKP (${d.nomorPkp})` : 'Kios Pengecer')}</TableCell>
+                        <TableCell className="text-muted-foreground">{[d.kecamatan, d.desa].filter(Boolean).join(', ') || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40">
+                            {d.namaProduk || 'Pupuk Bersubsidi'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {d.jumlah ?? 0}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{d.satuan || 'Ton'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function SuratJalanRow({
+  item,
+  onOpenDetail,
+}: {
+  item: SuratJalanItem
+  onOpenDetail: (item: SuratJalanItem) => void
+}) {
   const [expanded, setExpanded] = useState(false)
   const hasPupukAlloc = !!(item.urea || item.npk || item.za || item.sp36 || item.organik || item.npkKakao)
 
@@ -169,9 +403,19 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
         className="hover:bg-muted/50 transition-colors cursor-pointer"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* No. Surat Jalan */}
+        {/* No. Surat Jalan (Clickable Button) */}
         <TableCell className="font-mono text-xs font-bold text-primary whitespace-nowrap">
-          {item.noSuratJalan || '-'}
+          <Button
+            variant="link"
+            className="font-mono text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 p-0 h-auto gap-1"
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenDetail(item)
+            }}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span>{item.noSuratJalan || '-'}</span>
+          </Button>
         </TableCell>
 
         {/* Nomor PKP */}
@@ -254,14 +498,28 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
           {item.asalPengambilan || '-'}
         </TableCell>
 
-        {/* Action Toggle */}
+        {/* Action Button & Toggle */}
         <TableCell className="text-center">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-            {expanded
-              ? <ChevronUp className="h-4 w-4 text-primary" />
-              : <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            }
-          </Button>
+          <div className="flex items-center justify-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px] gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenDetail(item)
+              }}
+            >
+              <FileText className="h-3 w-3" />
+              <span>Detail</span>
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+              {expanded
+                ? <ChevronUp className="h-4 w-4 text-primary" />
+                : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              }
+            </Button>
+          </div>
         </TableCell>
       </TableRow>
 
@@ -331,15 +589,33 @@ function SuratJalanRow({ item }: { item: SuratJalanItem }) {
                   </div>
                 </div>
 
-                {/* Additional Detail Tables / LabelValues if present */}
-                {item.detail?.labelValues && Object.keys(item.detail.labelValues).length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-2 rounded bg-background/60 border border-border/30 text-xs">
-                    {Object.entries(item.detail.labelValues).map(([k, v]) => (
-                      <div key={k}>
-                        <span className="text-muted-foreground">{k}: </span>
-                        <span className="font-medium">{v}</span>
-                      </div>
-                    ))}
+                {/* Sub-table for details array if attached */}
+                {item.details && item.details.length > 0 && (
+                  <div className="p-3 rounded-lg bg-background/80 border border-border/50 space-y-2">
+                    <p className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                      <Store className="h-3.5 w-3.5 text-emerald-600" />
+                      Rincian Kios / Pengecer (SuratJalanDetail)
+                    </p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 text-[10px]">
+                          <TableHead>Nama Kios</TableHead>
+                          <TableHead>Kecamatan & Desa</TableHead>
+                          <TableHead>Produk</TableHead>
+                          <TableHead className="text-right">Jumlah</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {item.details.map((d, i) => (
+                          <TableRow key={d.id || i} className="text-xs">
+                            <TableCell className="font-semibold">{d.namaKios || (d.nomorPkp ? `Kios PKP (${d.nomorPkp})` : 'Kios Pengecer')}</TableCell>
+                            <TableCell>{[d.kecamatan, d.desa].filter(Boolean).join(', ') || '-'}</TableCell>
+                            <TableCell>{d.namaProduk || '-'}</TableCell>
+                            <TableCell className="text-right font-mono font-bold">{d.jumlah} {d.satuan || 'Ton'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </motion.div>
@@ -359,15 +635,24 @@ export function PenyaluranPengecerView() {
   const [sortField, setSortField] = useState<SortField>('tglSuratJalan')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
+  // Selected item for Detail Modal
+  const [selectedDetailItem, setSelectedDetailItem] = useState<SuratJalanItem | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+
   // Date Range Filters: 'all' | 'today' | '7days' | '1month' | 'custom_month'
   const [timeRangeFilter, setTimeRangeFilter] = useState<TimeRangeFilter>('all')
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth()) // 0 - 11
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState<number>(2026)
 
   const { data: res, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['penyaluranPengecer', search],
     queryFn: () => fetchPenyaluranPengecer(search),
   })
+
+  const handleOpenDetailModal = (item: SuratJalanItem) => {
+    setSelectedDetailItem(item)
+    setIsDetailModalOpen(true)
+  }
 
   const handleSearch = () => {
     setSearch(searchInput)
@@ -408,7 +693,7 @@ export function PenyaluranPengecerView() {
 
     return rawItems.filter(item => {
       const dateInfo = getItemDateInfo(item)
-      if (!dateInfo) return true // Tampilkan jika tanggal gagal di-parse
+      if (!dateInfo) return true
 
       if (timeRangeFilter === 'today') {
         return dateInfo.timestamp >= todayStart
@@ -450,78 +735,100 @@ export function PenyaluranPengecerView() {
   const safePage = Math.min(page, totalPages)
   const pagedItems = sortedItems.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
 
-  const scrapedAt = res?.scraped_at
-    ? new Date(res.scraped_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
-    : null
-
   const renderSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-muted-foreground/60 shrink-0" />
-    return sortOrder === 'asc' ? (
-      <ArrowUp className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0 font-bold" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0 font-bold" />
-    )
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-muted-foreground/60" />
+    return sortOrder === 'asc'
+      ? <ArrowUp className="h-3.5 w-3.5 text-emerald-600 font-bold" />
+      : <ArrowDown className="h-3.5 w-3.5 text-emerald-600 font-bold" />
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="space-y-4"
     >
-      <Card className="border-l-2 border-l-emerald-500" style={{ boxShadow: 'var(--shadow-sm)' }}>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* Modal Detail Surat Jalan */}
+      <DetailSuratJalanModal
+        item={selectedDetailItem}
+        open={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+      />
+
+      <Card className="border-border/60 shadow-xs">
+        <CardHeader className="space-y-3 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Leaf className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                Monitoring Distribusi — Surat Jalan (detail-sj-pkp-order)
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300">
-                  GOW CM Pupuk Indonesia
-                </Badge>
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Leaf className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                Monitoring Penyaluran ke Pengecer (Surat Jalan)
               </CardTitle>
-              {scrapedAt && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                  <span>🕒 Terakhir Update Scraper:</span>
-                  <strong className="font-semibold text-foreground">{scrapedAt} WIB</strong>
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Monitoring penyaluran pupuk bersubsidi dari Distributor (PUD) ke Kios Pengecer berbasis No. Surat Jalan GOW CM
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari No. Surat Jalan / PKP / SO / Kec..."
-                  value={searchInput}
-                  onChange={e => setSearchInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                  className="pl-9 h-9 w-full sm:w-64"
-                />
-              </div>
-              <Button onClick={handleSearch} size="sm" className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 font-bold">
-                Cari
-              </Button>
               <Button
-                onClick={handleManualRefresh}
-                disabled={isFetching || isSyncing}
-                size="sm"
                 variant="outline"
-                className="h-9 gap-1.5 shrink-0 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-semibold"
+                onClick={handleManualRefresh}
+                disabled={isSyncing || isFetching}
               >
-                <RefreshCw className={`h-3.5 w-3.5 text-emerald-600 ${isFetching || isSyncing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{isSyncing ? 'Memperbarui...' : 'Refresh'}</span>
+                <RefreshCw className={`h-3.5 w-3.5 ${isSyncing || isFetching ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Refresh'}
               </Button>
             </div>
           </div>
 
-          {/* Opsi Filter Tanggal / Waktu */}
-          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border/40 mt-3">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mr-1">
-              <Filter className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Filter Tanggal:</span>
+          {/* Search bar & Range Filter Controls */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 pt-1">
+            <div className="flex items-center gap-1.5 flex-1 max-w-md">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Cari No. Surat Jalan, PKP, Order, Kios..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="pl-8 h-8 text-xs"
+                />
+              </div>
+              <Button size="sm" onClick={handleSearch} className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
+                Cari
+              </Button>
+              {search && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => { setSearch(''); setSearchInput(''); setPage(1) }}
+                  className="h-8 text-xs"
+                >
+                  Reset
+                </Button>
+              )}
             </div>
+
+            <div className="flex items-center gap-1">
+              {res?.scraped_at && (
+                <Badge variant="outline" className="text-[10px] font-mono gap-1 py-0.5">
+                  <Clock className="h-2.5 w-2.5 text-emerald-600" />
+                  Sync: {new Date(res.scraped_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                </Badge>
+              )}
+              <Badge variant="outline" className="text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+                DataTables Sorting: DESC
+              </Badge>
+            </div>
+          </div>
+
+          {/* Date Filter Buttons */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/40">
+            <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 mr-1">
+              <Filter className="h-3 w-3 text-emerald-600" /> Filter Tanggal:
+            </span>
 
             <Button
               size="sm"
@@ -529,7 +836,7 @@ export function PenyaluranPengecerView() {
               className={`h-7 text-xs px-2.5 ${timeRangeFilter === 'all' ? 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold' : ''}`}
               onClick={() => { setTimeRangeFilter('all'); setPage(1) }}
             >
-              Semua
+              Lihat Semua
             </Button>
 
             <Button
@@ -568,7 +875,6 @@ export function PenyaluranPengecerView() {
               Pilihan Bulan
             </Button>
 
-            {/* Sub-controls untuk Pilihan Bulan */}
             {timeRangeFilter === 'custom_month' && (
               <div className="flex items-center gap-1.5 ml-1 animate-in fade-in slide-in-from-left-2 duration-200">
                 <Select
@@ -710,7 +1016,11 @@ export function PenyaluranPengecerView() {
                   </TableHeader>
                   <TableBody>
                     {pagedItems.map((item, idx) => (
-                      <SuratJalanRow key={`${item.noSuratJalan}_${idx}`} item={item} />
+                      <SuratJalanRow
+                        key={`${item.noSuratJalan}_${idx}`}
+                        item={item}
+                        onOpenDetail={handleOpenDetailModal}
+                      />
                     ))}
                   </TableBody>
                 </Table>
