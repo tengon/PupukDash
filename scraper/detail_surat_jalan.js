@@ -56,9 +56,61 @@ async function loginAndGetPrefix(page) {
   throw new Error('Gagal mendapatkan encrypted prefix dari sidebar');
 }
 
+const MONTH_MAP = {
+  'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mei': 4, 'may': 4, 'jun': 5,
+  'jul': 6, 'ags': 7, 'aug': 7, 'sep': 8, 'okt': 9, 'oct': 9, 'nov': 10, 'des': 11, 'dec': 11
+};
+
+function parseDateStr(str) {
+  if (!str) return null;
+  const parts = str.toLowerCase().trim().split('-');
+  if (parts.length >= 3) {
+    const year = parseInt(parts[0]) || 2026;
+    let month = 0;
+    if (!isNaN(parseInt(parts[1]))) {
+      month = Math.max(0, Math.min(11, parseInt(parts[1]) - 1));
+    } else if (MONTH_MAP[parts[1]] !== undefined) {
+      month = MONTH_MAP[parts[1]];
+    }
+    const dayRest = parts[2].replace(',', '').trim();
+    const day = parseInt(dayRest) || 1;
+    return new Date(year, month, day);
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function getCutoffDate(range) {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (range === 'today') return todayStart;
+  if (range === '7days') {
+    const d = new Date(todayStart);
+    d.setDate(d.getDate() - 7);
+    return d;
+  }
+  if (range === '1month') {
+    const d = new Date(todayStart);
+    d.setMonth(d.getMonth() - 1);
+    return d;
+  }
+  return null;
+}
+
 async function main() {
+  const args = process.argv.slice(2);
+  let rangeArg = 'all';
+  args.forEach(arg => {
+    if (arg.startsWith('--range=')) {
+      rangeArg = arg.split('=')[1];
+    }
+  });
+
+  const cutoffDate = getCutoffDate(rangeArg);
+
   console.log('='.repeat(60));
-  console.log('GOW CM Scraper: Dedicated Detail Surat Jalan');
+  console.log(`GOW CM Scraper: Dedicated Detail Surat Jalan (Range: ${rangeArg.toUpperCase()})`);
   console.log('='.repeat(60));
 
   const browser = await chromium.launch({

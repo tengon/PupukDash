@@ -34,6 +34,7 @@ import {
   Boxes,
   Truck,
   Filter,
+  FileText,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -50,6 +51,7 @@ interface ScheduleSettings {
   spjb_ppts: ScraperScheduleItem
   realisasi_stok_kios: ScraperScheduleItem
   penyaluran_pengecer: ScraperScheduleItem
+  detail_surat_jalan: ScraperScheduleItem
 }
 
 const INTERVAL_OPTIONS = [
@@ -77,7 +79,7 @@ export function ScraperDialog({
 }) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<'operasional' | 'ppts' | 'realisasi' | 'distribusi'>('operasional')
+  const [activeTab, setActiveTab] = useState<'operasional' | 'ppts' | 'realisasi' | 'distribusi' | 'detail_sj'>('operasional')
 
   // Local settings state
   const [opEnabled, setOpEnabled] = useState(true)
@@ -97,10 +99,16 @@ export function ScraperDialog({
   const [distribusiInterval, setDistribusiInterval] = useState('6')
   const [distribusiScrapeRange, setDistribusiScrapeRange] = useState<string>('all')
 
+  const [detailSjEnabled, setDetailSjEnabled] = useState(true)
+  const [detailSjStartTime, setDetailSjStartTime] = useState('06:00')
+  const [detailSjInterval, setDetailSjInterval] = useState('6')
+  const [detailSjScrapeRange, setDetailSjScrapeRange] = useState<string>('all')
+
   const [isSyncingOp, setIsSyncingOp] = useState(false)
   const [isSyncingPpts, setIsSyncingPpts] = useState(false)
   const [isSyncingRealisasi, setIsSyncingRealisasi] = useState(false)
   const [isSyncingDistribusi, setIsSyncingDistribusi] = useState(false)
+  const [isSyncingDetailSj, setIsSyncingDetailSj] = useState(false)
 
   // Fetch current schedule settings
   const { data: scheduleData, isLoading, refetch } = useQuery<{ success: boolean; settings: ScheduleSettings }>({
@@ -137,6 +145,12 @@ export function ScraperDialog({
         setDistribusiInterval(String(s.penyaluran_pengecer.intervalHours || 6))
         setDistribusiScrapeRange(s.penyaluran_pengecer.scrapeRange || 'all')
       }
+      if (s.detail_surat_jalan) {
+        setDetailSjEnabled(s.detail_surat_jalan.enabled ?? true)
+        setDetailSjStartTime(s.detail_surat_jalan.startTime || '06:00')
+        setDetailSjInterval(String(s.detail_surat_jalan.intervalHours || 6))
+        setDetailSjScrapeRange(s.detail_surat_jalan.scrapeRange || 'all')
+      }
     }
   }, [scheduleData])
 
@@ -164,6 +178,12 @@ export function ScraperDialog({
           startTime: distribusiStartTime,
           intervalHours: parseInt(distribusiInterval) || 6,
           scrapeRange: distribusiScrapeRange,
+        },
+        detail_surat_jalan: {
+          enabled: detailSjEnabled,
+          startTime: detailSjStartTime,
+          intervalHours: parseInt(detailSjInterval) || 6,
+          scrapeRange: detailSjScrapeRange,
         },
       }
 
@@ -279,6 +299,28 @@ export function ScraperDialog({
     }
   }
 
+  // Manual Trigger Detail Surat Jalan with Range Option
+  const triggerDetailSjSync = async () => {
+    setIsSyncingDetailSj(true)
+    try {
+      const res = await fetch(`/api/gowcm/sync-detail-surat-jalan?range=${detailSjScrapeRange}`, { method: 'POST' })
+      const json = await res.json()
+      toast({
+        title: 'Sync Detail Surat Jalan Selesai',
+        description: json.message || 'Scraping Rincian Item Detail Surat Jalan berhasil dijalankan.',
+      })
+      queryClient.invalidateQueries()
+    } catch (e: any) {
+      toast({
+        title: 'Sync Gagal',
+        description: e.message || 'Terjadi kesalahan saat sync Detail Surat Jalan',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSyncingDetailSj(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
@@ -300,22 +342,26 @@ export function ScraperDialog({
         ) : (
           <div className="space-y-4 text-xs pt-1">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-              <TabsList className="grid grid-cols-4 w-full">
-                <TabsTrigger value="operasional" className="gap-1 text-[10px] font-bold truncate">
+              <TabsList className="grid grid-cols-5 w-full">
+                <TabsTrigger value="operasional" className="gap-1 text-[10px] font-bold truncate px-1">
                   <Building2 className="h-3 w-3 text-emerald-600 shrink-0" />
                   <span className="truncate">Operasional</span>
                 </TabsTrigger>
-                <TabsTrigger value="ppts" className="gap-1 text-[10px] font-bold truncate">
+                <TabsTrigger value="ppts" className="gap-1 text-[10px] font-bold truncate px-1">
                   <Store className="h-3 w-3 text-blue-600 shrink-0" />
                   <span className="truncate">SPJB PPTS</span>
                 </TabsTrigger>
-                <TabsTrigger value="realisasi" className="gap-1 text-[10px] font-bold truncate">
+                <TabsTrigger value="realisasi" className="gap-1 text-[10px] font-bold truncate px-1">
                   <Boxes className="h-3 w-3 text-purple-600 shrink-0" />
                   <span className="truncate">Stok Kios</span>
                 </TabsTrigger>
-                <TabsTrigger value="distribusi" className="gap-1 text-[10px] font-bold truncate">
+                <TabsTrigger value="distribusi" className="gap-1 text-[10px] font-bold truncate px-1">
                   <Truck className="h-3 w-3 text-sky-600 shrink-0" />
                   <span className="truncate">Distribusi</span>
+                </TabsTrigger>
+                <TabsTrigger value="detail_sj" className="gap-1 text-[10px] font-bold truncate px-1">
+                  <FileText className="h-3 w-3 text-amber-600 shrink-0" />
+                  <span className="truncate">Detail SJ</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -626,6 +672,101 @@ export function ScraperDialog({
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingDistribusi ? 'animate-spin' : ''}`} />
                     {isSyncingDistribusi ? 'Syncing...' : `Run Scraper (${distribusiScrapeRange.toUpperCase()}) Sekarang`}
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* TAB 5: DETAIL SURAT JALAN */}
+              <TabsContent value="detail_sj" className="space-y-3 pt-3">
+                <div className="p-3.5 rounded-xl border bg-card space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-bold flex items-center gap-1.5">
+                        Status Auto-Sync Detail Surat Jalan
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">Aktifkan pengulangan otomatis scraping Rincian Item Detail Surat Jalan</p>
+                    </div>
+                    <Switch checked={detailSjEnabled} onCheckedChange={setDetailSjEnabled} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-amber-600" />
+                        Jam Mulai Eksekusi
+                      </Label>
+                      <Input
+                        type="time"
+                        value={detailSjStartTime}
+                        onChange={(e) => setDetailSjStartTime(e.target.value)}
+                        className="h-8 text-xs font-mono"
+                        disabled={!detailSjEnabled}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-amber-500" />
+                        Interval Pengulangan
+                      </Label>
+                      <Select value={detailSjInterval} onValueChange={setDetailSjInterval} disabled={!detailSjEnabled}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Pilih Interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INTERVAL_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Opsi Filter Rentang Data Scraper */}
+                  <div className="space-y-1 pt-2 border-t">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <Filter className="h-3 w-3 text-amber-600" />
+                      Rentang Data yang Di-Scrape (Limit Tanggal)
+                    </Label>
+                    <Select value={detailSjScrapeRange} onValueChange={setDetailSjScrapeRange}>
+                      <SelectTrigger className="h-8 text-xs font-bold text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+                        <SelectValue placeholder="Pilih Rentang Data" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCRAPE_RANGE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground">
+                      Pilih 'Hari Ini' atau '7 Hari' agar proses scraping berjalan sangat cepat dalam hitungan detik.
+                    </p>
+                  </div>
+
+                  {scheduleData?.settings?.detail_surat_jalan?.lastRun && (
+                    <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
+                      <span>Eksekusi Terakhir:</span>
+                      <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                        {new Date(scheduleData.settings.detail_surat_jalan.lastRun).toLocaleString('id-ID')}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1 text-xs border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-50"
+                    disabled={isSyncingDetailSj}
+                    onClick={triggerDetailSjSync}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingDetailSj ? 'animate-spin' : ''}`} />
+                    {isSyncingDetailSj ? 'Syncing...' : `Run Scraper Detail SJ (${detailSjScrapeRange.toUpperCase()}) Sekarang`}
                   </Button>
                 </div>
               </TabsContent>

@@ -18,6 +18,7 @@ function getSettings() {
     spjb_ppts: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     realisasi_stok_kios: { enabled: true, startTime: '06:00', intervalHours: 6, lastRun: null },
     penyaluran_pengecer: { enabled: true, startTime: '06:00', intervalHours: 6, scrapeRange: 'all', lastRun: null },
+    detail_surat_jalan: { enabled: true, startTime: '06:00', intervalHours: 6, scrapeRange: 'all', lastRun: null },
   }
 }
 
@@ -58,6 +59,10 @@ export async function POST(request: Request) {
       penyaluran_pengecer: {
         ...current.penyaluran_pengecer,
         ...(body.penyaluran_pengecer || {}),
+      },
+      detail_surat_jalan: {
+        ...current.detail_surat_jalan,
+        ...(body.detail_surat_jalan || {}),
       },
     }
 
