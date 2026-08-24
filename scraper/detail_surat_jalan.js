@@ -45,23 +45,26 @@ async function loginAndGetPrefix(page) {
   console.log('[LOGIN] Redirect berhasil');
   await sleep(4000);
 
-  // Ekstrak encrypted prefix dari sidebar
-  const prefix = await page.evaluate(() => {
-    const els = [...document.querySelectorAll('a[href], [href]')];
-    for (const el of els) {
-      const href = el.getAttribute('href') || '';
-      const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
-      if (match) return match[1];
-    }
-    return null;
-  });
+  // Ekstrak encrypted prefix dari sidebar DOM dengan retry
+  let prefix = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    prefix = await page.evaluate(() => {
+      const els = [...document.querySelectorAll('a[href], [href]')];
+      for (const el of els) {
+        const href = el.getAttribute('href') || el.getAttribute('to') || '';
+        const match = href.match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
+        if (match) return match[1];
+      }
+      return null;
+    });
+
+    if (prefix) break;
+    await sleep(2000);
+  }
 
   if (prefix) {
     return decodeURIComponent(prefix);
   }
-
-  const urlMatch = page.url().match(/#\/([A-Za-z0-9+\/=%]{20,})\//);
-  if (urlMatch) return decodeURIComponent(urlMatch[1]);
 
   throw new Error('Gagal mendapatkan encrypted prefix dari sidebar');
 }
@@ -145,15 +148,12 @@ async function main() {
       const url = `https://gowcm.pupuk-indonesia.com/#/${prefix}/${route}`;
       console.log(`[NAVIGATE] Mencoba ke halaman Surat Jalan: ${url}`);
       try {
-        await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
-        await sleep(2000);
-
-        const hasRows = await page.evaluate(() => !!document.querySelector('table tbody tr'));
-        if (hasRows) {
-          console.log(`[NAVIGATE] ✅ Route ditemukan: ${route}`);
-          listLoaded = true;
-          break;
-        }
+        await page.goto(url, { waitUntil: 'networkidle', timeout: 25000 });
+        await sleep(2500);
+        await page.waitForSelector('table tbody tr', { timeout: 12000 });
+        console.log(`[NAVIGATE] ✅ Route ditemukan: ${route}`);
+        listLoaded = true;
+        break;
       } catch (e) {
         console.warn(`[NAVIGATE] Warning route ${route}:`, e.message);
       }
@@ -236,10 +236,16 @@ async function main() {
       let detailItems = [];
 
       if (item.uuid) {
-        const btnSelector = `button[data-uuid="${item.uuid}"], #detailList[data-uuid="${item.uuid}"]`;
-        const btn = await page.$(btnSelector);
-        if (btn) {
-          await btn.click();
+        const clicked = await page.evaluate((uuidVal) => {
+          const btn = document.querySelector(`button[data-uuid="${uuidVal}"], #detailList[data-uuid="${uuidVal}"], [data-uuid="${uuidVal}"]`);
+          if (btn) {
+            btn.click();
+            return true;
+          }
+          return false;
+        }, item.uuid);
+
+        if (clicked) {
           await page.waitForSelector('.modal.show, .modal-dialog, .modal-content', { timeout: 1500 }).catch(() => {});
           await sleep(400);
 
