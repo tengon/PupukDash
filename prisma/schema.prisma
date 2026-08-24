@@ -375,24 +375,43 @@ model SuratJalan {
   @@index([kodeProdusen])
 }
 
-// 5. Tabel Detail Rincian Item Surat Jalan
+// 5. Tabel Detail Rincian Item Surat Jalan (Detail SJ-PKP-Order)
 model SuratJalanDetail {
-  id            String      @id @default(cuid())
-  suratJalanId  String?
-  noSuratJalan  String
-  kodeKios      String?
-  namaKios      String?
-  kecamatan     String?
-  desa          String?
-  namaProduk    String?
-  jumlah        Float?      @default(0)
-  satuan        String?     @default("Ton")
-  keterangan    String?
-  rawJson       String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  suratJalan    SuratJalan? @relation(fields: [suratJalanId], references: [id], onDelete: Cascade)
+  id              String      @id @default(cuid())
+  suratJalanId    String?
+  noSuratJalan    String
+  nomorPkp        String?
+  nomorOrder      String?
+  kodeSo          String?
+  provinsi        String?
+  kabupaten       String?
+  kecamatan       String?
+  desa            String?
+  kodeKios        String?
+  namaKios        String?
+  namaProduk      String?
+  jumlah          Float?      @default(0)
+  satuan          String?     @default("Ton")
+  urea            Float?      @default(0)
+  npk             Float?      @default(0)
+  organik         Float?      @default(0)
+  npkKakao        Float?      @default(0)
+  za              Float?      @default(0)
+  sp36            Float?      @default(0)
+  tglSuratJalan   String?
+  tglSyncIpubers  String?
+  tglTerimaKios   String?
+  asalPengambilan String?
+  namaProdusen    String?
+  kodeDistributor String?
+  namaDistributor String?
+  keterangan      String?
+  rawJson         String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  suratJalan      SuratJalan? @relation(fields: [suratJalanId], references: [id], onDelete: Cascade)
 
   @@index([noSuratJalan])
   @@index([suratJalanId])
+  @@index([nomorPkp])
 }

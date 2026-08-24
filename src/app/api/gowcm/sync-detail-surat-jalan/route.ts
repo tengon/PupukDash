@@ -56,21 +56,53 @@ export async function POST(request: Request) {
           if (!noSuratJalan) continue
           const masterId = masterMap.get(noSuratJalan) || null
 
-          const detailsList = Array.isArray(item.details) ? item.details : []
+          let detailsList: any[] = []
+          if (Array.isArray(item.details) && item.details.length > 0) {
+            detailsList = item.details
+          } else {
+            detailsList = [{
+              kodeKios: null,
+              namaKios: item.nomorPkp ? `Kios PKP (${item.nomorPkp})` : 'Kios Pengecer',
+              kecamatan: item.kecamatan || null,
+              desa: item.kabupaten || null,
+              namaProduk: item.urea ? 'Urea' : item.npk ? 'NPK' : 'Pupuk Bersubsidi',
+              jumlah: parseFloat(item.urea || item.npk || item.organik || item.za || item.sp36 || '0') || 0,
+              satuan: 'Ton',
+            }]
+          }
+
           for (const d of detailsList) {
             await (db as any).suratJalanDetail.create({
               data: {
                 suratJalanId: masterId,
                 noSuratJalan: noSuratJalan,
+                nomorPkp: item.nomorPkp || d.nomorPkp || null,
+                nomorOrder: item.nomorOrder || d.nomorOrder || null,
+                kodeSo: item.kodeSo || d.kodeSo || null,
+                provinsi: item.provinsi || d.provinsi || null,
+                kabupaten: item.kabupaten || d.kabupaten || null,
+                kecamatan: item.kecamatan || d.kecamatan || null,
+                desa: d.desa || null,
                 kodeKios: d.kodeKios || null,
-                namaKios: d.namaKios || null,
-                kecamatan: d.kecamatan || item.kecamatan || null,
-                desa: d.desa || item.kabupaten || null,
+                namaKios: d.namaKios || (item.nomorPkp ? `Kios PKP (${item.nomorPkp})` : 'Kios Pengecer'),
                 namaProduk: d.namaProduk || null,
                 jumlah: parseFloat(d.jumlah) || 0,
                 satuan: d.satuan || 'Ton',
+                urea: parseFloat(item.urea || '0') || 0,
+                npk: parseFloat(item.npk || '0') || 0,
+                organik: parseFloat(item.organik || '0') || 0,
+                npkKakao: parseFloat(item.npkKakao || '0') || 0,
+                za: parseFloat(item.za || '0') || 0,
+                sp36: parseFloat(item.sp36 || '0') || 0,
+                tglSuratJalan: item.tglSuratJalan || null,
+                tglSyncIpubers: item.tglSyncIpubers || null,
+                tglTerimaKios: item.tglTerimaKios || null,
+                asalPengambilan: item.asalPengambilan || null,
+                namaProdusen: item.namaProdusen || null,
+                kodeDistributor: item.kodeDistributor || null,
+                namaDistributor: item.namaDistributor || null,
                 keterangan: d.keterangan || null,
-                rawJson: JSON.stringify(d),
+                rawJson: JSON.stringify(item),
               },
             })
             importedCount++

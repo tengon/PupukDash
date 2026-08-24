@@ -8,13 +8,11 @@ async function main() {
     path.join(__dirname, 'detail_surat_jalan_full.json'),
     path.join(process.cwd(), 'scraper', 'detail_surat_jalan_full.json'),
     path.join(process.cwd(), 'detail_surat_jalan_full.json'),
-    path.join(__dirname, 'scraper', 'penyaluran_pengecer_full.json'),
-    path.join(process.cwd(), 'scraper', 'penyaluran_pengecer_full.json'),
   ]
 
   const filePath = possiblePaths.find(p => fs.existsSync(p))
   if (!filePath) {
-    console.error('File detail_surat_jalan_full.json atau penyaluran_pengecer_full.json tidak ditemukan!')
+    console.error('File detail_surat_jalan_full.json tidak ditemukan!')
     return
   }
 
@@ -47,80 +45,61 @@ async function main() {
 
     const masterId = masterMap.get(noSuratJalan) || null
 
-    // Extract detail list (from dedicated detail scraper or main scraper item)
     let detailsList: any[] = []
-    if (Array.isArray(item.details)) {
+    if (Array.isArray(item.details) && item.details.length > 0) {
       detailsList = item.details
-    } else if (item.detail && Array.isArray(item.detail.tables)) {
-      item.detail.tables.forEach((t: any) => {
-        if (Array.isArray(t.rows)) {
-          t.rows.forEach((r: any) => {
-            if (Array.isArray(r) && r.length >= 2) {
-              detailsList.push({
-                kodeKios: r[0] || '',
-                namaKios: r[1] || '',
-                kecamatan: r[2] || '',
-                desa: r[3] || '',
-                namaProduk: r[4] || '',
-                jumlah: parseFloat(r[5]) || 0,
-                satuan: r[6] || 'Ton',
-                rawCells: r,
-              })
-            }
-          })
-        }
-      })
+    } else {
+      // Fallback row if no sub-table in modal
+      detailsList = [{
+        kodeKios: null,
+        namaKios: item.nomorPkp ? `Kios PKP (${item.nomorPkp})` : 'Kios Pengecer',
+        kecamatan: item.kecamatan || null,
+        desa: item.kabupaten || null,
+        namaProduk: item.urea ? 'Urea' : item.npk ? 'NPK' : 'Pupuk Bersubsidi',
+        jumlah: parseFloat(item.urea || item.npk || item.organik || item.za || item.sp36 || '0') || 0,
+        satuan: 'Ton',
+      }]
     }
 
-    // High-performance fallback detail generation if table details missing
-    if (detailsList.length === 0) {
-      const pupukTypes = [
-        { name: 'Urea', val: item.urea },
-        { name: 'NPK', val: item.npk },
-        { name: 'Organik', val: item.organik },
-        { name: 'ZA', val: item.za },
-        { name: 'SP-36', val: item.sp36 },
-        { name: 'NPK Kakao', val: item.npkKakao },
-      ]
-
-      pupukTypes.forEach(p => {
-        const qty = parseFloat(p.val)
-        if (!isNaN(qty) && qty > 0) {
-          detailsList.push({
-            kodeKios: '',
-            namaKios: item.nomorPkp ? `Kios PKP (${item.nomorPkp})` : 'Kios Pengecer',
-            kecamatan: item.kecamatan || '',
-            desa: item.kabupaten || '',
-            namaProduk: p.name,
-            jumlah: qty,
-            satuan: 'Ton',
-          })
-        }
-      })
-    }
-
-    // Insert detail items into SuratJalanDetail
     for (const d of detailsList) {
       await detailModel.create({
         data: {
           suratJalanId: masterId,
           noSuratJalan: noSuratJalan,
+          nomorPkp: item.nomorPkp || d.nomorPkp || null,
+          nomorOrder: item.nomorOrder || d.nomorOrder || null,
+          kodeSo: item.kodeSo || d.kodeSo || null,
+          provinsi: item.provinsi || d.provinsi || null,
+          kabupaten: item.kabupaten || d.kabupaten || null,
+          kecamatan: item.kecamatan || d.kecamatan || null,
+          desa: d.desa || null,
           kodeKios: d.kodeKios || null,
-          namaKios: d.namaKios || null,
-          kecamatan: d.kecamatan || item.kecamatan || null,
-          desa: d.desa || item.kabupaten || null,
+          namaKios: d.namaKios || (item.nomorPkp ? `Kios PKP (${item.nomorPkp})` : 'Kios Pengecer'),
           namaProduk: d.namaProduk || null,
           jumlah: parseFloat(d.jumlah) || 0,
           satuan: d.satuan || 'Ton',
+          urea: parseFloat(item.urea || '0') || 0,
+          npk: parseFloat(item.npk || '0') || 0,
+          organik: parseFloat(item.organik || '0') || 0,
+          npkKakao: parseFloat(item.npkKakao || '0') || 0,
+          za: parseFloat(item.za || '0') || 0,
+          sp36: parseFloat(item.sp36 || '0') || 0,
+          tglSuratJalan: item.tglSuratJalan || null,
+          tglSyncIpubers: item.tglSyncIpubers || null,
+          tglTerimaKios: item.tglTerimaKios || null,
+          asalPengambilan: item.asalPengambilan || null,
+          namaProdusen: item.namaProdusen || null,
+          kodeDistributor: item.kodeDistributor || null,
+          namaDistributor: item.namaDistributor || null,
           keterangan: d.keterangan || null,
-          rawJson: JSON.stringify(d),
+          rawJson: JSON.stringify(item),
         },
       })
       insertedCount++
     }
   }
 
-  console.log(`✅ Selesai! ${insertedCount} rincian item Detail Surat Jalan berhasil dimasukkan ke tabel SuratJalanDetail di SQLite.`)
+  console.log(`✅ Selesai! ${insertedCount} rincian item Detail Surat Jalan (PKP Order) berhasil dimasukkan ke tabel SuratJalanDetail di SQLite.`)
 }
 
 main()
