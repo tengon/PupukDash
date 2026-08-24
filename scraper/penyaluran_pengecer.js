@@ -437,10 +437,16 @@ async function scrapeDetail(page, item, prefix) {
 
     // Coba klik tombol detail (modal) di list page
     if (item.uuid) {
-      const btnSelector = `button[data-uuid="${item.uuid}"], #detailList[data-uuid="${item.uuid}"]`;
-      const btn = await page.$(btnSelector);
-      if (btn) {
-        await btn.click();
+      const clicked = await page.evaluate((uuidVal) => {
+        const btn = document.querySelector(`button[data-uuid="${uuidVal}"], #detailList[data-uuid="${uuidVal}"], [data-uuid="${uuidVal}"]`);
+        if (btn) {
+          btn.click();
+          return true;
+        }
+        return false;
+      }, item.uuid);
+
+      if (clicked) {
         await page.waitForSelector('.modal.show, .modal-dialog, .modal-content', { timeout: 1000 }).catch(() => {});
         await sleep(300);
 

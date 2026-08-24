@@ -37,6 +37,9 @@ export async function GET(request: Request) {
 
         const dbRecords = await (db as any).suratJalan.findMany({
           where: whereClause,
+          include: {
+            details: true,
+          },
           orderBy: { createdAt: 'desc' },
         })
 
