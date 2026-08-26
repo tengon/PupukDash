@@ -342,6 +342,8 @@ async function scrapeDetail(page, spjb, prefix) {
       const detailRows = [];
 
       const trElements = targetTable ? [...targetTable.querySelectorAll('tbody tr')] : [];
+      let currentProvinsi = 'JAWA TENGAH';
+      let currentKabupaten = 'KAB. SEMARANG';
       let currentKecamatan = 'Kab. Semarang';
 
       for (let i = 0; i < trElements.length; i++) {
@@ -352,8 +354,20 @@ async function scrapeDetail(page, spjb, prefix) {
         const text = tr.innerText.replace(/\s+/g, ' ').trim();
         const textUpper = text.toUpperCase();
 
-        // Abaikan baris rekap total utama & header provinsi / kabupaten
+        // Abaikan baris rekap total utama
         if (textUpper.includes('TOTAL PRODUK') || textUpper.startsWith('TOTAL')) continue;
+
+        // Level 1: Provinsi
+        if (textUpper.includes('PROVINSI') || textUpper === 'JAWA TENGAH') {
+          currentProvinsi = text.replace(/-$/, '').trim();
+          continue;
+        }
+
+        // Level 2: Kabupaten
+        if (textUpper.startsWith('KAB.') || textUpper.startsWith('KABUPATEN')) {
+          currentKabupaten = text.replace(/-$/, '').trim();
+          continue;
+        }
 
         const firstCol = (cells[0] || cells[1] || '').toUpperCase();
         const isProductRow = firstCol.includes('UREA') ||
@@ -366,6 +380,7 @@ async function scrapeDetail(page, spjb, prefix) {
                              tr.classList.contains('lastChild');
 
         if (isProductRow && cells.length >= 5) {
+          // Level 4: Produk
           const produk = cells[1] || cells[0] || 'UREA';
           if (produk.toUpperCase().includes('TOTAL')) continue;
 
@@ -375,6 +390,8 @@ async function scrapeDetail(page, spjb, prefix) {
           const totalSisa = cells[cells.length - 1] || '0';
 
           detailRows.push({
+            provinsi: currentProvinsi,
+            kabupaten: currentKabupaten,
             kecamatan: currentKecamatan,
             produk: produk,
             totalAlokasi,
@@ -383,9 +400,9 @@ async function scrapeDetail(page, spjb, prefix) {
             totalSisa,
           });
         } else {
-          // Merupakan baris header Kecamatan (Parent Row)
+          // Level 3: Kecamatan (Parent Row)
           const cleanKec = text.replace(/-$/, '').trim();
-          if (cleanKec && !cleanKec.toUpperCase().includes('JAWA TENGAH') && !cleanKec.toUpperCase().startsWith('KAB.')) {
+          if (cleanKec) {
             currentKecamatan = cleanKec;
           }
         }
