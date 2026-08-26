@@ -214,19 +214,18 @@ async function setFilters(page) {
       }
     }
 
-    // Cari filter Status = Active
-    // Biasanya berupa select dropdown atau filter pill
+    // Cari filter Status = Semua / All agar tidak ada kontrak SPJB PPTS yang terlewat
     const statusSelects = await page.$$('select');
     for (const sel of statusSelects) {
       const options = await sel.evaluate(el => [...el.options].map(o => ({ value: o.value, text: o.text })));
-      const activeOpt = options.find(o =>
-        o.text.toLowerCase().includes('active') ||
-        o.text.toLowerCase().includes('aktif') ||
-        o.value.toLowerCase() === 'active'
+      const allStatusOpt = options.find(o =>
+        o.text.toLowerCase().includes('semua') ||
+        o.text.toLowerCase().includes('all') ||
+        o.value === '' || o.value === 'ALL'
       );
-      if (activeOpt) {
-        await sel.selectOption(activeOpt.value);
-        console.log('[FILTER] Status set ke:', activeOpt.text);
+      if (allStatusOpt) {
+        await sel.selectOption(allStatusOpt.value);
+        console.log('[FILTER] Status set ke:', allStatusOpt.text);
         await sleep(1000);
         break;
       }
@@ -309,11 +308,11 @@ async function scrapeDetail(page, spjb, prefix) {
         return { headers, rows };
       };
 
-      // Cari tabel yang memiliki header "Alokasi SPJB" atau "Kacamatan"/"Kecamatan"
+      // Cari tabel yang memiliki header "Alokasi SPJB", "Realisasi", "Kecamatan", atau "Produk"
       let targetTable = null;
       for (const t of tables) {
         const headers = [...t.querySelectorAll('thead th, thead td')].map(h => h.innerText.trim().toLowerCase());
-        if (headers.some(h => h.includes('alokasi') || h.includes('kacamatan') || h.includes('kecamatan'))) {
+        if (headers.some(h => h.includes('alokasi') || h.includes('realisasi') || h.includes('produk') || h.includes('kacamatan') || h.includes('kecamatan'))) {
           targetTable = t;
           break;
         }
