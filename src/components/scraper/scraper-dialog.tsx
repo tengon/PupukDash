@@ -440,6 +440,9 @@ export function ScraperDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-[10px] text-muted-foreground">
+                      Pilih 'Hari Ini' atau '7 Hari' agar proses scraping berjalan sangat cepat dalam hitungan detik.
+                    </p>
                   </div>
 
                   {scheduleData?.settings?.spjb_operasional?.lastRun && (
@@ -532,6 +535,9 @@ export function ScraperDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-[10px] text-muted-foreground">
+                      Pilih 'Hari Ini' atau '7 Hari' agar proses scraping berjalan sangat cepat dalam hitungan detik.
+                    </p>
                   </div>
 
                   {scheduleData?.settings?.spjb_ppts?.lastRun && (
@@ -624,6 +630,9 @@ export function ScraperDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-[10px] text-muted-foreground">
+                      Pilih 'Hari Ini' atau '7 Hari' agar proses scraping berjalan sangat cepat dalam hitungan detik.
+                    </p>
                   </div>
 
                   {scheduleData?.settings?.realisasi_stok_kios?.lastRun && (

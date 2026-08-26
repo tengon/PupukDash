@@ -382,8 +382,16 @@ async function clickNextPage(page) {
 
 async function main() {
   const startTime = Date.now();
+  const args = process.argv.slice(2);
+  let rangeArg = 'all';
+  args.forEach(arg => {
+    if (arg.startsWith('--range=')) {
+      rangeArg = arg.split('=')[1];
+    }
+  });
+
   console.log('='.repeat(60));
-  console.log('GOW CM Scraper: SPJB PPTS (Alokasi)');
+  console.log(`GOW CM Scraper: SPJB PPTS (Range: ${rangeArg.toUpperCase()})`);
   console.log('Filter: Show=Lihat Semua | Status=Active');
   console.log('='.repeat(60));
 

@@ -55,6 +55,19 @@ function parseNumberVal(val) {
 }
 
 async function scrapeRealisasiStokKios() {
+  const args = process.argv.slice(2);
+  let rangeArg = 'all';
+  args.forEach(arg => {
+    if (arg.startsWith('--range=')) {
+      rangeArg = arg.split('=')[1];
+    }
+  });
+
+  console.log('='.repeat(60));
+  console.log(`GOW CM Scraper: Realisasi Stok Kios (Range: ${rangeArg.toUpperCase()})`);
+  console.log('Filter: Show=Lihat Semua');
+  console.log('='.repeat(60));
+
   console.log('[SCRAPER REALISASI] Memulai proses scraping Realisasi >> Stok Kios IPubers...');
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
