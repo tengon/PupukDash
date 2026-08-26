@@ -7,7 +7,7 @@ export async function syncRealisasiStokKiosToDb() {
 
   let filePath = path.join(process.cwd(), 'scraper', 'realisasi_stok_kios_full.json')
   if (!fs.existsSync(filePath)) {
-    filePath = path.join('d:', 'testGet', 'realisasi_stok_kios_full.json')
+    filePath = path.join(process.cwd(), '..', 'realisasi_stok_kios_full.json')
   }
 
   if (!fs.existsSync(filePath)) {

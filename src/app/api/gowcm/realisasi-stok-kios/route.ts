@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     let jsonFilePath = path.join(process.cwd(), 'scraper', 'realisasi_stok_kios_full.json')
 
     if (!fs.existsSync(jsonFilePath)) {
-      jsonFilePath = path.join('d:', 'testGet', 'realisasi_stok_kios_full.json')
+      jsonFilePath = path.join(process.cwd(), '..', 'realisasi_stok_kios_full.json')
     }
 
     if (!fs.existsSync(jsonFilePath)) {

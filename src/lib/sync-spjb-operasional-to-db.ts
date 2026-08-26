@@ -7,7 +7,7 @@ export async function syncSpjbOperasionalToDb() {
 
   let opFilePath = path.join(process.cwd(), 'scraper', 'spjb_operasional_full.json')
   if (!fs.existsSync(opFilePath)) {
-    opFilePath = path.join('d:', 'testGet', 'spjb_operasional_full.json')
+    opFilePath = path.join(process.cwd(), '..', 'spjb_operasional_full.json')
   }
 
   if (!fs.existsSync(opFilePath)) {

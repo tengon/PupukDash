@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const rangeParam = searchParams.get('range')
 
     const scraperDir = path.join(process.cwd(), 'scraper')
-    const testGetNodeModules = path.join('d:', 'testGet', 'node_modules')
+    const testGetNodeModules = path.join(process.cwd(), '..', 'testGet', 'node_modules')
     const nodePath = fs.existsSync(testGetNodeModules)
       ? `${testGetNodeModules};${process.env.NODE_PATH || ''}`
       : process.env.NODE_PATH || ''

@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')?.toLowerCase() || ''
     const product = searchParams.get('product') || ''
 
-    const filePath = 'd:\\testGet\\stok_kios_ipuber_full.json'
+    const filePath = path.join(process.cwd(), 'scraper', 'realisasi_stok_kios_full.json')
 
     if (!fs.existsSync(filePath)) {
       return NextResponse.json({

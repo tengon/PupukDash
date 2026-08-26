@@ -29,7 +29,7 @@ export async function syncSpjbPptsToDb() {
 
   let pptsFilePath = path.join(process.cwd(), 'scraper', 'spjb_ppts_full.json')
   if (!fs.existsSync(pptsFilePath)) {
-    pptsFilePath = path.join('d:', 'testGet', 'spjb_ppts_full.json')
+    pptsFilePath = path.join(process.cwd(), '..', 'spjb_ppts_full.json')
   }
 
   if (!fs.existsSync(pptsFilePath)) {
