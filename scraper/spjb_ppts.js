@@ -12,12 +12,25 @@
  * Filter: Show = Lihat Semua, Status = Active
  */
 
-const { chromium } = require('playwright');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 
-// Playwright dari d:\testGet\node_modules
-const playwrightPath = path.join('d:', 'testGet', 'node_modules', 'playwright');
+// Auto-add fallback node_modules paths if playwright is not in default search paths
+const fallbackPaths = [
+  path.join(__dirname, '..', 'node_modules'),
+  path.join(process.cwd(), 'node_modules'),
+  path.join(process.cwd(), '..', 'node_modules'),
+  'D:\\testGet\\node_modules',
+  'd:\\testGet\\node_modules',
+  '/home/sipupuk/PupukDash/node_modules',
+];
+fallbackPaths.forEach(p => {
+  if (fs.existsSync(p) && !module.paths.includes(p)) {
+    module.paths.unshift(p);
+  }
+});
+
+const { chromium } = require('playwright');
 
 const CREDENTIALS = {
   username: '1000001601',
