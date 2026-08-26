@@ -343,58 +343,52 @@ async function scrapeDetail(page, spjb, prefix) {
 
       const trElements = targetTable ? [...targetTable.querySelectorAll('tbody tr')] : [];
       let currentKecamatan = 'Kab. Semarang';
-      let isTotalGroup = false;
 
       for (let i = 0; i < trElements.length; i++) {
         const tr = trElements[i];
-        const isLastChild = tr.classList.contains('lastChild');
-        const text = tr.innerText.replace(/\s+/g, ' ').trim();
-
-        if (!text) continue;
-
-        // Baris Parent (Non-lastChild): Header Provinsi / Kabupaten / Kecamatan / Total Produk
-        if (!isLastChild) {
-          const cleanText = text.replace(/-$/, '').trim();
-          const cleanLower = cleanText.toLowerCase();
-
-          if (cleanLower.includes('total produk') || cleanLower.includes('total')) {
-            isTotalGroup = true;
-          } else if (cleanLower.includes('jawa tengah') || cleanLower.includes('kab.')) {
-            isTotalGroup = true;
-          } else if (cleanText) {
-            isTotalGroup = false;
-            currentKecamatan = cleanText;
-          }
-          continue;
-        }
-
-        // Abaikan seluruh baris child di bawah grup Total Produk / Provinsi / Kabupaten
-        if (isTotalGroup) continue;
-
-        // Baris Child (lastChild): Baris Produk (UREA, NPK, ORGANIK, ZA, dsb.)
         const cells = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        if (cells.length < 5) continue;
+        if (cells.length === 0) continue;
 
-        const cell0 = cells[0] || '';
-        const cell1 = cells[1] || '';
-        const produk = cell1 || cell0 || 'UREA';
+        const text = tr.innerText.replace(/\s+/g, ' ').trim();
+        const textUpper = text.toUpperCase();
 
-        // Abaikan baris rekap total
-        if (produk.toUpperCase().includes('TOTAL') || cell0.toUpperCase().includes('TOTAL')) continue;
+        // Abaikan baris rekap total utama & header provinsi / kabupaten
+        if (textUpper.includes('TOTAL PRODUK') || textUpper.startsWith('TOTAL')) continue;
 
-        const totalAlokasi = cells[cells.length - 4] || '0';
-        const totalSo = cells[cells.length - 3] || '0';
-        const totalSoApprove = cells[cells.length - 2] || '0';
-        const totalSisa = cells[cells.length - 1] || '0';
+        const firstCol = (cells[0] || cells[1] || '').toUpperCase();
+        const isProductRow = firstCol.includes('UREA') ||
+                             firstCol.includes('NPK') ||
+                             firstCol.includes('ORGANIK') ||
+                             firstCol.includes('ZA') ||
+                             firstCol.includes('SP-36') ||
+                             firstCol.includes('PHONSKA') ||
+                             firstCol.includes('FERTIPHOS') ||
+                             tr.classList.contains('lastChild');
 
-        detailRows.push({
-          kecamatan: currentKecamatan,
-          produk: produk,
-          totalAlokasi,
-          totalSo,
-          totalSoApprove,
-          totalSisa,
-        });
+        if (isProductRow && cells.length >= 5) {
+          const produk = cells[1] || cells[0] || 'UREA';
+          if (produk.toUpperCase().includes('TOTAL')) continue;
+
+          const totalAlokasi = cells[cells.length - 4] || '0';
+          const totalSo = cells[cells.length - 3] || '0';
+          const totalSoApprove = cells[cells.length - 2] || '0';
+          const totalSisa = cells[cells.length - 1] || '0';
+
+          detailRows.push({
+            kecamatan: currentKecamatan,
+            produk: produk,
+            totalAlokasi,
+            totalSo,
+            totalSoApprove,
+            totalSisa,
+          });
+        } else {
+          // Merupakan baris header Kecamatan (Parent Row)
+          const cleanKec = text.replace(/-$/, '').trim();
+          if (cleanKec && !cleanKec.toUpperCase().includes('JAWA TENGAH') && !cleanKec.toUpperCase().startsWith('KAB.')) {
+            currentKecamatan = cleanKec;
+          }
+        }
       }
 
       return {
