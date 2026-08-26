@@ -85,24 +85,27 @@ export function ScraperDialog({
   const [opEnabled, setOpEnabled] = useState(true)
   const [opStartTime, setOpStartTime] = useState('06:00')
   const [opInterval, setOpInterval] = useState('6')
+  const [opScrapeRange, setOpScrapeRange] = useState<string>('all')
 
   const [pptsEnabled, setPptsEnabled] = useState(true)
   const [pptsStartTime, setPptsStartTime] = useState('06:00')
   const [pptsInterval, setPptsInterval] = useState('6')
+  const [pptsScrapeRange, setPptsScrapeRange] = useState<string>('all')
 
   const [realisasiEnabled, setRealisasiEnabled] = useState(true)
   const [realisasiStartTime, setRealisasiStartTime] = useState('06:00')
   const [realisasiInterval, setRealisasiInterval] = useState('6')
+  const [realisasiScrapeRange, setRealisasiScrapeRange] = useState<string>('all')
 
   const [distribusiEnabled, setDistribusiEnabled] = useState(true)
   const [distribusiStartTime, setDistribusiStartTime] = useState('06:00')
   const [distribusiInterval, setDistribusiInterval] = useState('6')
-  const [distribusiScrapeRange, setDistribusiScrapeRange] = useState<string>('all')
+  const [distribusiScrapeRange, setDistribusiScrapeRange] = useState<string>('today')
 
   const [detailSjEnabled, setDetailSjEnabled] = useState(true)
   const [detailSjStartTime, setDetailSjStartTime] = useState('06:00')
   const [detailSjInterval, setDetailSjInterval] = useState('6')
-  const [detailSjScrapeRange, setDetailSjScrapeRange] = useState<string>('all')
+  const [detailSjScrapeRange, setDetailSjScrapeRange] = useState<string>('today')
 
   const [isSyncingOp, setIsSyncingOp] = useState(false)
   const [isSyncingPpts, setIsSyncingPpts] = useState(false)
@@ -128,28 +131,31 @@ export function ScraperDialog({
         setOpEnabled(s.spjb_operasional.enabled ?? true)
         setOpStartTime(s.spjb_operasional.startTime || '06:00')
         setOpInterval(String(s.spjb_operasional.intervalHours || 6))
+        setOpScrapeRange(s.spjb_operasional.scrapeRange || 'all')
       }
       if (s.spjb_ppts) {
         setPptsEnabled(s.spjb_ppts.enabled ?? true)
         setPptsStartTime(s.spjb_ppts.startTime || '06:00')
         setPptsInterval(String(s.spjb_ppts.intervalHours || 6))
+        setPptsScrapeRange(s.spjb_ppts.scrapeRange || 'all')
       }
       if (s.realisasi_stok_kios) {
         setRealisasiEnabled(s.realisasi_stok_kios.enabled ?? true)
         setRealisasiStartTime(s.realisasi_stok_kios.startTime || '06:00')
         setRealisasiInterval(String(s.realisasi_stok_kios.intervalHours || 6))
+        setRealisasiScrapeRange(s.realisasi_stok_kios.scrapeRange || 'all')
       }
       if (s.penyaluran_pengecer) {
         setDistribusiEnabled(s.penyaluran_pengecer.enabled ?? true)
         setDistribusiStartTime(s.penyaluran_pengecer.startTime || '06:00')
         setDistribusiInterval(String(s.penyaluran_pengecer.intervalHours || 6))
-        setDistribusiScrapeRange(s.penyaluran_pengecer.scrapeRange || 'all')
+        setDistribusiScrapeRange(s.penyaluran_pengecer.scrapeRange || 'today')
       }
       if (s.detail_surat_jalan) {
         setDetailSjEnabled(s.detail_surat_jalan.enabled ?? true)
         setDetailSjStartTime(s.detail_surat_jalan.startTime || '06:00')
         setDetailSjInterval(String(s.detail_surat_jalan.intervalHours || 6))
-        setDetailSjScrapeRange(s.detail_surat_jalan.scrapeRange || 'all')
+        setDetailSjScrapeRange(s.detail_surat_jalan.scrapeRange || 'today')
       }
     }
   }, [scheduleData])
@@ -162,16 +168,19 @@ export function ScraperDialog({
           enabled: opEnabled,
           startTime: opStartTime,
           intervalHours: parseInt(opInterval) || 6,
+          scrapeRange: opScrapeRange,
         },
         spjb_ppts: {
           enabled: pptsEnabled,
           startTime: pptsStartTime,
           intervalHours: parseInt(pptsInterval) || 6,
+          scrapeRange: pptsScrapeRange,
         },
         realisasi_stok_kios: {
           enabled: realisasiEnabled,
           startTime: realisasiStartTime,
           intervalHours: parseInt(realisasiInterval) || 6,
+          scrapeRange: realisasiScrapeRange,
         },
         penyaluran_pengecer: {
           enabled: distribusiEnabled,
@@ -215,11 +224,11 @@ export function ScraperDialog({
   const triggerOpSync = async () => {
     setIsSyncingOp(true)
     try {
-      const res = await fetch('/api/gowcm/sync-spjb-operasional', { method: 'POST' })
+      const res = await fetch(`/api/gowcm/sync-spjb-operasional?range=${opScrapeRange}`, { method: 'POST' })
       const json = await res.json()
       toast({
         title: 'Sync SPJB Operasional Selesai',
-        description: json.message || 'Data SPJB Operasional berhasil di-scrape.',
+        description: json.message || 'Data SPJB Operasional berhasil di-scrape & dimasukkan ke DB.',
       })
       queryClient.invalidateQueries()
     } catch (e: any) {
@@ -237,11 +246,11 @@ export function ScraperDialog({
   const triggerPptsSync = async () => {
     setIsSyncingPpts(true)
     try {
-      const res = await fetch('/api/gowcm/sync-spjb-ppts', { method: 'POST' })
+      const res = await fetch(`/api/gowcm/sync-spjb-ppts?range=${pptsScrapeRange}`, { method: 'POST' })
       const json = await res.json()
       toast({
         title: 'Sync SPJB PPTS Selesai',
-        description: json.message || 'Data SPJB PPTS berhasil di-scrape.',
+        description: json.message || 'Data SPJB PPTS berhasil di-scrape & dimasukkan ke DB.',
       })
       queryClient.invalidateQueries()
     } catch (e: any) {
@@ -259,11 +268,11 @@ export function ScraperDialog({
   const triggerRealisasiSync = async () => {
     setIsSyncingRealisasi(true)
     try {
-      const res = await fetch('/api/gowcm/sync-realisasi-stok-kios', { method: 'POST' })
+      const res = await fetch(`/api/gowcm/sync-realisasi-stok-kios?range=${realisasiScrapeRange}`, { method: 'POST' })
       const json = await res.json()
       toast({
         title: 'Sync Realisasi Stok Kios Selesai',
-        description: json.message || 'Scraping Realisasi Stok Kios IPubers berhasil dijalankan.',
+        description: json.message || 'Scraping Realisasi Stok Kios IPubers berhasil di-scrape & dimasukkan ke DB.',
       })
       queryClient.invalidateQueries()
     } catch (e: any) {
@@ -277,7 +286,7 @@ export function ScraperDialog({
     }
   }
 
-  // Manual Trigger Penyaluran Pengecer (Distribusi) with Range Option
+  // Manual Trigger Penyaluran Pengecer (Distribusi)
   const triggerDistribusiSync = async () => {
     setIsSyncingDistribusi(true)
     try {
@@ -285,7 +294,7 @@ export function ScraperDialog({
       const json = await res.json()
       toast({
         title: 'Sync Penyaluran Pengecer Selesai',
-        description: json.message || 'Scraping Surat Jalan Penyaluran Pengecer berhasil dijalankan.',
+        description: json.message || 'Scraping Surat Jalan Penyaluran Pengecer berhasil di-scrape & dimasukkan ke DB.',
       })
       queryClient.invalidateQueries()
     } catch (e: any) {
@@ -299,7 +308,7 @@ export function ScraperDialog({
     }
   }
 
-  // Manual Trigger Detail Surat Jalan with Range Option
+  // Manual Trigger Detail Surat Jalan
   const triggerDetailSjSync = async () => {
     setIsSyncingDetailSj(true)
     try {
@@ -307,7 +316,7 @@ export function ScraperDialog({
       const json = await res.json()
       toast({
         title: 'Sync Detail Surat Jalan Selesai',
-        description: json.message || 'Scraping Rincian Item Detail Surat Jalan berhasil dijalankan.',
+        description: json.message || 'Scraping Rincian Item Detail Surat Jalan berhasil di-scrape & dimasukkan ke DB.',
       })
       queryClient.invalidateQueries()
     } catch (e: any) {
@@ -349,7 +358,7 @@ export function ScraperDialog({
                 </TabsTrigger>
                 <TabsTrigger value="ppts" className="gap-1 text-[10px] font-bold truncate px-1">
                   <Store className="h-3 w-3 text-blue-600 shrink-0" />
-                  <span className="truncate">SPJB PPTS</span>
+                  <span className="truncate">PPTS</span>
                 </TabsTrigger>
                 <TabsTrigger value="realisasi" className="gap-1 text-[10px] font-bold truncate px-1">
                   <Boxes className="h-3 w-3 text-purple-600 shrink-0" />
@@ -413,6 +422,26 @@ export function ScraperDialog({
                     </div>
                   </div>
 
+                  {/* Opsi Filter Rentang Data Scraper */}
+                  <div className="space-y-1 pt-2 border-t">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <Filter className="h-3 w-3 text-emerald-600" />
+                      Rentang Data yang Di-Scrape (Limit Tanggal)
+                    </Label>
+                    <Select value={opScrapeRange} onValueChange={setOpScrapeRange}>
+                      <SelectTrigger className="h-8 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                        <SelectValue placeholder="Pilih Rentang Data" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCRAPE_RANGE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {scheduleData?.settings?.spjb_operasional?.lastRun && (
                     <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
                       <span>Eksekusi Terakhir:</span>
@@ -432,7 +461,7 @@ export function ScraperDialog({
                     onClick={triggerOpSync}
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingOp ? 'animate-spin' : ''}`} />
-                    {isSyncingOp ? 'Syncing...' : 'Run Scraper Operasional Sekarang'}
+                    {isSyncingOp ? 'Syncing...' : `Run Scraper Operasional (${opScrapeRange.toUpperCase()}) Sekarang`}
                   </Button>
                 </div>
               </TabsContent>
@@ -485,6 +514,26 @@ export function ScraperDialog({
                     </div>
                   </div>
 
+                  {/* Opsi Filter Rentang Data Scraper */}
+                  <div className="space-y-1 pt-2 border-t">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <Filter className="h-3 w-3 text-blue-600" />
+                      Rentang Data yang Di-Scrape (Limit Tanggal)
+                    </Label>
+                    <Select value={pptsScrapeRange} onValueChange={setPptsScrapeRange}>
+                      <SelectTrigger className="h-8 text-xs font-bold text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                        <SelectValue placeholder="Pilih Rentang Data" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCRAPE_RANGE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {scheduleData?.settings?.spjb_ppts?.lastRun && (
                     <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
                       <span>Eksekusi Terakhir:</span>
@@ -504,7 +553,7 @@ export function ScraperDialog({
                     onClick={triggerPptsSync}
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingPpts ? 'animate-spin' : ''}`} />
-                    {isSyncingPpts ? 'Syncing...' : 'Run Scraper PPTS Sekarang'}
+                    {isSyncingPpts ? 'Syncing...' : `Run Scraper PPTS (${pptsScrapeRange.toUpperCase()}) Sekarang`}
                   </Button>
                 </div>
               </TabsContent>
@@ -557,6 +606,26 @@ export function ScraperDialog({
                     </div>
                   </div>
 
+                  {/* Opsi Filter Rentang Data Scraper */}
+                  <div className="space-y-1 pt-2 border-t">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <Filter className="h-3 w-3 text-purple-600" />
+                      Rentang Data yang Di-Scrape (Limit Tanggal)
+                    </Label>
+                    <Select value={realisasiScrapeRange} onValueChange={setRealisasiScrapeRange}>
+                      <SelectTrigger className="h-8 text-xs font-bold text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                        <SelectValue placeholder="Pilih Rentang Data" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCRAPE_RANGE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {scheduleData?.settings?.realisasi_stok_kios?.lastRun && (
                     <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-dashed">
                       <span>Eksekusi Terakhir:</span>
@@ -576,7 +645,7 @@ export function ScraperDialog({
                     onClick={triggerRealisasiSync}
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingRealisasi ? 'animate-spin' : ''}`} />
-                    {isSyncingRealisasi ? 'Syncing...' : 'Run Scraper Realisasi Sekarang'}
+                    {isSyncingRealisasi ? 'Syncing...' : `Run Scraper Realisasi (${realisasiScrapeRange.toUpperCase()}) Sekarang`}
                   </Button>
                 </div>
               </TabsContent>
@@ -647,9 +716,6 @@ export function ScraperDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-[10px] text-muted-foreground">
-                      Pilih 'Hari Ini' atau '7 Hari' agar proses scraping berjalan sangat cepat dalam hitungan detik.
-                    </p>
                   </div>
 
                   {scheduleData?.settings?.penyaluran_pengecer?.lastRun && (
@@ -742,9 +808,6 @@ export function ScraperDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-[10px] text-muted-foreground">
-                      Pilih 'Hari Ini' atau '7 Hari' agar proses scraping berjalan sangat cepat dalam hitungan detik.
-                    </p>
                   </div>
 
                   {scheduleData?.settings?.detail_surat_jalan?.lastRun && (
@@ -772,26 +835,19 @@ export function ScraperDialog({
               </TabsContent>
             </Tabs>
 
-            {/* Bottom Actions */}
-            <div className="pt-2 flex items-center justify-between border-t gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 gap-1.5 text-xs text-muted-foreground"
-                onClick={() => refetch()}
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Refresh Status
-              </Button>
-
+            {/* Bottom Save Action */}
+            <div className="flex items-center justify-between pt-3 border-t">
+              <span className="text-[11px] text-muted-foreground">
+                Perubahan jadwal disimpan di <code className="text-[10px] font-mono bg-muted px-1 py-0.5 rounded">scraper/schedule_settings.json</code>
+              </span>
               <Button
                 size="sm"
-                className="h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
-                disabled={saveScheduleMutation.isPending}
+                className="h-8 gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                 onClick={() => saveScheduleMutation.mutate()}
+                disabled={saveScheduleMutation.isPending}
               >
-                <Save className="h-4 w-4" />
-                {saveScheduleMutation.isPending ? 'Menyimpan...' : 'Simpan Penjadwalan Scraping'}
+                <Save className="h-3.5 w-3.5" />
+                {saveScheduleMutation.isPending ? 'Menyimpan...' : 'Simpan Jadwal All Scrapers'}
               </Button>
             </div>
           </div>

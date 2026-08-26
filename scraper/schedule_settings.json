@@ -3,18 +3,21 @@
     "enabled": true,
     "startTime": "06:00",
     "intervalHours": 6,
+    "scrapeRange": "all",
     "lastRun": "2026-08-20T16:00:33.563Z"
   },
   "spjb_ppts": {
     "enabled": true,
     "startTime": "06:00",
     "intervalHours": 6,
+    "scrapeRange": "all",
     "lastRun": "2026-08-20T16:01:22.566Z"
   },
   "realisasi_stok_kios": {
     "enabled": true,
     "startTime": "06:00",
     "intervalHours": 6,
+    "scrapeRange": "all",
     "lastRun": "2026-08-20T20:05:54.972Z"
   },
   "penyaluran_pengecer": {
@@ -23,5 +26,12 @@
     "intervalHours": 6,
     "scrapeRange": "today",
     "lastRun": "2026-08-20T20:30:52.578Z"
+  },
+  "detail_surat_jalan": {
+    "enabled": true,
+    "startTime": "06:00",
+    "intervalHours": 6,
+    "scrapeRange": "today",
+    "lastRun": "2026-08-24T09:40:32.000Z"
   }
 }

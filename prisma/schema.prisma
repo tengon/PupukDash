@@ -415,3 +415,24 @@ model SuratJalanDetail {
   @@index([suratJalanId])
   @@index([nomorPkp])
 }
+
+// 6. Tabel Realisasi Stok Kios (Stok Kios IPubers)
+model RealisasiStokKios {
+  id          String   @id @default(cuid())
+  kodeKios    String
+  namaKios    String
+  kodeProduk  String?
+  namaProduk  String
+  stokKg      Float    @default(0)
+  stokTon     Float    @default(0)
+  kecamatan   String?
+  kabupaten   String?  @default("Kab. Semarang")
+  syncAt      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([kodeKios, namaProduk])
+  @@index([kodeKios])
+  @@index([namaProduk])
+}
+

@@ -1,34 +1,58 @@
 import { NextResponse } from 'next/server'
 import { exec } from 'child_process'
+import { promisify } from 'util'
 import path from 'path'
-import util from 'util'
+import fs from 'fs'
+import { syncRealisasiStokKiosToDb } from '@/lib/sync-realisasi-stok-kios-to-db'
 
-const execPromise = util.promisify(exec)
+const execAsync = promisify(exec)
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const scriptPath = path.join(process.cwd(), 'scraper', 'realisasi_stok_kios.js')
-    const nodeCmd = process.platform === 'win32'
-      ? `$env:NODE_PATH="d:\\testGet\\node_modules"; node "${scriptPath}"`
-      : `node "${scriptPath}"`
+    const { searchParams } = new URL(request.url)
+    const rangeParam = searchParams.get('range')
 
-    console.log('[API SYNC REALISASI] Executing scraper script:', scriptPath)
-    const { stdout, stderr } = await execPromise(nodeCmd, {
-      shell: process.platform === 'win32' ? 'powershell.exe' : '/bin/sh',
-      timeout: 120000,
+    const scraperDir = path.join(process.cwd(), 'scraper')
+    const testGetNodeModules = path.join('d:', 'testGet', 'node_modules')
+    const nodePath = fs.existsSync(testGetNodeModules)
+      ? `${testGetNodeModules};${process.env.NODE_PATH || ''}`
+      : process.env.NODE_PATH || ''
+
+    const execEnv = { ...process.env, NODE_PATH: nodePath }
+
+    let rangeArg = ''
+    if (rangeParam) {
+      rangeArg = `--range=${rangeParam}`
+    }
+
+    console.log(`[SYNC REALISASI] Executing realisasi_stok_kios.js ${rangeArg}...`)
+    const { stdout, stderr } = await execAsync(`node realisasi_stok_kios.js ${rangeArg}`.trim(), {
+      cwd: scraperDir,
+      env: execEnv,
+      timeout: 300000,
+      maxBuffer: 20 * 1024 * 1024,
     })
 
-    console.log('[API SYNC REALISASI STDOUT]:', stdout)
+    console.log('[SYNC REALISASI STDOUT]:', stdout)
+    if (stderr) console.error('[SYNC REALISASI STDERR]:', stderr)
+
+    // Sync output to SQLite database
+    const syncRes = await syncRealisasiStokKiosToDb()
 
     return NextResponse.json({
       success: true,
-      message: 'Scraping Realisasi Stok Kios IPubers berhasil dijalankan.',
+      message: `Scraper Realisasi Stok Kios selesai! ${syncRes.updatedCount || 0} data tersimpan ke DB.`,
       output: stdout,
+      dbSync: syncRes,
     })
   } catch (error: any) {
-    console.error('❌ [API SYNC REALISASI ERROR]:', error.message)
+    console.error('Error running realisasi_stok_kios scraper:', error)
     return NextResponse.json(
-      { success: false, error: 'Gagal menjalankan scraper Realisasi Stok Kios', details: error.message },
+      {
+        success: false,
+        error: 'Gagal menjalankan scraper Realisasi Stok Kios',
+        details: error.message,
+      },
       { status: 500 }
     )
   }
