@@ -38,6 +38,12 @@ export async function POST(request: Request) {
 
     const syncRes = await syncSpjbPptsToDb()
 
+    // Update lastRun di schedule_settings.json
+    try {
+      const { updateScraperLastRun } = await import('@/lib/update-scraper-last-run')
+      updateScraperLastRun('spjb_ppts')
+    } catch {}
+
     return NextResponse.json({
       success: true,
       message: `Scraper SPJB PPTS selesai! Data tersimpan ke DB.`,

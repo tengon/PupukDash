@@ -39,6 +39,12 @@ export async function POST(request: Request) {
     // Sync output to SQLite database
     const syncRes = await syncRealisasiStokKiosToDb()
 
+    // Update lastRun di schedule_settings.json
+    try {
+      const { updateScraperLastRun } = await import('@/lib/update-scraper-last-run')
+      updateScraperLastRun('realisasi_stok_kios')
+    } catch {}
+
     return NextResponse.json({
       success: true,
       message: `Scraper Realisasi Stok Kios selesai! ${syncRes.updatedCount || 0} data tersimpan ke DB.`,

@@ -114,6 +114,12 @@ export async function POST(request: Request) {
       console.warn('Gagal sinkron database SuratJalanDetail:', dbSyncErr)
     }
 
+    // Update lastRun di schedule_settings.json
+    try {
+      const { updateScraperLastRun } = await import('@/lib/update-scraper-last-run')
+      updateScraperLastRun('detail_surat_jalan')
+    } catch {}
+
     return NextResponse.json({
       success: true,
       message: `Scraper Detail Surat Jalan selesai! ${importedCount} rincian item dimasukkan ke DB.`,

@@ -38,6 +38,12 @@ export async function POST(request: Request) {
 
     const syncRes = await syncSpjbOperasionalToDb()
 
+    // Update lastRun di schedule_settings.json
+    try {
+      const { updateScraperLastRun } = await import('@/lib/update-scraper-last-run')
+      updateScraperLastRun('spjb_operasional')
+    } catch {}
+
     return NextResponse.json({
       success: true,
       message: `Scraper SPJB Operasional selesai! Data tersimpan ke DB.`,
